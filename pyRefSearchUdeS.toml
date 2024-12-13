@@ -1,0 +1,41 @@
+# Type de recherche
+#   - "Publications" : recherche de publications par identifiant Scopus
+#   - "Profils"      : recherche de profils d'auteurs par noms, pour une éventuelle
+#                      recherche de publications par identifiants Scopus
+search_type = "Publications"
+
+# Fichier Excel d'entrée et nom du feuillet contenant les information des auteur.e.s
+# (colonnes "Nom", "Prénom", ainsi que "Scopus ID" pour les recherches de publications)
+in_excel_file = "pyRefSearchUdeS.xlsx"
+in_excel_file_sheet_name = "Membres réguliers"
+
+# Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)
+pub_year_first = 2020
+pub_year_last = 2024
+
+# Noms et codes Scopus des types de publications désirées pour la recherche par publications
+#   Article-ar / Abstract Report-ab / Book-bk / Book Chapter-ch / Conference Paper-cp /
+#   Conference Review-cr / Data Paper-dp / Editorial-ed / Erratum-er / Letter-le /
+#   Multimedia-mm / Note-no / Report-rp / Retracted-tb / Review-re / Short Survey-sh
+#   NB: la recherche de brevets ne fonctionne pas...
+publication_types = [["Articles", "ar"], ["Conférences", "cp"], ["Livres", "bk"],
+    ["Chapitres de livres", "ch"], ["Lettres", "le"], ["Rapports", "rp"]]
+# Noms d'institutions et d'affiliations considérées commme "locales", pour valider
+# les profils d'auteurs dans les recherches
+local_affiliations = [
+    "Université de Sherbrooke",
+    "3IT",
+    "Institut interdisciplinaire d'innovation technologique",
+    "LN2",
+    "Laboratoire nanotechnologies et nanosystèmes",
+]
+
+# Intervalle de mise à jour de la copie locale de la base de données Scopus.
+# Une recherche en ligne dans Scopus prend beaucoup de temps, les résultats sont
+# sauvegardés dans une base de données locale pour éviter de refaire la recherche
+# en ligne à chaque fois. Cette base de données locale doit est mise à jour à
+# intervalles réguliers.
+#  - "False" : aucune mise à jour
+#  - Nombre : nombre de jours entre chaque mise à jour
+scopus_database_refresh = 7
+
