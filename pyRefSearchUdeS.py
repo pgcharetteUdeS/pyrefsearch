@@ -716,7 +716,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         homonyms_only=True,
     )
 
-    # Fetch US patent applications and published patents for the list of authors
+    # Fetch US patent applications and published patents
     patents_applications_by_filing_date: pd.DataFrame = query_us_patents(
         reference_query=reference_query, applications=True
     )
@@ -759,13 +759,10 @@ def query_author_profiles(reference_query: ReferenceQuery) -> None:
 
 def run_bibliographic_search(reference_query: ReferenceQuery, search_type: str) -> None:
     """
-     For a list of author names and range of years supplied in an input Excel file,
-     query:
+     For a list of author names and range of years, search either for:
         - references (publications in Scopus, patents in the USPTO database)
-        OR
-        - author profiles
-
-     . Write the results to an output Excel file.
+          OR
+        - author profiles in the Scopus database
 
      Args:
          reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
