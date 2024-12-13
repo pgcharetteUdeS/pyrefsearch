@@ -347,7 +347,7 @@ def write_reference_query_results_to_excel(
         "Année de fin",
     ]
     results += reference_query.publication_types
-    results += ["Demandes de brevets US déposées", "Brevets US délivrés"]
+    results += ["Brevets US en instance", "Brevets US délivrés"]
     values: list[int] = [
         len(reference_query.au_ids),
         reference_query.pub_year_first,
@@ -372,7 +372,7 @@ def write_reference_query_results_to_excel(
                 )
         if not patents_applications_by_filing_date.empty:
             patents_applications_by_filing_date.to_excel(
-                writer, index=False, sheet_name="Demandes de brevets US déposées"
+                writer, index=False, sheet_name="Brevets US en instance"
             )
         if not patents_by_publication_date.empty:
             patents_by_publication_date.to_excel(
@@ -720,7 +720,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     patents_applications_by_filing_date: pd.DataFrame = query_us_patents(
         reference_query=reference_query, applications=True
     )
-    print("Demandes de brevets US déposées: ", len(patents_applications_by_filing_date))
+    print("Brevets US en instance: ", len(patents_applications_by_filing_date))
     patents_by_publication_date: pd.DataFrame = query_us_patents(
         reference_query=reference_query, applications=False
     )
