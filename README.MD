@@ -3,15 +3,15 @@
 <!---Badges-->
 [![Python 3.10](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-## Recherche de publications dans les bases de données Scopus et de brevets US, ou de profils Scopus, pour une liste d'auteur.e.s
+## Recherche de références dans les bases de données Scopus et de brevets US, ou de profils Scopus, pour une liste d'auteur.e.s
 - Appel du script: *python.exe pyRefSearchUdeS.py*
 - Les paramètres d'exécution sont lus dans le fichier *pyRefSearchUdeS.toml*
 - Les données d'auteur.e.s sont lues dans un fichier Excel d'entrée
 - Les résultats de la recherche sont écrits dans un fichier Excel de sortie
 - Le script doit être exécuté à partir d'un poste sur le réseau universitaire
-pour que l'accès à Scopus soit autorisé
-- Une “clé” est requise pour interroger l’API Scopus, voir https://dev.elsevier.com/index.jsp.
-La première exécution du script demandera à l’utilisateur de saisir la clé
+pour que l'accès à Scopus soit autorisé (une “clé” est requise pour interroger l’API Scopus,
+voir https://dev.elsevier.com/index.jsp. La première exécution du script demandera à
+l’utilisateur de saisir la clé).
 
 ## Fichier des paramètres d'exécution *pyRefSearchUdeS.toml* (voir le fichier pour plus d'infos sur les paramètres) :
 - *search_type* : Type de recherche (par publications/brevets ou profils d'auteur.e.s)
@@ -30,8 +30,8 @@ suivantes du feuillet *in_excel_file_sheet_name*:
 
 - *Nom* : Nom de famille de l’auteur.e
 - *Prénom* : Prénom de l’auteur.e
-- *Scopus ID* : Identifiant Scopus de l’auteur.e pour une recherche de publications 
-(laisser la cellule vide si aucun identifiant n'est disponible)
+- *Scopus ID* : Identifiant Scopus de l’auteur.e pour une recherche de publications/brevets 
+(laisser la cellule vide si aucun identifiant Scopus n'est disponible)
 
 ## Fichier Excel de sortie :
 - Recherche de publications/brevets:
@@ -67,5 +67,5 @@ mais il ne semble pas y avoir de moyen facile de faire des recherches scriptées
 dans cette base de données.
 
 ## Installation:
-- Projet *pyRefSearchUdeS* disponible sur [github](https://github.com/pgcharetteUdeS/pyScopus)
+- Projet *pyRefSearchUdeS* disponible sur [github](https://github.com/pgcharetteUdeS/pyRefSearchUdeS)
 - *pip install -r requirements.txt*
