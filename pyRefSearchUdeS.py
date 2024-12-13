@@ -588,9 +588,9 @@ def query_us_patents(
     See: https://patent-client.readthedocs.io/en/latest/user_guide/fulltext.html
          https://www.uspto.gov/patents/search/patent-public-search/quick-reference-guides
 
-         USPTO database search field codes:
-         - Patents over a range of years: ((<first name> NEAR2 <last name>).IN.) AND @PD>="<year0>0101"<="<year1>1231"
-         - Applications over a range of years: ((<first name>  NEAR2 <last name>).IN.) AND @AD>="<year0>0101"<="<year1>1231"
+         USPTO database search field codes for search over a range of years:
+         - Applications: ((<first name>  NEAR2 <last name>).IN.) AND @AD>="<year0>0101"<="<year1>1231"
+         - Patents: ((<first name> NEAR2 <last name>).IN.) AND @PD>="<year0>0101"<="<year1>1231"
 
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
