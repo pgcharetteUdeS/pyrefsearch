@@ -7,7 +7,7 @@
     The script uses the "pybliometrics" for Scopus searches,
     see https://pybliometrics.readthedocs.io/en/stable/
 
-    A "key" is required to query the Scopus API, see https://dev.elsevier.com/index.jsp.
+    NB: A "key" is required to query the Scopus API, see https://dev.elsevier.com/index.jsp.
     The first execution of the script will prompt the user to enter the key.
 
     The script uses the "patent_client" package for searches in the USPTO database,
@@ -47,7 +47,6 @@ class ReferenceQuery:
                 f"Could not open '{filename}', close it " "if it's already open!"
             ) from None
 
-    # noinspection PyTypeChecker
     def __init__(
         self,
         in_excel_file: Path,
@@ -583,15 +582,18 @@ def query_us_patents(
     reference_query: ReferenceQuery, applications: bool = True
 ) -> pd.DataFrame:
     """
-    Query the USPTO database for a list of authors over a range of years
+    Query the USPTO database for patent applications and published patents
+    for a list of authors over a range of years using the "patent_client" package
 
     See: https://patent-client.readthedocs.io/en/latest/user_guide/fulltext.html
          https://www.uspto.gov/patents/search/patent-public-search/quick-reference-guides
-         Search by range of publication years: ((Paul NEAR2 Charette).IN.) AND @PD>="20240101"<="20241231"
-         Search by range of application years: ((Paul NEAR2 Charette).IN.) AND @AD>="20240101"<="20241231"
+
+         USPTO database search field codes:
+         - Patents over a range of years: ((<first name> NEAR2 <last name>).IN.) AND @PD>="<year0>0101"<="<year1>1231"
+         - Applications over a range of years: ((<first name>  NEAR2 <last name>).IN.) AND @AD>="<year0>0101"<="<year1>1231"
 
     Args:
-        reference_query (ReferenceQuery): ScopusQuery Class object containing query info
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
         applications (bool): Search filed applications if True, else search published patents if False
 
     Returns : DataFrame with patent search results
@@ -670,7 +672,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
 
     # Console banner
     print(
-        "Recherche de publications par identifiant Scopus pour la période "
+        "Recherche de publications et brevets US pour la période "
         f"{reference_query.pub_year_first}-{reference_query.pub_year_last}"
     )
 
@@ -689,7 +691,8 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         ),
     )
 
-    # Fetch publications by type, store in list of dataframes for each type
+    # Fetch publications by type in the Scopus database, store in list of dataframes
+    # by type
     publications_all_df, pub_type_counts_by_author = query_scopus_publications(
         reference_query=reference_query
     )
@@ -706,14 +709,14 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         ]
         print(f"{pub_type}: {len(publications_by_type_dfs[i])}")
 
-    # Fetch author profiles corresponding to user-supplied names, check for
-    # author names with multiple Scopus IDs (homonyms)
+    # Fetch author Scopus profiles corresponding to user-supplied names, check for
+    # author names with multiple Scopus IDs ("homonyms")
     author_profiles_by_name_df = query_scopus_author_profiles_by_name(
         reference_query=reference_query,
         homonyms_only=True,
     )
 
-    # Fetch patents by filing date and by publication date
+    # Fetch US patent applications and published patents for the list of authors
     patents_applications_by_filing_date: pd.DataFrame = query_us_patents(
         reference_query=reference_query, applications=True
     )
@@ -739,13 +742,13 @@ def query_author_profiles(reference_query: ReferenceQuery) -> None:
     Query Scopus for a list of author profiles by name
 
     Args:
-        reference_query (ReferenceQuery): ScopusQuery Class object containing query info
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
 
     Returns: None
 
     """
 
-    print("Recherche de profils d'auteur.e.s par nom")
+    print("Recherche de profils d'auteur.e.s par nom dans la base de données Scopus")
     author_profiles_by_name_df = query_scopus_author_profiles_by_name(
         reference_query=reference_query,
         homonyms_only=False,
@@ -827,7 +830,7 @@ def main():
         scopus_database_refresh=toml_dict["scopus_database_refresh"],
     )
 
-    # Query the Scopus database!
+    # Run the bibliographic search!
     run_bibliographic_search(
         reference_query=reference_query,
         search_type=toml_dict["search_type"],
