@@ -4,8 +4,8 @@
 [![Python 3.10](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
 ## Recherche de publications OU de profils pour une liste d'auteur.e.s dans la base de données Scopus
-- Appel du script: *python.exe pyScopus.py*
-- Les paramètres d'exécution sont lus dans le fichier *pyScopus.toml*
+- Appel du script: *python.exe pyRefSearchUdeS.py*
+- Les paramètres d'exécution sont lus dans le fichier *pyRefSearchUdeS.toml*
 - Les données d'auteur.e.s sont lues dans un fichier Excel d'entrée
 - Les résultats de la recherche sont écrits dans un fichier Excel de sortie
 - Le script doit être exécuté à partir d'un poste sur le réseau universitaire
@@ -14,7 +14,7 @@ pour que l'accès à Scopus soit autorisé
 La première exécution du script demandera à l’utilisateur de saisir la clé
 - Le script utilise le package [pybliometrics](https://pybliometrics.readthedocs.io/en/stable/)
 
-## Fichier des paramètres d'exécution *pyScopus.toml* (voir le fichier pour plus d'infos sur les paramètres) :
+## Fichier des paramètres d'exécution *pyRefSearchUdeS.toml* (voir le fichier pour plus d'infos sur les paramètres) :
 - *search_type* : Type de recherche (par publications ou profils d'auteur.e.s)
 - *in_excel_file* : Fichier Excel d'entrée
 - *in_excel_file_sheet_name* : Feuillet dans le fichier Excel d'entrée contenant
@@ -68,5 +68,5 @@ mais il ne semble pas y avoir de moyen facile de faire des recherches scriptées
 dans cette base de données.
 
 ## Installation:
-- Projet *pyScopus* disponible sur [github](https://github.com/pgcharetteUdeS/pyScopus)
+- Projet *pyRefSearchUdeS* disponible sur [github](https://github.com/pgcharetteUdeS/pyScopus)
 - *pip install -r requirements.txt*
