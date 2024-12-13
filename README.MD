@@ -16,7 +16,7 @@ l’utilisateur de saisir la clé).
 ## Fichier des paramètres d'exécution *pyRefSearchUdeS.toml* (voir le fichier pour plus d'infos sur les paramètres) :
 - *search_type* : Type de recherche (par publications/brevets ou profils d'auteur.e.s)
 - *in_excel_file* : Fichier Excel d'entrée
-- *in_excel_file_sheet_name* : Feuillet dans le fichier Excel d'entrée contenant
+- *in_excel_file_author_sheet* : Feuillet dans le fichier Excel d'entrée contenant
 les informations des auteur.e.s
 - *first_year* : Première année de la gamme d'années (recherche par publications/brevets)
 - *last_year* : Dernière année de la gamme d'années (recherche par publications/brevets)

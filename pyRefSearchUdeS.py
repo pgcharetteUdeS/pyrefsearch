@@ -50,7 +50,7 @@ class ReferenceQuery:
     def __init__(
         self,
         in_excel_file: Path,
-        in_excel_file_sheet_name: str,
+        in_excel_file_author_sheet: str,
         out_excel_file: Path,
         pub_year_first: int,
         pub_year_last: int,
@@ -76,15 +76,15 @@ class ReferenceQuery:
         # Fetch list of author names from input Excel file
         self.au_names: list = pd.read_excel(
             self.in_excel_file,
-            sheet_name=in_excel_file_sheet_name,
+            sheet_name=in_excel_file_author_sheet,
             usecols=["Nom", "Prénom"],
         ).values.tolist()
 
-        # Fetch list of author Scopus IDs from input Excel file, if it exists
+        # Fetch author Scopus IDs column from input Excel file, if it exists
         try:
             self.au_ids: list = pd.read_excel(
                 self.in_excel_file,
-                sheet_name=in_excel_file_sheet_name,
+                sheet_name=in_excel_file_author_sheet,
                 usecols=["Scopus ID"],
             ).values.tolist()
             self.au_ids = list(chain.from_iterable(self.au_ids))
@@ -818,7 +818,7 @@ def main():
     # Define ReferenceQuery Class object containing the query parameters
     reference_query: ReferenceQuery = ReferenceQuery(
         in_excel_file=in_excel_file,
-        in_excel_file_sheet_name=toml_dict["in_excel_file_sheet_name"],
+        in_excel_file_author_sheet=toml_dict["in_excel_file_author_sheet"],
         out_excel_file=out_excel_file,
         pub_year_first=toml_dict["pub_year_first"],
         pub_year_last=toml_dict["pub_year_last"],

@@ -7,7 +7,7 @@ search_type = "Publications"
 # Fichier Excel d'entrée et nom du feuillet contenant les information des auteur.e.s
 # (colonnes "Nom", "Prénom", ainsi que "Scopus ID" pour les recherches de publications)
 in_excel_file = "pyRefSearchUdeS.xlsx"
-in_excel_file_sheet_name = "Membres réguliers"
+in_excel_file_author_sheet = "Membres réguliers"
 
 # Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)
 pub_year_first = 2024
