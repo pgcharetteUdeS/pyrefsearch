@@ -66,7 +66,7 @@ class ReferenceQuery:
         self.publication_types: list[str] = [row[0] for row in publication_types]
         self.publication_type_codes: list[str] = [row[1] for row in publication_types]
         self.local_affiliations: list[str] = [
-            to_lower_no_accents(s) for s in local_affiliations
+            _to_lower_no_accents(s) for s in local_affiliations
         ]
         self.scopus_database_refresh: bool | int = scopus_database_refresh
 
@@ -94,7 +94,7 @@ class ReferenceQuery:
             self.au_ids = [0] * len(self.au_names)
 
 
-def to_lower_no_accents(s: str | pd.Series) -> str:
+def _to_lower_no_accents(s: str | pd.Series) -> str:
     """
     Convert string to lower case and remove accents
 
@@ -108,7 +108,7 @@ def to_lower_no_accents(s: str | pd.Series) -> str:
     return unidecode.unidecode(s.lower().strip())
 
 
-def reindex_author_profiles_df(df: pd.DataFrame) -> pd.DataFrame:
+def _reindex_author_profiles_df(df: pd.DataFrame) -> pd.DataFrame:
     """
     Reindex and re-order columns in author profiles DataFrame
     (the Scopus database indexing puts the names far down the list)
@@ -144,7 +144,7 @@ def reindex_author_profiles_df(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def flag_matched_scopus_author_ids_and_affiliations(
+def _flag_matched_scopus_author_ids_and_affiliations(
     reference_query: ReferenceQuery, author_profiles_df: pd.DataFrame
 ) -> pd.DataFrame:
     """
@@ -163,7 +163,7 @@ def flag_matched_scopus_author_ids_and_affiliations(
     for i, row in author_profiles_df.iterrows():
         if row.affiliation is not None:
             local_affiliation_match: bool = any(
-                s in to_lower_no_accents(row.affiliation)
+                s in _to_lower_no_accents(row.affiliation)
                 for s in reference_query.local_affiliations
             )
             au_id_index: int | None = (
@@ -171,9 +171,9 @@ def flag_matched_scopus_author_ids_and_affiliations(
                 if int(row.eid) in reference_query.au_ids
                 else None
             )
-            au_id_match: bool = au_id_index is not None and to_lower_no_accents(
+            au_id_match: bool = au_id_index is not None and _to_lower_no_accents(
                 reference_query.au_names[au_id_index][0]
-            ) == to_lower_no_accents(row.surname)
+            ) == _to_lower_no_accents(row.surname)
             if local_affiliation_match and au_id_match:
                 local_column[hash(i)] = "Affl. + ID"
             elif local_affiliation_match:
@@ -183,6 +183,216 @@ def flag_matched_scopus_author_ids_and_affiliations(
     author_profiles_df["Affl/ID"] = local_column
 
     return author_profiles_df
+
+
+def _check_author_name_correspondance(
+    reference_query: ReferenceQuery, authors_df: pd.DataFrame
+) -> list:
+    """
+
+    Check that the author names supplied in the input Excel file correspond to the
+    author names associated with their IDs in the Scopus database, and local
+    affiliations
+
+    Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+        authors_df (pd.DataFrame): DataFrame with author profiles
+
+    Returns: List of errors per author
+
+    """
+
+    query_errors: list[str] = [""] * len(reference_query.au_ids)
+    for i, [input_last_name, input_first_name] in enumerate(reference_query.au_names):
+        # Check for missing Scopus ID
+        if authors_df["Nom de famille"][i] is None:
+            authors_df.loc[i, "Nom de famille"] = input_last_name
+            authors_df.loc[i, "Prénom"] = input_first_name
+            query_errors[i] = "Aucun identifiant Scopus"
+            print(
+                f"[yellow]WARNING: L'auteur.e '{input_last_name}, {input_first_name}' "
+                "n'a pas d'identifiant Scopus[/yellow]"
+            )
+        else:
+            # Check for name discrepancies
+            scopus_last_name: str = _to_lower_no_accents(
+                authors_df["Nom de famille"][i]
+            )
+            if scopus_last_name != _to_lower_no_accents(input_last_name):
+                query_errors[i] = "Disparité de noms de famille"
+                print(
+                    f"[red]ERREUR pour l'identifiant {reference_query.au_ids[i]}: "
+                    f"le nom de famille de l'auteur.e '{input_last_name}, "
+                    f"{input_first_name}' dans {reference_query.in_excel_file} diffère de "
+                    f"'{authors_df['Nom de famille'][i]}, {authors_df['Prénom'][i]}'"
+                    " dans la base de données Scopus![/red]"
+                )
+
+            # Check for local affiliation discrepancies
+            affiliation: str = (
+                ""
+                if authors_df["Affiliation"][i] is None
+                else _to_lower_no_accents(authors_df["Affiliation"][i])
+            )
+            parent_affiliation: str = (
+                ""
+                if authors_df["Affiliation mère"][i] is None
+                else _to_lower_no_accents(authors_df["Affiliation mère"][i])
+            )
+            if all(
+                s not in affiliation and s not in parent_affiliation
+                for s in reference_query.local_affiliations
+            ):
+                query_errors[i] = (
+                    "Affiliation non locale"
+                    if query_errors[i] == ""
+                    else "Disparité de noms de famille / Affiliation non locale"
+                )
+                print(
+                    f"[red]ERREUR pour l'identifiant {reference_query.au_ids[i]} "
+                    f"({input_last_name}, {input_first_name}): "
+                    f"l'affiliation '{affiliation}, {parent_affiliation}' "
+                    "est non locale![/red]"
+                )
+
+    return query_errors
+
+
+def _count_publications_by_type_in_df(
+    reference_query: ReferenceQuery, df: pd.DataFrame
+) -> list:
+    """
+    Count number of publications by type in a dataframe
+
+    Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+        df (pd.DataFrame): DataFrame with publications
+
+    Returns: List of counts
+
+    """
+
+    pub_type_counts: list = [0] * len(reference_query.publication_type_codes)
+    if not df.empty:
+        for i, pub_type in enumerate(reference_query.publication_type_codes):
+            pub_type_counts[i] = len(df[df["subtype"] == pub_type])
+    return pub_type_counts
+
+
+def _build_patent_query_string(reference_query: ReferenceQuery, field_code: str) -> str:
+    query_str = f'@{field_code}>="{reference_query.pub_year_first}0101"<="{reference_query.pub_year_last}1231" AND ('
+    for i, name in enumerate(reference_query.au_names):
+        if i > 0:
+            query_str += " OR "
+        query_str += f"(({name[1]} NEAR2 {name[0]}).IN.)"
+    query_str += ")"
+    return query_str
+
+
+def _export_publications_df_to_excel_sheet(
+    writer: pd.ExcelWriter, df: pd.DataFrame, sheet_name: str
+) -> None:
+    """
+    Write selected set of publication dataframe columns to Excel sheet
+
+    Args:
+        writer (pd.ExcelWriter): openpyxl writer object
+        df (pd.DataFrame): articles dataframe
+        sheet_name (str): Excel file sheet name
+
+    Returns: None
+
+    """
+
+    if not df.empty:
+        df[
+            [
+                "title",
+                "author_names",
+                "publicationName",
+                "volume",
+                "pageRange",
+                "coverDisplayDate",
+                "doi",
+            ]
+        ].to_excel(writer, index=False, sheet_name=sheet_name)
+
+
+def write_reference_query_results_to_excel(
+    reference_query: ReferenceQuery,
+    publications_by_type_dfs: list[pd.DataFrame],
+    patents_applications_by_filing_date: pd.DataFrame,
+    patents_by_publication_date: pd.DataFrame,
+    author_profiles_by_ids_df: pd.DataFrame,
+    author_profiles_by_names_df: pd.DataFrame,
+) -> None:
+    """
+    Write publications search results to the output Excel file
+
+    Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+        publications_by_type_dfs (list): list of DataFrames with search results by type
+        patents_applications_by_filing_date (pd.DataFrame): patent application search results by filing date
+        patents_by_publication_date (pd.DataFrame): patent search results by publication date
+        author_profiles_by_ids_df (pd.DataFrame): author search results by ids
+        author_profiles_by_names_df (pd.DataFrame): author search results by names
+
+    Returns: None
+
+    """
+
+    # Create results summary dataframe
+    results: list[str] = [
+        "Nb d'auteur.e.s",
+        "Année de début",
+        "Année de fin",
+    ]
+    results += reference_query.publication_types
+    results += ["Demandes de brevets US déposées", "Brevets US délivrés"]
+    values: list[int] = [
+        len(reference_query.au_ids),
+        reference_query.pub_year_first,
+        reference_query.pub_year_last,
+    ]
+    values += [0 if df.empty else len(df) for df in publications_by_type_dfs]
+    values += [
+        len(patents_applications_by_filing_date),
+        len(patents_by_publication_date),
+    ]
+    results_df = pd.DataFrame([results, values]).T
+
+    # Write dataframes in separate sheets to the output Excel file
+    with pd.ExcelWriter(reference_query.out_excel_file) as writer:
+        results_df.to_excel(writer, index=False, header=False, sheet_name="Résultats")
+        for i, df in enumerate(publications_by_type_dfs):
+            if not df.empty:
+                _export_publications_df_to_excel_sheet(
+                    writer=writer,
+                    df=df,
+                    sheet_name=reference_query.publication_types[i],
+                )
+        if not patents_applications_by_filing_date.empty:
+            patents_applications_by_filing_date.to_excel(
+                writer, index=False, sheet_name="Demandes de brevets US déposées"
+            )
+        if not patents_by_publication_date.empty:
+            patents_by_publication_date.to_excel(
+                writer, index=False, sheet_name="Brevets US délivrés"
+            )
+        col = author_profiles_by_ids_df.pop("h-index")
+        author_profiles_by_ids_df["h-index"] = col
+        col = author_profiles_by_ids_df.pop("Période active")
+        author_profiles_by_ids_df["Période active"] = col
+        author_profiles_by_ids_df.to_excel(
+            writer, index=False, sheet_name="Profils par identifiant"
+        )
+        author_profiles_by_names_df.to_excel(
+            writer, index=False, sheet_name="Homonymes"
+        )
+    print(
+        "Résultats de la recherche sauvegardés "
+        f"dans le fichier '{reference_query.out_excel_file}'"
+    )
 
 
 def query_scopus_author_profiles_by_name(
@@ -242,10 +452,10 @@ def query_scopus_author_profiles_by_name(
             )
 
     if not author_profiles_all_df.empty:
-        author_profiles_all_df = flag_matched_scopus_author_ids_and_affiliations(
+        author_profiles_all_df = _flag_matched_scopus_author_ids_and_affiliations(
             reference_query=reference_query, author_profiles_df=author_profiles_all_df
         )
-        author_profiles_all_df = reindex_author_profiles_df(df=author_profiles_all_df)
+        author_profiles_all_df = _reindex_author_profiles_df(df=author_profiles_all_df)
 
     return author_profiles_all_df
 
@@ -311,99 +521,7 @@ def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.Da
     return pd.DataFrame(author_profiles, columns=columns)
 
 
-def check_author_name_correspondance(
-    reference_query: ReferenceQuery, authors_df: pd.DataFrame
-) -> list:
-    """
-
-    Check that the author names supplied in the input Excel file correspond to the
-    author names associated with their IDs in the Scopus database, and local
-    affiliations
-
-    Args:
-        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
-        authors_df (pd.DataFrame): DataFrame with author profiles
-
-    Returns: List of errors per author
-
-    """
-
-    query_errors: list[str] = [""] * len(reference_query.au_ids)
-    for i, [input_last_name, input_first_name] in enumerate(reference_query.au_names):
-        # Check for missing Scopus ID
-        if authors_df["Nom de famille"][i] is None:
-            authors_df.loc[i, "Nom de famille"] = input_last_name
-            authors_df.loc[i, "Prénom"] = input_first_name
-            query_errors[i] = "Aucun identifiant Scopus"
-            print(
-                f"[yellow]WARNING: L'auteur.e '{input_last_name}, {input_first_name}' "
-                "n'a pas d'identifiant Scopus[/yellow]"
-            )
-        else:
-            # Check for name discrepancies
-            scopus_last_name: str = to_lower_no_accents(authors_df["Nom de famille"][i])
-            if scopus_last_name != to_lower_no_accents(input_last_name):
-                query_errors[i] = "Disparité de noms de famille"
-                print(
-                    f"[red]ERREUR pour l'identifiant {reference_query.au_ids[i]}: "
-                    f"le nom de famille de l'auteur.e '{input_last_name}, "
-                    f"{input_first_name}' dans {reference_query.in_excel_file} diffère de "
-                    f"'{authors_df['Nom de famille'][i]}, {authors_df['Prénom'][i]}'"
-                    " dans la base de données Scopus![/red]"
-                )
-
-            # Check for local affiliation discrepancies
-            affiliation: str = (
-                ""
-                if authors_df["Affiliation"][i] is None
-                else to_lower_no_accents(authors_df["Affiliation"][i])
-            )
-            parent_affiliation: str = (
-                ""
-                if authors_df["Affiliation mère"][i] is None
-                else to_lower_no_accents(authors_df["Affiliation mère"][i])
-            )
-            if all(
-                s not in affiliation and s not in parent_affiliation
-                for s in reference_query.local_affiliations
-            ):
-                query_errors[i] = (
-                    "Affiliation non locale"
-                    if query_errors[i] == ""
-                    else "Disparité de noms de famille / Affiliation non locale"
-                )
-                print(
-                    f"[red]ERREUR pour l'identifiant {reference_query.au_ids[i]} "
-                    f"({input_last_name}, {input_first_name}): "
-                    f"l'affiliation '{affiliation}, {parent_affiliation}' "
-                    "est non locale![/red]"
-                )
-
-    return query_errors
-
-
-def count_publications_by_type_in_df(
-    reference_query: ReferenceQuery, df: pd.DataFrame
-) -> list:
-    """
-    Count number of publications by type in a dataframe
-
-    Args:
-        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
-        df (pd.DataFrame): DataFrame with publications
-
-    Returns: List of counts
-
-    """
-
-    pub_type_counts: list = [0] * len(reference_query.publication_type_codes)
-    if not df.empty:
-        for i, pub_type in enumerate(reference_query.publication_type_codes):
-            pub_type_counts[i] = len(df[df["subtype"] == pub_type])
-    return pub_type_counts
-
-
-def query_scopus_publications_by_id(
+def query_scopus_publications(
     reference_query: ReferenceQuery,
 ) -> tuple[pd.DataFrame, list]:
     """
@@ -443,7 +561,7 @@ def query_scopus_publications_by_id(
             )
             author_pubs_df = pd.DataFrame(query_results.results)
             pub_type_counts_by_author.append(
-                count_publications_by_type_in_df(
+                _count_publications_by_type_in_df(
                     reference_query=reference_query, df=author_pubs_df
                 )
             )
@@ -453,118 +571,92 @@ def query_scopus_publications_by_id(
                 [0] * len(reference_query.publication_type_codes)
             )
 
-    # Remove duplicates and sort by author names
+    # Remove duplicates and sort by title
     if not publications_df.empty:
         publications_df.drop_duplicates(inplace=True)
-        publications_df.sort_values(by=["author_names"], inplace=True)
+        publications_df.sort_values(by=["title"], inplace=True)
 
     return publications_df, pub_type_counts_by_author
 
 
-def export_publications_df_to_excel_sheet(
-    writer: pd.ExcelWriter, df: pd.DataFrame, sheet_name: str
-) -> None:
+def query_us_patents(
+    reference_query: ReferenceQuery, applications: bool = True
+) -> pd.DataFrame:
     """
-    Write selected set of publication dataframe columns to Excel sheet
+    Query the USPTO database for a list of authors over a range of years
+
+    See: https://patent-client.readthedocs.io/en/latest/user_guide/fulltext.html
+         https://www.uspto.gov/patents/search/patent-public-search/quick-reference-guides
+         Search by range of publication years: ((Paul NEAR2 Charette).IN.) AND @PD>="20240101"<="20241231"
+         Search by range of application years: ((Paul NEAR2 Charette).IN.) AND @AD>="20240101"<="20241231"
 
     Args:
-        writer (pd.ExcelWriter): openpyxl writer object
-        df (pd.DataFrame): articles dataframe
-        sheet_name (str): Excel file sheet name
+        reference_query (ReferenceQuery): ScopusQuery Class object containing query info
+        applications (bool): Search filed applications if True, else search published patents if False
 
-    Returns: None
-
-    """
-
-    if not df.empty:
-        df[
-            [
-                "author_names",
-                "title",
-                "publicationName",
-                "volume",
-                "pageRange",
-                "coverDisplayDate",
-                "doi",
-            ]
-        ].to_excel(writer, index=False, sheet_name=sheet_name)
-
-
-def write_reference_query_results_to_excel(
-    reference_query: ReferenceQuery,
-    publications_by_type_dfs: list[pd.DataFrame],
-    patents_applications_by_filing_date: pd.DataFrame,
-    patents_by_publication_date: pd.DataFrame,
-    author_profiles_by_ids_df: pd.DataFrame,
-    author_profiles_by_names_df: pd.DataFrame,
-) -> None:
-    """
-    Write publications search results to the output Excel file
-
-    Args:
-        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
-        publications_by_type_dfs (list): list of DataFrames with search results by type
-        patents_applications_by_filing_date (pd.DataFrame): patent application search results by filing date
-        patents_by_publication_date (pd.DataFrame): patent search results by publication date
-        author_profiles_by_ids_df (pd.DataFrame): author search results by ids
-        author_profiles_by_names_df (pd.DataFrame): author search results by names
-
-    Returns: None
+    Returns : DataFrame with patent search results
 
     """
 
-    # Create results summary dataframe
-    results: list[str] = [
-        "Nb d'auteur.e.s",
-        "Année de début",
-        "Année de fin",
-    ]
-    results += reference_query.publication_types
-    results += ["Demandes de brevets US déposées", "Brevets US délivrés"]
-    values: list[int] = [
-        len(reference_query.au_ids),
-        reference_query.pub_year_first,
-        reference_query.pub_year_last,
-    ]
-    values += [0 if df.empty else len(df) for df in publications_by_type_dfs]
-    values += [len(patents_applications_by_filing_date), len(patents_by_publication_date)]
-    results_df = pd.DataFrame([results, values]).T
-
-    # Write dataframes in separate sheets to the output Excel file
-    with pd.ExcelWriter(reference_query.out_excel_file) as writer:
-        results_df.to_excel(writer, index=False, header=False, sheet_name="Résultats")
-        for i, df in enumerate(publications_by_type_dfs):
-            if not df.empty:
-                export_publications_df_to_excel_sheet(
-                    writer=writer,
-                    df=df,
-                    sheet_name=reference_query.publication_types[i],
-                )
-        if not patents_applications_by_filing_date.empty:
-            patents_applications_by_filing_date.to_excel(
-                writer, index=False, sheet_name="Demandes de brevets US déposées"
-            )
-        if not patents_by_publication_date.empty:
-            patents_by_publication_date.to_excel(
-                writer, index=False, sheet_name="Brevets US délivrés"
-            )
-        col = author_profiles_by_ids_df.pop("h-index")
-        author_profiles_by_ids_df["h-index"] = col
-        col = author_profiles_by_ids_df.pop("Période active")
-        author_profiles_by_ids_df["Période active"] = col
-        author_profiles_by_ids_df.to_excel(
-            writer, index=False, sheet_name="Profils par identifiant"
+    max_results: int = 200
+    if applications:
+        # Execute filed applications query
+        query_str = _build_patent_query_string(
+            reference_query=reference_query, field_code="AD"
         )
-        author_profiles_by_names_df.to_excel(
-            writer, index=False, sheet_name="Homonymes"
+        patents = (
+            PublishedApplication.objects.filter(query=query_str)
+            .limit(max_results)
+            .values(
+                "guid",
+                "patent_title",
+                "app_filing_date",
+                "inventors",
+                "assignees",
+            )
+            .to_pandas()
         )
-    print(
-        "Résultats de la recherche sauvegardés "
-        f"dans le fichier '{reference_query.out_excel_file}'"
-    )
+
+    else:
+        # Execute published patents query
+        query_str = _build_patent_query_string(
+            reference_query=reference_query, field_code="PD"
+        )
+        patents = (
+            Patent.objects.filter(query=query_str)
+            .limit(max_results)
+            .values(
+                "guid",
+                "patent_title",
+                "app_filing_date",
+                "publication_date",
+                "inventors",
+                "assignees",
+            )
+            .to_pandas()
+        )
+
+    # Loop through results to extract lists of inventors and assignees, filter out
+    # patents without Canadian inventors
+    patents.assign(CA=False, inplace=True)
+    for i, row in patents.iterrows():
+        patents.at[i, "inventors"] = tuple(
+            f'{row["inventors"][j][0][1]} ({row["inventors"][j][2][1]})'
+            for j in range(len(row["inventors"]))
+        )
+        patents.at[i, "assignees"] = tuple(
+            row["assignees"][j][2][1] for j in range(len(row["assignees"]))
+        )
+        patents.at[i, "noCA"] = all(
+            "(CA)" not in inventor for inventor in row["inventors"]
+        )
+    patents.drop(patents[patents["noCA"]].index, inplace=True)
+    patents.drop(columns=["noCA"], inplace=True)
+
+    return patents
 
 
-def query_references(reference_query: ReferenceQuery) -> None:
+def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     """
     Search for publications in Scopus and patents in the USPTO database
     for a list of authors over a range of years
@@ -591,14 +683,14 @@ def query_references(reference_query: ReferenceQuery) -> None:
         loc=0,
         column="Erreurs",
         value=pd.Series(
-            check_author_name_correspondance(
+            _check_author_name_correspondance(
                 reference_query=reference_query, authors_df=author_profiles_by_ids_df
             )
         ),
     )
 
     # Fetch publications by type, store in list of dataframes for each type
-    publications_all_df, pub_type_counts_by_author = query_scopus_publications_by_id(
+    publications_all_df, pub_type_counts_by_author = query_scopus_publications(
         reference_query=reference_query
     )
     publications_by_type_dfs: list[pd.DataFrame] = []
@@ -662,93 +754,6 @@ def query_author_profiles(reference_query: ReferenceQuery) -> None:
         author_profiles_by_name_df.to_excel(writer, index=False, sheet_name="Profils")
 
 
-def build_patent_query_string(reference_query: ReferenceQuery, field_code: str) -> str:
-    query_str = f'@{field_code}>="{reference_query.pub_year_first}0101"<="{reference_query.pub_year_last}1231" AND ('
-    for i, name in enumerate(reference_query.au_names):
-        if i > 0:
-            query_str += " OR "
-        query_str += f"(({name[1]} NEAR2 {name[0]}).IN.)"
-    query_str += ")"
-    return query_str
-
-
-def query_us_patents(
-    reference_query: ReferenceQuery, applications: bool = True
-) -> pd.DataFrame:
-    """
-    Query the USPTO database for a list of authors over a range of years
-
-    See: https://patent-client.readthedocs.io/en/latest/user_guide/fulltext.html
-         https://www.uspto.gov/patents/search/patent-public-search/quick-reference-guides
-         Search by range of publication years: ((Paul NEAR2 Charette).IN.) AND @PD>="20240101"<="20241231"
-         Search by range of application years: ((Paul NEAR2 Charette).IN.) AND @AD>="20240101"<="20241231"
-
-    Args:
-        reference_query (ReferenceQuery): ScopusQuery Class object containing query info
-        applications (bool): Search filed applications if True, else search published patents if False
-
-    Returns : DataFrame with patent search results
-
-    """
-
-    max_results: int = 200
-    if applications:
-        # Execute filed applications query
-        query_str = build_patent_query_string(
-            reference_query=reference_query, field_code="AD"
-        )
-        patents = (
-            PublishedApplication.objects.filter(query=query_str)
-            .limit(max_results)
-            .values(
-                "guid",
-                "patent_title",
-                "app_filing_date",
-                "inventors",
-                "assignees",
-            )
-            .to_pandas()
-        )
-
-    else:
-        # Execute published patents query
-        query_str = build_patent_query_string(
-            reference_query=reference_query, field_code="PD"
-        )
-        patents = (
-            Patent.objects.filter(query=query_str)
-            .limit(max_results)
-            .values(
-                "guid",
-                "patent_title",
-                "app_filing_date",
-                "publication_date",
-                "inventors",
-                "assignees",
-            )
-            .to_pandas()
-        )
-
-    # Loop through results to extract lists of inventors and assignees, filter out
-    # patents without Canadian inventors
-    patents.assign(CA=False, inplace=True)
-    for i, row in patents.iterrows():
-        patents.at[i, "inventors"] = tuple(
-            f'{row["inventors"][j][0][1]} ({row["inventors"][j][2][1]})'
-            for j in range(len(row["inventors"]))
-        )
-        patents.at[i, "assignees"] = tuple(
-            row["assignees"][j][2][1] for j in range(len(row["assignees"]))
-        )
-        patents.at[i, "noCA"] = all(
-            "(CA)" not in inventor for inventor in row["inventors"]
-        )
-    patents.drop(patents[patents["noCA"]].index, inplace=True)
-    patents.drop(columns=["noCA"], inplace=True)
-
-    return patents
-
-
 def run_bibliographic_search(reference_query: ReferenceQuery, search_type: str) -> None:
     """
      For a list of author names and range of years supplied in an input Excel file,
@@ -780,11 +785,11 @@ def run_bibliographic_search(reference_query: ReferenceQuery, search_type: str) 
     )
 
     # Init Scopus API
-    pybliometrics.scopus.init(config_dir="pybliometrics.cfg")
+    pybliometrics.scopus.init()
 
     # Run the query
     if search_type == "Publications":
-        query_references(reference_query=reference_query)
+        query_publications_and_patents(reference_query=reference_query)
     elif search_type == "Profils":
         query_author_profiles(reference_query=reference_query)
     else:

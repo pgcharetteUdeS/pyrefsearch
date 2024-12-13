@@ -161,5 +161,4 @@ cython_debug/
 *.xlsx
 
 /notes.txt
-/pybliometrics.cfg
 /pybliometrics_Scriptable bibliometrics using a Python interface to Scopus.pdf
