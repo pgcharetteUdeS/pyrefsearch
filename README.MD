@@ -1,9 +1,9 @@
-## pyScopus.py
+## pyRefSearchUdeS.py
 
 <!---Badges-->
 [![Python 3.10](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-## Recherche de publications OU de profils pour une liste d'auteur.e.s dans la base de données Scopus
+## Recherche de publications dans les bases de données Scopus et de brevets US, ou de profils Scopus, pour une liste d'auteur.e.s
 - Appel du script: *python.exe pyRefSearchUdeS.py*
 - Les paramètres d'exécution sont lus dans le fichier *pyRefSearchUdeS.toml*
 - Les données d'auteur.e.s sont lues dans un fichier Excel d'entrée
@@ -12,16 +12,15 @@
 pour que l'accès à Scopus soit autorisé
 - Une “clé” est requise pour interroger l’API Scopus, voir https://dev.elsevier.com/index.jsp.
 La première exécution du script demandera à l’utilisateur de saisir la clé
-- Le script utilise le package [pybliometrics](https://pybliometrics.readthedocs.io/en/stable/)
 
 ## Fichier des paramètres d'exécution *pyRefSearchUdeS.toml* (voir le fichier pour plus d'infos sur les paramètres) :
-- *search_type* : Type de recherche (par publications ou profils d'auteur.e.s)
+- *search_type* : Type de recherche (par publications/brevets ou profils d'auteur.e.s)
 - *in_excel_file* : Fichier Excel d'entrée
 - *in_excel_file_sheet_name* : Feuillet dans le fichier Excel d'entrée contenant
 les informations des auteur.e.s
-- *first_year* : Première année de la gamme d'années (recherche par publications)
-- *last_year* : Dernière année de la gamme d'années (recherche par publications)
-- *publication_types* : Liste des types de publications (recherche par publications)
+- *first_year* : Première année de la gamme d'années (recherche par publications/brevets)
+- *last_year* : Dernière année de la gamme d'années (recherche par publications/brevets)
+- *publication_types* : Liste des types de publications (recherche par publications/brevets)
 - *local_affiliations* : Liste des institutions considérées comme des affiliations "locales"
 - *scopus_database_refresh*: Intervalle de mise à jour de la copie locale de la base de données Scopus
 
@@ -35,17 +34,17 @@ suivantes du feuillet *in_excel_file_sheet_name*:
 (laisser la cellule vide si aucun identifiant n'est disponible)
 
 ## Fichier Excel de sortie :
-- Recherche de publications:
+- Recherche de publications/brevets:
   - Nom du fichier: *\<in_excel_file mantissa\>\_publications\_\<first_year\>-\<last_year\>.xlsx*
   - Feuillet *Résultats* : résumé des résultats de la recherche
   - Feuillets *Articles*, *Conférences*, *Lettres*, *Livres*, *Chapitres de livres*,
-  *Rapports* : résultats de la recherche par type de publication (omis si aucun résultat)
+  *Rapports*, *Brevets* : résultats de la recherche par type de publication (omis si aucun résultat)
   - Feuillet *Profils par identifiants*, colonne *Erreurs*: erreurs dans les profils
   d'auteur.e.s et/ou disparités entre les informations dans le fichier Excel d'entrée
   et la base de données Scopus
 - Recherche de profils :
   - Nom du fichier: *\<in_excel_file mantissa\>\_profils.xlsx*
-- Recherche de publications ou de profils :
+- Recherche de publications/brevets ou de profils :
   - Feuillet *Homonymes* ou *Profils* selon le type de recherche, colonne *Affl/ID*:
   repérage des noms d’auteur.e.s
   correspondant à plusieurs identifiants Scopus, afin de s’assurer que les bons
