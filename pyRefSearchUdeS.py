@@ -642,12 +642,14 @@ def query_us_patents(
     # patents without Canadian inventors
     patents.assign(CA=False, inplace=True)
     for i, row in patents.iterrows():
-        patents.at[i, "inventors"] = tuple(
-            f'{row["inventors"][j][0][1]} ({row["inventors"][j][2][1]})'
-            for j in range(len(row["inventors"]))
+        patents.at[i, "inventors"] = list(
+            tuple(
+                f'{row["inventors"][j][0][1]} ({row["inventors"][j][2][1]})'
+                for j in range(len(row["inventors"]))
+            )
         )
-        patents.at[i, "assignees"] = tuple(
-            row["assignees"][j][2][1] for j in range(len(row["assignees"]))
+        patents.at[i, "assignees"] = list(
+            tuple(row["assignees"][j][2][1] for j in range(len(row["assignees"])))
         )
         patents.at[i, "noCA"] = all(
             "(CA)" not in inventor for inventor in row["inventors"]
@@ -757,7 +759,7 @@ def query_author_profiles(reference_query: ReferenceQuery) -> None:
         author_profiles_by_name_df.to_excel(writer, index=False, sheet_name="Profils")
 
 
-def run_bibliographic_search(reference_query: ReferenceQuery, search_type: str) -> None:
+def run_reference_search(reference_query: ReferenceQuery, search_type: str) -> None:
     """
      For a list of author names and range of years, search either for:
         - references (publications in Scopus, patents in the USPTO database)
@@ -828,7 +830,7 @@ def main():
     )
 
     # Run the bibliographic search!
-    run_bibliographic_search(
+    run_reference_search(
         reference_query=reference_query,
         search_type=toml_dict["search_type"],
     )
