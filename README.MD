@@ -3,7 +3,7 @@
 <!---Badges-->
 [![Python 3.10](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-## Recherche de références dans les bases de données Scopus et de brevets US, ou de profils Scopus, pour une liste d'auteur.e.s
+## Recherche dans des bases de données sur une gamme d'années pour des publications (Scopus) et pour des brevets US (USPTO), ou uniquement pour des profils Scopus, pour une liste d'auteur.e.s.
 - Appel du script: *python.exe pyRefSearchUdeS.py*
 - Les paramètres d'exécution sont lus dans le fichier *pyRefSearchUdeS.toml*
 - Les données d'auteur.e.s sont lues dans un fichier Excel d'entrée
