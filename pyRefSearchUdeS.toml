@@ -10,7 +10,7 @@ in_excel_file = "pyRefSearchUdeS.xlsx"
 in_excel_file_author_sheet = "Membres réguliers"
 
 # Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)
-pub_year_first = 2024
+pub_year_first = 2020
 pub_year_last = 2024
 
 # Noms et codes Scopus des types de publications désirées pour la recherche par publications

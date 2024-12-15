@@ -320,8 +320,8 @@ def _export_publications_df_to_excel_sheet(
 def write_reference_query_results_to_excel(
     reference_query: ReferenceQuery,
     publications_by_type_dfs: list[pd.DataFrame],
-    patents_applications_by_filing_date: pd.DataFrame,
-    patents_by_publication_date: pd.DataFrame,
+    patents: pd.DataFrame,
+    patent_applications: pd.DataFrame,
     author_profiles_by_ids_df: pd.DataFrame,
     author_profiles_by_names_df: pd.DataFrame,
 ) -> None:
@@ -331,8 +331,8 @@ def write_reference_query_results_to_excel(
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
         publications_by_type_dfs (list): list of DataFrames with search results by type
-        patents_applications_by_filing_date (pd.DataFrame): patent application search results by filing date
-        patents_by_publication_date (pd.DataFrame): patent search results by publication date
+        patents (pd.DataFrame): patent application search results by filing date
+        patent_applications (pd.DataFrame): patent search results by publication date
         author_profiles_by_ids_df (pd.DataFrame): author search results by ids
         author_profiles_by_names_df (pd.DataFrame): author search results by names
 
@@ -355,8 +355,8 @@ def write_reference_query_results_to_excel(
     ]
     values += [0 if df.empty else len(df) for df in publications_by_type_dfs]
     values += [
-        len(patents_applications_by_filing_date),
-        len(patents_by_publication_date),
+        len(patents),
+        len(patent_applications),
     ]
     results_df = pd.DataFrame([results, values]).T
 
@@ -370,12 +370,10 @@ def write_reference_query_results_to_excel(
                     df=df,
                     sheet_name=reference_query.publication_types[i],
                 )
-        if not patents_applications_by_filing_date.empty:
-            patents_applications_by_filing_date.to_excel(
-                writer, index=False, sheet_name="Brevets US en instance"
-            )
-        if not patents_by_publication_date.empty:
-            patents_by_publication_date.to_excel(
+        if not patents.empty:
+            patents.to_excel(writer, index=False, sheet_name="Brevets US en instance")
+        if not patent_applications.empty:
+            patent_applications.to_excel(
                 writer, index=False, sheet_name="Brevets US délivrés"
             )
         col = author_profiles_by_ids_df.pop("h-index")
@@ -719,21 +717,21 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     )
 
     # Fetch US patent applications and published patents
-    patents_applications_by_filing_date: pd.DataFrame = query_us_patents(
+    patent_applications: pd.DataFrame = query_us_patents(
         reference_query=reference_query, applications=True
     )
-    print("Brevets US en instance: ", len(patents_applications_by_filing_date))
-    patents_by_publication_date: pd.DataFrame = query_us_patents(
+    print("Brevets US en instance: ", len(patent_applications))
+    patents: pd.DataFrame = query_us_patents(
         reference_query=reference_query, applications=False
     )
-    print("Brevets US délivrés: ", len(patents_by_publication_date))
+    print("Brevets US délivrés: ", len(patents))
 
     # Write results to output Excel file
     write_reference_query_results_to_excel(
         reference_query=reference_query,
         publications_by_type_dfs=publications_by_type_dfs,
-        patents_applications_by_filing_date=patents_applications_by_filing_date,
-        patents_by_publication_date=patents_by_publication_date,
+        patents=patents,
+        patent_applications=patent_applications,
         author_profiles_by_ids_df=author_profiles_by_ids_df,
         author_profiles_by_names_df=author_profiles_by_name_df,
     )
