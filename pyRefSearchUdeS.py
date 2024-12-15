@@ -355,8 +355,8 @@ def write_reference_query_results_to_excel(
     ]
     values += [0 if df.empty else len(df) for df in publications_by_type_dfs]
     values += [
-        len(patents),
         len(patent_applications),
+        len(patents),
     ]
     results_df = pd.DataFrame([results, values]).T
 
@@ -370,12 +370,12 @@ def write_reference_query_results_to_excel(
                     df=df,
                     sheet_name=reference_query.publication_types[i],
                 )
-        if not patents.empty:
-            patents.to_excel(writer, index=False, sheet_name="Brevets US en instance")
         if not patent_applications.empty:
             patent_applications.to_excel(
-                writer, index=False, sheet_name="Brevets US délivrés"
+                writer, index=False, sheet_name="Brevets US en instance"
             )
+        if not patents.empty:
+            patents.to_excel(writer, index=False, sheet_name="Brevets US délivrés")
         col = author_profiles_by_ids_df.pop("h-index")
         author_profiles_by_ids_df["h-index"] = col
         col = author_profiles_by_ids_df.pop("Période active")
