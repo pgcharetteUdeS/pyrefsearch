@@ -337,23 +337,23 @@ def _count_patents_per_author(
 
     if not patents.empty:
         # Count patents per author
-        author_patent_counts = [0] * len(reference_query.au_names)
-        for i, [lastname, firstname] in enumerate(reference_query.au_names):
-            author_patent_counts: list[int] = [0] * len(reference_query.au_names)
-            author_patent_counts[i] = sum(
-                [
-                    1
-                    for _, row in patents.iterrows()
-                    if any(
-                        [
-                            _to_lower_no_accents(lastname)
-                            in _to_lower_no_accents(inventor)
-                            and _to_lower_no_accents(firstname)
-                            in _to_lower_no_accents(inventor)
-                            for inventor in row["inventors"]
-                        ]
-                    )
-                ]
+        for [lastname, firstname] in reference_query.au_names:
+            author_patent_counts.append(
+                sum(
+                    [
+                        1
+                        for _, row in patents.iterrows()
+                        if any(
+                            [
+                                _to_lower_no_accents(lastname)
+                                in _to_lower_no_accents(inventor)
+                                and _to_lower_no_accents(firstname)
+                                in _to_lower_no_accents(inventor)
+                                for inventor in row["inventors"]
+                            ]
+                        )
+                    ]
+                )
             )
 
         # Count joint patents
