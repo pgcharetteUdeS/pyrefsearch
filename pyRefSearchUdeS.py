@@ -308,6 +308,7 @@ def _export_publications_df_to_excel_sheet(
             [
                 "title",
                 "author_names",
+                "Conjointes",
                 "publicationName",
                 "volume",
                 "pageRange",
@@ -342,13 +343,15 @@ def write_reference_query_results_to_excel(
 
     # Create results summary dataframe
     results: list[str] = [
+        "",
         "Nb d'auteur.e.s",
         "Année de début",
         "Année de fin",
     ]
     results += reference_query.publication_types
-    results += ["Brevets US en instance", "Brevets US délivrés"]
-    values: list[int] = [
+    results += ["Brevets US (applications)", "Brevets US (délivrés)"]
+    values: list = [
+        "",
         len(reference_query.au_ids),
         reference_query.pub_year_first,
         reference_query.pub_year_last,
@@ -358,7 +361,12 @@ def write_reference_query_results_to_excel(
         len(patent_applications),
         len(patents),
     ]
-    results_df = pd.DataFrame([results, values]).T
+    co_authors: list = ["Conjointes", "", "", ""]
+    co_authors += [
+        "" if df.empty else len(df[df["Conjointes"] > 1])
+        for df in publications_by_type_dfs
+    ]
+    results_df = pd.DataFrame([results, values, co_authors]).T
 
     # Write dataframes in separate sheets to the output Excel file
     with pd.ExcelWriter(reference_query.out_excel_file) as writer:
@@ -372,12 +380,10 @@ def write_reference_query_results_to_excel(
                 )
         if not patent_applications.empty:
             patent_applications.to_excel(
-                writer, index=False, sheet_name="Brevets US en instance"
+                writer, index=False, sheet_name="Brevets US (applications)"
             )
         if not patents.empty:
-            patents.to_excel(writer, index=False, sheet_name="Brevets US délivrés")
-        col = author_profiles_by_ids_df.pop("h-index")
-        author_profiles_by_ids_df["h-index"] = col
+            patents.to_excel(writer, index=False, sheet_name="Brevets US (délivrés)")
         col = author_profiles_by_ids_df.pop("Période active")
         author_profiles_by_ids_df["Période active"] = col
         author_profiles_by_ids_df.to_excel(
@@ -474,7 +480,6 @@ def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.Da
         "Prénom",
         "Affiliation",
         "Affiliation mère",
-        "h-index",
         "Période active",
     ]
     author_profiles = []
@@ -494,7 +499,6 @@ def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.Da
                         author.affiliation_current[0].__getattribute__(
                             "parent_preferred_name"
                         ),
-                        author.h_index,
                         author.publication_range,
                     ]
                 )
@@ -568,9 +572,14 @@ def query_scopus_publications(
                 [0] * len(reference_query.publication_type_codes)
             )
 
-    # Remove duplicates and sort by title
+    # Tabulate co-authors, remove duplicates and sort by title
     if not publications_df.empty:
+        publications_df.sort_values(by=["eid"], inplace=True)
+        co_authored = publications_df.pivot_table(
+            columns=["eid"], aggfunc="size"
+        ).values
         publications_df.drop_duplicates(inplace=True)
+        publications_df["Conjointes"] = co_authored
         publications_df.sort_values(by=["title"], inplace=True)
 
     return publications_df, pub_type_counts_by_author
@@ -638,22 +647,24 @@ def query_us_patents(
 
     # Loop through results to extract lists of inventors and assignees, filter out
     # patents without Canadian inventors
-    patents.assign(CA=False, inplace=True)
-    for i, row in patents.iterrows():
-        patents.at[i, "inventors"] = list(
-            tuple(
-                f'{row["inventors"][j][0][1]} ({row["inventors"][j][2][1]})'
-                for j in range(len(row["inventors"]))
+    if not patents.empty:
+        patents.assign(CA=False, inplace=True)
+        for i, row in patents.iterrows():
+            patents.at[i, "inventors"] = list(
+                tuple(
+                    f'{row["inventors"][j][0][1]} ({row["inventors"][j][2][1]})'
+                    for j in range(len(row["inventors"]))
+                )
             )
-        )
-        patents.at[i, "assignees"] = list(
-            tuple(row["assignees"][j][2][1] for j in range(len(row["assignees"])))
-        )
-        patents.at[i, "noCA"] = all(
-            "(CA)" not in inventor for inventor in row["inventors"]
-        )
-    patents.drop(patents[patents["noCA"]].index, inplace=True)
-    patents.drop(columns=["noCA"], inplace=True)
+            patents.at[i, "assignees"] = list(
+                tuple(row["assignees"][j][2][1] for j in range(len(row["assignees"])))
+            )
+            patents.at[i, "noCA"] = all(
+                "(CA)" not in inventor for inventor in row["inventors"]
+            )
+        patents.drop(patents[patents["noCA"]].index, inplace=True)
+        patents.drop(columns=["noCA"], inplace=True)
+        patents.sort_values(by=["patent_title"], inplace=True)
 
     return patents
 
@@ -720,11 +731,11 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     patent_applications: pd.DataFrame = query_us_patents(
         reference_query=reference_query, applications=True
     )
-    print("Brevets US en instance: ", len(patent_applications))
+    print("Brevets US (applications): ", len(patent_applications))
     patents: pd.DataFrame = query_us_patents(
         reference_query=reference_query, applications=False
     )
-    print("Brevets US délivrés: ", len(patents))
+    print("Brevets US (délivrés): ", len(patents))
 
     # Write results to output Excel file
     write_reference_query_results_to_excel(
