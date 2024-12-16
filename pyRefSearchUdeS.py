@@ -631,7 +631,7 @@ def query_scopus_publications(
         co_authored = publications_df.pivot_table(
             columns=["eid"], aggfunc="size"
         ).values
-        publications_df.drop_duplicates(inplace=True)
+        publications_df.drop_duplicates("eid", inplace=True)
         publications_df["Coauteurs"] = co_authored
         publications_df.sort_values(by=["title"], inplace=True)
 
