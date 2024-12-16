@@ -21,7 +21,6 @@ from itertools import chain
 import math
 import pybliometrics
 import pandas as pd
-from docutils.languages.ru import author_separators
 from patent_client import Patent, PublishedApplication
 from pathlib import Path
 from pybliometrics.scopus import AuthorRetrieval, AuthorSearch, ScopusSearch
@@ -335,11 +334,14 @@ def _count_patents_per_author(
 
     author_patent_counts: list[int] = []
     joint_patents: int = 0
+
     if not patents.empty:
         # Count patents per author
-        for [lastname, firstname] in reference_query.au_names:
-            author_patent_counts.append(
-                sum(
+        author_patent_counts = [0] * len(reference_query.au_names)
+        for i, [lastname, firstname] in enumerate(reference_query.au_names):
+            author_patent_counts: list[int] = [0] * len(reference_query.au_names)
+            author_patent_counts[i] = sum(
+                [
                     1
                     for _, row in patents.iterrows()
                     if any(
@@ -351,7 +353,7 @@ def _count_patents_per_author(
                             for inventor in row["inventors"]
                         ]
                     )
-                )
+                ]
             )
 
         # Count joint patents
@@ -430,16 +432,22 @@ def write_reference_query_results_to_excel(
         reference_query.pub_year_first,
         reference_query.pub_year_last,
     ]
-    values += [0 if df.empty else len(df) for df in publications_by_type_dfs]
+    if publications_by_type_dfs:
+        values += [0 if df.empty else len(df) for df in publications_by_type_dfs]
+    else:
+        values += [0] * len(reference_query.publication_types)
     values += [
         len(patent_applications),
         len(patents),
     ]
     co_authors: list = ["Conjointes", "", "", ""]
-    co_authors += [
-        "" if df.empty else len(df[df["Coauteurs"] > 1])
-        for df in publications_by_type_dfs
-    ]
+    if publications_by_type_dfs:
+        co_authors += [
+            "" if df.empty else len(df[df["Coauteurs"] > 1])
+            for df in publications_by_type_dfs
+        ]
+    else:
+        co_authors += [0] * len(reference_query.publication_types)
     co_authors += [joint_patent_applications, joint_patents]
     results_df = pd.DataFrame([results, values, co_authors]).T
 
@@ -466,11 +474,11 @@ def write_reference_query_results_to_excel(
             patents.to_excel(writer, index=False, sheet_name="Brevets US (délivrés)")
 
         # Author profile sheets
-        if not patent_applications.empty:
+        if author_patent_application_counts:
             author_profiles_by_ids_df["Brevets US (applications)"] = (
                 author_patent_application_counts
             )
-        if not patents.empty:
+        if author_patent_counts:
             author_profiles_by_ids_df["Brevets US (délivrés)"] = author_patent_counts
         col = author_profiles_by_ids_df.pop("Période active")
         author_profiles_by_ids_df["Période active"] = col
@@ -796,17 +804,18 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         reference_query=reference_query
     )
     publications_by_type_dfs: list[pd.DataFrame] = []
-    for i, pub_type in enumerate(reference_query.publication_types):
-        publications_by_type_dfs.append(
-            publications_all_df[
-                publications_all_df["subtype"]
-                == reference_query.publication_type_codes[i]
+    if not publications_all_df.empty:
+        for i, pub_type in enumerate(reference_query.publication_types):
+            publications_by_type_dfs.append(
+                publications_all_df[
+                    publications_all_df["subtype"]
+                    == reference_query.publication_type_codes[i]
+                ]
+            )
+            author_profiles_by_ids_df[pub_type] = [
+                row[i] for row in pub_type_counts_by_author
             ]
-        )
-        author_profiles_by_ids_df[pub_type] = [
-            row[i] for row in pub_type_counts_by_author
-        ]
-        print(f"{pub_type}: {len(publications_by_type_dfs[i])}")
+            print(f"{pub_type}: {len(publications_by_type_dfs[i])}")
 
     # Fetch author Scopus profiles corresponding to user-supplied names, check for
     # author names with multiple Scopus IDs ("homonyms")
