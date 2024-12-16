@@ -404,7 +404,7 @@ def write_reference_query_results_to_excel(
 
     # Write dataframes in separate sheets to the output Excel file
     with pd.ExcelWriter(reference_query.out_excel_file) as writer:
-        # results sheet
+        # Results (first) sheet
         results_df.to_excel(writer, index=False, header=False, sheet_name="Résultats")
 
         # Scopus search publications sheets by type
@@ -424,7 +424,7 @@ def write_reference_query_results_to_excel(
         if not patents.empty:
             patents.to_excel(writer, index=False, sheet_name="Brevets US (délivrés)")
 
-        # Author profiles sheets
+        # Author profile sheets
         if not patent_applications.empty:
             author_profiles_by_ids_df["Brevets US (applications)"] = (
                 _count_patents_per_author(
