@@ -318,6 +318,40 @@ def _export_publications_df_to_excel_sheet(
         ].to_excel(writer, index=False, sheet_name=sheet_name)
 
 
+def _count_patents_per_author(
+    reference_query: ReferenceQuery, patents: pd.DataFrame
+) -> list:
+    """
+    Count number of patents each an author
+
+    Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+        patents (pd.DataFrame): patents or patent application search results
+
+    Returns: List of number of patents per author
+
+    """
+
+    patent_count: list[int] = []
+    for [lastname, firstname] in reference_query.au_names:
+        patent_count.append(
+            sum(
+                1
+                for _, row in patents.iterrows()
+                if any(
+                    [
+                        _to_lower_no_accents(lastname) in _to_lower_no_accents(inventor)
+                        and _to_lower_no_accents(firstname)
+                        in _to_lower_no_accents(inventor)
+                        for inventor in row["inventors"]
+                    ]
+                )
+            )
+        )
+
+    return patent_count
+
+
 def write_reference_query_results_to_excel(
     reference_query: ReferenceQuery,
     publications_by_type_dfs: list[pd.DataFrame],
@@ -370,7 +404,10 @@ def write_reference_query_results_to_excel(
 
     # Write dataframes in separate sheets to the output Excel file
     with pd.ExcelWriter(reference_query.out_excel_file) as writer:
+        # results sheet
         results_df.to_excel(writer, index=False, header=False, sheet_name="Résultats")
+
+        # Scopus search publications sheets by type
         for i, df in enumerate(publications_by_type_dfs):
             if not df.empty:
                 _export_publications_df_to_excel_sheet(
@@ -378,12 +415,28 @@ def write_reference_query_results_to_excel(
                     df=df,
                     sheet_name=reference_query.publication_types[i],
                 )
+
+        # USPTO search results sheets
         if not patent_applications.empty:
             patent_applications.to_excel(
                 writer, index=False, sheet_name="Brevets US (applications)"
             )
         if not patents.empty:
             patents.to_excel(writer, index=False, sheet_name="Brevets US (délivrés)")
+
+        # Author profiles sheets
+        if not patent_applications.empty:
+            author_profiles_by_ids_df["Brevets US (applications)"] = (
+                _count_patents_per_author(
+                    reference_query=reference_query, patents=patent_applications
+                )
+            )
+        if not patents.empty:
+            author_profiles_by_ids_df["Brevets US (délivrés)"] = (
+                _count_patents_per_author(
+                    reference_query=reference_query, patents=patents
+                )
+            )
         col = author_profiles_by_ids_df.pop("Période active")
         author_profiles_by_ids_df["Période active"] = col
         author_profiles_by_ids_df.to_excel(
