@@ -308,7 +308,7 @@ def _export_publications_df_to_excel_sheet(
             [
                 "title",
                 "author_names",
-                "Conjointes",
+                "Coauteurs",
                 "publicationName",
                 "volume",
                 "pageRange",
@@ -363,7 +363,7 @@ def write_reference_query_results_to_excel(
     ]
     co_authors: list = ["Conjointes", "", "", ""]
     co_authors += [
-        "" if df.empty else len(df[df["Conjointes"] > 1])
+        "" if df.empty else len(df[df["Coauteurs"] > 1])
         for df in publications_by_type_dfs
     ]
     results_df = pd.DataFrame([results, values, co_authors]).T
@@ -579,7 +579,7 @@ def query_scopus_publications(
             columns=["eid"], aggfunc="size"
         ).values
         publications_df.drop_duplicates(inplace=True)
-        publications_df["Conjointes"] = co_authored
+        publications_df["Coauteurs"] = co_authored
         publications_df.sort_values(by=["title"], inplace=True)
 
     return publications_df, pub_type_counts_by_author
