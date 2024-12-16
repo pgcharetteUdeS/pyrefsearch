@@ -322,7 +322,7 @@ def _count_patents_per_author(
     reference_query: ReferenceQuery, patents: pd.DataFrame
 ) -> list:
     """
-    Count number of patents each an author
+    Count number of patents for each an author
 
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
