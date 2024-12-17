@@ -427,7 +427,7 @@ def write_reference_query_results_to_excel(
         "Année de fin",
     ]
     results += reference_query.publication_types
-    results += ["Brevets US (applications)", "Brevets US (délivrés)"]
+    results += ["Brevets US (en instance)", "Brevets US (délivrés)"]
     values: list = [
         "",
         len(reference_query.au_ids),
