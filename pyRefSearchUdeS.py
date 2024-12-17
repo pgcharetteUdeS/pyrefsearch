@@ -332,7 +332,7 @@ def _count_patents_per_author(
 
     """
 
-    author_patent_counts: list[int] = []
+    author_patent_counts: list = []
     joint_patents: int = 0
 
     if not patents.empty:
@@ -355,6 +355,8 @@ def _count_patents_per_author(
                     ]
                 )
             )
+            if author_patent_counts[-1] == 0:
+                author_patent_counts[-1] = ""
 
         # Count joint patents
         for _, row in patents.iterrows():
@@ -475,7 +477,7 @@ def write_reference_query_results_to_excel(
 
         # Author profile sheets
         if author_patent_application_counts:
-            author_profiles_by_ids_df["Brevets US (applications)"] = (
+            author_profiles_by_ids_df["Brevets US (appl.)"] = (
                 author_patent_application_counts
             )
         if author_patent_counts:
@@ -813,7 +815,9 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
                 ]
             )
             if len(publications_by_type_dfs[i]) > 0:
-                author_profiles_by_ids_df[pub_type] = [row[i] for row in pub_type_counts_by_author]
+                author_profiles_by_ids_df[pub_type] = [
+                    row[i] if row[i] > 0 else "" for row in pub_type_counts_by_author
+                ]
             print(f"{pub_type}: {len(publications_by_type_dfs[i])}")
 
     # Fetch author Scopus profiles corresponding to user-supplied names, check for

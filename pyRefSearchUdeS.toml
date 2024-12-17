@@ -18,8 +18,8 @@ pub_year_last = 2024
 #   Conference Review-cr / Data Paper-dp / Editorial-ed / Erratum-er / Letter-le /
 #   Multimedia-mm / Note-no / Report-rp / Retracted-tb / Review-re / Short Survey-sh
 #   NB: la recherche de brevets ne fonctionne pas...
-publication_types = [["Articles", "ar"], ["Conférences", "cp"], ["Livres", "bk"],
-    ["Chapitres de livres", "ch"], ["Lettres", "le"], ["Rapports", "rp"]]
+publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Livres", "bk"],
+    ["Chap. de livres", "ch"], ["Lettres", "le"], ["Rapports", "rp"]]
 
 # Noms d'institutions et d'affiliations considérées commme "locales", pour valider
 # les profils d'auteurs dans les recherches
