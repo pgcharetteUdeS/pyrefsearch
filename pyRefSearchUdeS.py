@@ -320,7 +320,7 @@ def _export_publications_df_to_excel_sheet(
 
 def _count_patents_per_author(
     reference_query: ReferenceQuery, patents: pd.DataFrame
-) -> tuple[list, int]:
+) -> tuple[list, list, int]:
     """
     Count the number of patents for each author and the number of joint patents
 
@@ -328,11 +328,13 @@ def _count_patents_per_author(
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
         patents (pd.DataFrame): patents or patent application search results
 
-    Returns : Number of patents per author (list), number of joint patents
+    Returns : Number of patents per author (list), number of coauthors per patent (list),
+              number of joint patents
 
     """
 
     author_patent_counts: list = []
+    patent_joint_author_counts: list = []
     joint_patents: int = 0
 
     if not patents.empty:
@@ -360,7 +362,7 @@ def _count_patents_per_author(
 
         # Count joint patents
         for _, row in patents.iterrows():
-            if (
+            patent_joint_author_counts.append(
                 sum(
                     [
                         (
@@ -379,11 +381,13 @@ def _count_patents_per_author(
                         for [lastname, firstname] in reference_query.au_names
                     ]
                 )
-                > 1
-            ):
+            )
+            if patent_joint_author_counts[-1] > 1:
                 joint_patents += 1
+            else:
+                patent_joint_author_counts[-1] = ""
 
-    return author_patent_counts, joint_patents
+    return author_patent_counts, patent_joint_author_counts, joint_patents
 
 
 def write_reference_query_results_to_excel(
@@ -410,13 +414,15 @@ def write_reference_query_results_to_excel(
     """
 
     # Count number of patents & patent applications per author, and joint patents
-    author_patent_application_counts, joint_patent_applications = (
-        _count_patents_per_author(
-            reference_query=reference_query, patents=patent_applications
-        )
+    (
+        author_patent_application_counts,
+        patent_application_joint_author_counts,
+        joint_patent_applications,
+    ) = _count_patents_per_author(
+        reference_query=reference_query, patents=patent_applications
     )
-    author_patent_counts, joint_patents = _count_patents_per_author(
-        reference_query=reference_query, patents=patents
+    author_patent_counts, patent_joint_author_counts, joint_patents = (
+        _count_patents_per_author(reference_query=reference_query, patents=patents)
     )
 
     # Create results summary dataframe
@@ -477,10 +483,14 @@ def write_reference_query_results_to_excel(
 
         # USPTO search results sheets
         if not patent_applications.empty:
+            patent_applications.insert(
+                0, "Coauteurs", patent_application_joint_author_counts
+            )
             patent_applications.to_excel(
                 writer, index=False, sheet_name="Brevets US (en instance)"
             )
         if not patents.empty:
+            patents.insert(0, "Coauteurs", patent_joint_author_counts)
             patents.to_excel(writer, index=False, sheet_name="Brevets US (délivrés)")
 
         # Author profile sheets
