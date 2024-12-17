@@ -812,9 +812,8 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
                     == reference_query.publication_type_codes[i]
                 ]
             )
-            author_profiles_by_ids_df[pub_type] = [
-                row[i] for row in pub_type_counts_by_author
-            ]
+            if len(publications_by_type_dfs[i]) > 0:
+                author_profiles_by_ids_df[pub_type] = [row[i] for row in pub_type_counts_by_author]
             print(f"{pub_type}: {len(publications_by_type_dfs[i])}")
 
     # Fetch author Scopus profiles corresponding to user-supplied names, check for
