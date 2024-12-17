@@ -470,14 +470,14 @@ def write_reference_query_results_to_excel(
         # USPTO search results sheets
         if not patent_applications.empty:
             patent_applications.to_excel(
-                writer, index=False, sheet_name="Brevets US (applications)"
+                writer, index=False, sheet_name="Brevets US (en instance)"
             )
         if not patents.empty:
             patents.to_excel(writer, index=False, sheet_name="Brevets US (délivrés)")
 
         # Author profile sheets
         if author_patent_application_counts:
-            author_profiles_by_ids_df["Brevets US (appl.)"] = (
+            author_profiles_by_ids_df["Brevets US (en instance)"] = (
                 author_patent_application_counts
             )
         if author_patent_counts:
@@ -684,8 +684,10 @@ def query_scopus_publications(
 
 
 def query_us_patents(
-    reference_query: ReferenceQuery, applications: bool = True
-) -> pd.DataFrame:
+    reference_query: ReferenceQuery,
+    applications: bool = True,
+    application_ids_to_remove=None,
+) -> tuple[pd.DataFrame, list]:
     """
     Query the USPTO database for patent applications and published patents
     for a list of authors over a range of years using the "patent_client" package
@@ -700,12 +702,14 @@ def query_us_patents(
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
         applications (bool): Search filed applications if True, else search published patents if False
+        application_ids_to_remove (list): List of application ids to remove from search results
 
-    Returns : DataFrame with patent search results
+    Returns : DataFrame with patent search results, list of patent application_ids
 
     """
 
     max_results: int = 200
+    application_ids: list[int] = []
     if applications:
         # Execute filed applications query
         query_str = _build_patent_query_string(
@@ -766,7 +770,22 @@ def query_us_patents(
         patents.drop(columns=["noCA"], inplace=True)
         patents.sort_values(by=["patent_title"], inplace=True)
 
-    return patents
+        # Compile list of application ids
+        application_ids = patents["appl_id"].to_list()
+
+        # If required, filter out applications for which patents have been delivered
+        if applications and application_ids_to_remove:
+            patents.drop(
+                patents[
+                    [
+                        application_id in application_ids_to_remove
+                        for application_id in application_ids
+                    ]
+                ].index,
+                inplace=True,
+            )
+
+    return patents, application_ids
 
 
 def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
@@ -830,14 +849,16 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     )
 
     # Fetch US patent applications and published patents
-    patent_applications: pd.DataFrame = query_us_patents(
-        reference_query=reference_query, applications=True
-    )
-    print("Brevets US (applications): ", len(patent_applications))
-    patents: pd.DataFrame = query_us_patents(
+    patents, patent_application_ids = query_us_patents(
         reference_query=reference_query, applications=False
     )
     print("Brevets US (délivrés): ", len(patents))
+    patent_applications, _ = query_us_patents(
+        reference_query=reference_query,
+        applications=True,
+        application_ids_to_remove=patent_application_ids,
+    )
+    print("Brevets US (en instance): ", len(patent_applications))
 
     # Write results to output Excel file
     write_reference_query_results_to_excel(
