@@ -306,9 +306,9 @@ def _export_publications_df_to_excel_sheet(
     if not df.empty:
         df[
             [
+                "Coauteurs",
                 "title",
                 "author_names",
-                "Coauteurs",
                 "publicationName",
                 "volume",
                 "pageRange",
@@ -328,7 +328,7 @@ def _count_patents_per_author(
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
         patents (pd.DataFrame): patents or patent application search results
 
-    Returns : Number of patents per author (list), number of joint publications
+    Returns : Number of patents per author (list), number of joint patents
 
     """
 
@@ -461,9 +461,17 @@ def write_reference_query_results_to_excel(
         # Scopus search publications sheets by type
         for i, df in enumerate(publications_by_type_dfs):
             if not df.empty:
+                # Remove singlets in co-publication count column (replace with "")
+                joint_publication_counts = [
+                    count if count > 1 else "" for count in df["Coauteurs"].values
+                ]
+                df_copy = df.drop("Coauteurs", axis=1).copy()
+                df_copy["Coauteurs"] = joint_publication_counts
+
+                # Write dataframe to sheet
                 _export_publications_df_to_excel_sheet(
                     writer=writer,
-                    df=df,
+                    df=df_copy,
                     sheet_name=reference_query.publication_types[i],
                 )
 
