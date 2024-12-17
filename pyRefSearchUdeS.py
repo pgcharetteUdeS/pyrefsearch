@@ -716,6 +716,7 @@ def query_us_patents(
             .limit(max_results)
             .values(
                 "guid",
+                "appl_id",
                 "patent_title",
                 "app_filing_date",
                 "inventors",
@@ -734,6 +735,7 @@ def query_us_patents(
             .limit(max_results)
             .values(
                 "guid",
+                "appl_id",
                 "patent_title",
                 "app_filing_date",
                 "publication_date",
