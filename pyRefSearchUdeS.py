@@ -307,12 +307,12 @@ def _export_publications_df_to_excel_sheet(
         df[
             [
                 "Coauteurs",
+                "coverDate",
                 "title",
                 "author_names",
                 "publicationName",
                 "volume",
                 "pageRange",
-                "coverDisplayDate",
                 "doi",
             ]
         ].to_excel(writer, index=False, sheet_name=sheet_name)
@@ -413,7 +413,7 @@ def write_reference_query_results_to_excel(
 
     """
 
-    # Tabulate joint patents and patent applications by author and document
+    # Tabulate joint patents and patent applications by author and by document
     if not patent_applications.empty:
         (
             joint_patent_applications_by_author,
@@ -478,7 +478,7 @@ def write_reference_query_results_to_excel(
         # Results (first) sheet
         results_df.to_excel(writer, index=False, header=False, sheet_name="Résultats")
 
-        # Scopus search publications sheets by type
+        # Scopus search result sheets by publication type
         for i, df in enumerate(publications_by_type_dfs):
             if not df.empty:
                 # Remove singlets in co-publication count column (replace with "")
@@ -495,7 +495,7 @@ def write_reference_query_results_to_excel(
                     sheet_name=reference_query.publication_types[i],
                 )
 
-        # USPTO search results sheets
+        # USPTO search result sheets
         if not patent_applications.empty:
             patent_applications.to_excel(
                 writer, index=False, sheet_name="Brevets US (en instance)"
@@ -700,7 +700,7 @@ def query_scopus_publications(
         ).values
         publications_df.drop_duplicates("eid", inplace=True)
         publications_df["Coauteurs"] = co_authored
-        publications_df.sort_values(by=["title"], inplace=True)
+        publications_df.sort_values(by=["coverDate"], inplace=True)
 
     return publications_df, pub_type_counts_by_author
 
