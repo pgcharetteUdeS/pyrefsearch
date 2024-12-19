@@ -65,7 +65,7 @@ class ReferenceQuery:
         self.publication_types: list[str] = [row[0] for row in publication_types]
         self.publication_type_codes: list[str] = [row[1] for row in publication_types]
         self.local_affiliations: list[str] = [
-            _to_lower_no_accents(s) for s in local_affiliations
+            _to_lower_no_accents_no_hyphens(s) for s in local_affiliations
         ]
         self.scopus_database_refresh: bool | int = scopus_database_refresh
 
@@ -93,9 +93,9 @@ class ReferenceQuery:
             self.au_ids = [0] * len(self.au_names)
 
 
-def _to_lower_no_accents(s: str | pd.Series) -> str:
+def _to_lower_no_accents_no_hyphens(s: str | pd.Series) -> str:
     """
-    Convert string to lower case and remove accents
+    Convert string to lower case and remove accents and hyphens
 
     Args:
         s (str): Input string
@@ -104,7 +104,7 @@ def _to_lower_no_accents(s: str | pd.Series) -> str:
 
     """
 
-    return unidecode.unidecode(s.lower().strip())
+    return unidecode.unidecode(s.replace("-", " ").lower().strip())
 
 
 def _reindex_author_profiles_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -162,7 +162,7 @@ def _flag_matched_scopus_author_ids_and_affiliations(
     for i, row in author_profiles_df.iterrows():
         if row.affiliation is not None:
             local_affiliation_match: bool = any(
-                s in _to_lower_no_accents(row.affiliation)
+                s in _to_lower_no_accents_no_hyphens(row.affiliation)
                 for s in reference_query.local_affiliations
             )
             au_id_index: int | None = (
@@ -170,9 +170,13 @@ def _flag_matched_scopus_author_ids_and_affiliations(
                 if int(row.eid) in reference_query.au_ids
                 else None
             )
-            au_id_match: bool = au_id_index is not None and _to_lower_no_accents(
-                reference_query.au_names[au_id_index][0]
-            ) == _to_lower_no_accents(row.surname)
+            au_id_match: bool = (
+                au_id_index is not None
+                and _to_lower_no_accents_no_hyphens(
+                    reference_query.au_names[au_id_index][0]
+                )
+                == _to_lower_no_accents_no_hyphens(row.surname)
+            )
             if local_affiliation_match and au_id_match:
                 local_column[hash(i)] = "Affl. + ID"
             elif local_affiliation_match:
@@ -214,10 +218,10 @@ def _check_author_name_correspondance(
             )
         else:
             # Check for name discrepancies
-            scopus_last_name: str = _to_lower_no_accents(
+            scopus_last_name: str = _to_lower_no_accents_no_hyphens(
                 authors_df["Nom de famille"][i]
             )
-            if scopus_last_name != _to_lower_no_accents(input_last_name):
+            if scopus_last_name != _to_lower_no_accents_no_hyphens(input_last_name):
                 query_errors[i] = "Disparité de noms de famille"
                 print(
                     f"[red]ERREUR pour l'identifiant {reference_query.au_ids[i]}: "
@@ -231,12 +235,12 @@ def _check_author_name_correspondance(
             affiliation: str = (
                 ""
                 if authors_df["Affiliation"][i] is None
-                else _to_lower_no_accents(authors_df["Affiliation"][i])
+                else _to_lower_no_accents_no_hyphens(authors_df["Affiliation"][i])
             )
             parent_affiliation: str = (
                 ""
                 if authors_df["Affiliation mère"][i] is None
-                else _to_lower_no_accents(authors_df["Affiliation mère"][i])
+                else _to_lower_no_accents_no_hyphens(authors_df["Affiliation mère"][i])
             )
             if all(
                 s not in affiliation and s not in parent_affiliation
@@ -306,9 +310,10 @@ def _export_publications_df_to_excel_sheet(
     if not df.empty:
         df[
             [
-                "Coauteurs",
                 "coverDate",
                 "title",
+                "Nb co-auteurs",
+                "Auteurs locaux",
                 "author_names",
                 "publicationName",
                 "volume",
@@ -347,10 +352,10 @@ def _tabulate_joint_patents(
                         for _, row in patents.iterrows()
                         if any(
                             [
-                                _to_lower_no_accents(lastname)
-                                in _to_lower_no_accents(inventor)
-                                and _to_lower_no_accents(firstname)
-                                in _to_lower_no_accents(inventor)
+                                _to_lower_no_accents_no_hyphens(lastname)
+                                in _to_lower_no_accents_no_hyphens(inventor)
+                                and _to_lower_no_accents_no_hyphens(firstname)
+                                in _to_lower_no_accents_no_hyphens(inventor)
                                 for inventor in row["inventors"]
                             ]
                         )
@@ -369,10 +374,10 @@ def _tabulate_joint_patents(
                             1
                             if any(
                                 [
-                                    _to_lower_no_accents(lastname)
-                                    in _to_lower_no_accents(inventor)
-                                    and _to_lower_no_accents(firstname)
-                                    in _to_lower_no_accents(inventor)
+                                    _to_lower_no_accents_no_hyphens(lastname)
+                                    in _to_lower_no_accents_no_hyphens(inventor)
+                                    and _to_lower_no_accents_no_hyphens(firstname)
+                                    in _to_lower_no_accents_no_hyphens(inventor)
                                     for inventor in row["inventors"]
                                 ]
                             )
@@ -423,7 +428,7 @@ def write_reference_query_results_to_excel(
             reference_query=reference_query, patents=patent_applications
         )
         patent_applications.insert(
-            0, "Coauteurs", joint_patent_applications_by_document
+            0, "Nb co-auteurs", joint_patent_applications_by_document
         )
         author_profiles_by_ids_df["Brevets US (en instance)"] = (
             joint_patent_applications_by_author
@@ -434,7 +439,7 @@ def write_reference_query_results_to_excel(
         joint_patents_by_author, joint_patents_by_document, joint_patents_count = (
             _tabulate_joint_patents(reference_query=reference_query, patents=patents)
         )
-        patents.insert(0, "Coauteurs", joint_patents_by_document)
+        patents.insert(0, "Nb co-auteurs", joint_patents_by_document)
         author_profiles_by_ids_df["Brevets US (délivrés)"] = joint_patents_by_author
     else:
         joint_patents_count = 0
@@ -465,7 +470,7 @@ def write_reference_query_results_to_excel(
     co_authors: list = ["Conjointes", "", "", ""]
     if publications_by_type_dfs:
         co_authors += [
-            "" if df.empty else len(df[df["Coauteurs"] > 1])
+            "" if df.empty else len(df[df["Nb co-auteurs"] > 1])
             for df in publications_by_type_dfs
         ]
     else:
@@ -483,10 +488,10 @@ def write_reference_query_results_to_excel(
             if not df.empty:
                 # Remove singlets in co-publication count column (replace with "")
                 joint_publication_counts = [
-                    count if count > 1 else "" for count in df["Coauteurs"].values
+                    count if count > 1 else "" for count in df["Nb co-auteurs"].values
                 ]
-                df_copy = df.drop("Coauteurs", axis=1).copy()
-                df_copy["Coauteurs"] = joint_publication_counts
+                df_copy = df.drop("Nb co-auteurs", axis=1).copy()
+                df_copy["Nb co-auteurs"] = joint_publication_counts
 
                 # Write dataframe to sheet
                 _export_publications_df_to_excel_sheet(
@@ -656,7 +661,8 @@ def query_scopus_publications(
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
 
-    Returns : DataFrame with publication search results, list of publication type counts by author
+    Returns : DataFrame with publication search results (pd.DataFrame),
+              list of publication type counts by author (list)
     """
 
     # Build Scopus document type search string
@@ -692,14 +698,26 @@ def query_scopus_publications(
                 [0] * len(reference_query.publication_type_codes)
             )
 
-    # Tabulate co-authors, remove duplicates and sort by title
     if not publications_df.empty:
-        publications_df.sort_values(by=["eid"], inplace=True)
-        co_authored = publications_df.pivot_table(
-            columns=["eid"], aggfunc="size"
-        ).values
+        # Remove duplicates
         publications_df.drop_duplicates("eid", inplace=True)
-        publications_df["Coauteurs"] = co_authored
+
+        # Add columns listing names and counts of local coauthors
+        local_coauthors: list = []
+        local_coauthors_counts: list = []
+        for _, row in publications_df.iterrows():
+            co_authors_local: list = [
+                reference_query.au_names[i][0]
+                for i, local_author_id in enumerate(reference_query.au_ids)
+                if any([str(local_author_id) in row["author_ids"]])
+                and local_author_id > 0
+            ]
+            local_coauthors.append(co_authors_local)
+            local_coauthors_counts.append(len(co_authors_local))
+        publications_df["Auteurs locaux"] = local_coauthors
+        publications_df["Nb co-auteurs"] = local_coauthors_counts
+
+        # Sort by publication date
         publications_df.sort_values(by=["coverDate"], inplace=True)
 
     return publications_df, pub_type_counts_by_author
