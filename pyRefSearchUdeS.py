@@ -428,7 +428,7 @@ def write_reference_query_results_to_excel(
             reference_query=reference_query, patents=patent_applications
         )
         patent_applications.insert(
-            0, "Nb co-auteurs", joint_patent_applications_by_document
+            4, "Nb co-inventeurs", joint_patent_applications_by_document
         )
         author_profiles_by_ids_df["Brevets US (en instance)"] = (
             joint_patent_applications_by_author
@@ -439,7 +439,7 @@ def write_reference_query_results_to_excel(
         joint_patents_by_author, joint_patents_by_document, joint_patents_count = (
             _tabulate_joint_patents(reference_query=reference_query, patents=patents)
         )
-        patents.insert(0, "Nb co-auteurs", joint_patents_by_document)
+        patents.insert(4, "Nb co-inventeurs", joint_patents_by_document)
         author_profiles_by_ids_df["Brevets US (délivrés)"] = joint_patents_by_author
     else:
         joint_patents_count = 0
@@ -748,7 +748,7 @@ def query_us_patents(
 
     """
 
-    max_results: int = 200
+    max_results: int = 500
     application_ids: list[int] = []
     if applications:
         # Execute filed applications query
