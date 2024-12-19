@@ -73,6 +73,8 @@ class ReferenceQuery:
         self.check_excel_file_access(self.in_excel_file)
         self.check_excel_file_access(self.out_excel_file)
 
+        input_data = pd.read_excel(self.in_excel_file)
+
         # Fetch list of author names from input Excel file
         self.au_names: list = pd.read_excel(
             self.in_excel_file,
@@ -428,7 +430,7 @@ def write_reference_query_results_to_excel(
             reference_query=reference_query, patents=patent_applications
         )
         patent_applications.insert(
-            4, "Nb co-inventeurs", joint_patent_applications_by_document
+            3, "Nb co-inventeurs", joint_patent_applications_by_document
         )
         author_profiles_by_ids_df["Brevets US (en instance)"] = (
             joint_patent_applications_by_author
@@ -512,10 +514,10 @@ def write_reference_query_results_to_excel(
         col = author_profiles_by_ids_df.pop("Période active")
         author_profiles_by_ids_df["Période active"] = col
         author_profiles_by_ids_df.to_excel(
-            writer, index=False, sheet_name="Profils par identifiant"
+            writer, index=False, sheet_name="Auteurs - Profils"
         )
         author_profiles_by_names_df.to_excel(
-            writer, index=False, sheet_name="Homonymes"
+            writer, index=False, sheet_name="Auteurs - Homonymes"
         )
     print(
         "Résultats de la recherche sauvegardés "
@@ -759,10 +761,10 @@ def query_us_patents(
             PublishedApplication.objects.filter(query=query_str)
             .limit(max_results)
             .values(
+                "app_filing_date",
                 "guid",
                 "appl_id",
                 "patent_title",
-                "app_filing_date",
                 "inventors",
                 "assignees",
             )
@@ -778,11 +780,11 @@ def query_us_patents(
             Patent.objects.filter(query=query_str)
             .limit(max_results)
             .values(
+                "publication_date",
+                "app_filing_date",
                 "guid",
                 "appl_id",
                 "patent_title",
-                "app_filing_date",
-                "publication_date",
                 "inventors",
                 "assignees",
             )
@@ -790,7 +792,7 @@ def query_us_patents(
         )
 
     # Loop through results to extract lists of inventors and assignees, filter out
-    # patents without Canadian inventors
+    # patents without Canadian inventors, sort by date
     if not patents.empty:
         patents.assign(CA=False, inplace=True)
         for i, row in patents.iterrows():
@@ -808,10 +810,14 @@ def query_us_patents(
             )
         patents.drop(patents[patents["noCA"]].index, inplace=True)
         patents.drop(columns=["noCA"], inplace=True)
-        patents.sort_values(by=["patent_title"], inplace=True)
+        if applications:
+            patents.sort_values(by=["app_filing_date"], inplace=True)
+        else:
+            patents.sort_values(by=["publication_date"], inplace=True)
 
-        # Compile list of application ids
+        # Compile list of application ids, then remove column
         application_ids = patents["appl_id"].to_list()
+        patents.drop(columns=["appl_id"], inplace=True)
 
         # If required, filter out applications for which patents have been delivered
         if applications and application_ids_to_remove:
