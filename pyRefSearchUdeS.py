@@ -847,9 +847,9 @@ def query_us_patents(
         # Loop to extract inventors and assignees lists (names only), flag patents
         # without at least one Canadian inventor to attempt to filter out patents with
         # inventors having same names as the authors but not being the same persons,
-        # and flag incorrect hits caused by USPTO not searching correctly for
-        # multi-word names such as "Maude Josée" that will pick up all authors with
-        # either "Maude" or "Josée" in their names.
+        # and double-check search results by inventor because the USPTO interface does
+        # not handle multi-word names such as "Maude Josée" and will pick up all
+        # authors with either "Maude" or "Josée" in their names.
         for i, row in patents.iterrows():
             patents.at[i, "inventors"] = list(
                 tuple(
