@@ -17,14 +17,13 @@
 
 """
 
-from itertools import chain
-import math
 import pybliometrics
 import pandas as pd
 from patent_client import Patent, PublishedApplication
 from pathlib import Path
 from pybliometrics.scopus import AuthorRetrieval, AuthorSearch, ScopusSearch
 from pybliometrics.scopus.exception import ScopusException
+import re
 from rich import print
 import sys
 import toml
@@ -52,7 +51,6 @@ class ReferenceQuery:
         self,
         in_excel_file: Path,
         in_excel_file_author_sheet: str,
-        in_excel_file_format_3it: bool,
         out_excel_file: Path,
         pub_year_first: int,
         pub_year_last: int,
@@ -75,72 +73,59 @@ class ReferenceQuery:
         self.check_excel_file_access(self.in_excel_file)
         self.check_excel_file_access(self.out_excel_file)
 
-        # 3IT-formatted input Excel file
-        if in_excel_file_format_3it:
-            warnings.simplefilter(action="ignore", category=UserWarning)
-            input_data_full = pd.read_excel(
-                self.in_excel_file, sheet_name=in_excel_file_author_sheet
-            )
+        # Load input Excel file into a dataframe, remove rows without author names
+        warnings.simplefilter(action="ignore", category=UserWarning)
+        input_data_full = pd.read_excel(
+            self.in_excel_file, sheet_name=in_excel_file_author_sheet
+        )
+        input_data_full.dropna(subset=["Nom"], inplace=True)
 
-            # Validate that range of years in query is within available data
-            author_status_by_year_columns = [
-                f"{year}-{year+1}"
-                for year in range(self.pub_year_first, self.pub_year_last + 1)
+        # Validate that either the range of years specified in the input Excel file
+        # covers the range of years specified in the query, or that no particular range
+        # of years is specified in the input Excel. If not, exit with error.
+        self.au_names: list = []
+        author_status_by_year_columns = [
+            f"{year}-{year+1}"
+            for year in range(self.pub_year_first, self.pub_year_last + 1)
+        ]
+        # Author information filtered by member status/year, remove collaborators
+        if all(
+            [col in input_data_full.columns for col in author_status_by_year_columns]
+        ):
+            authors = input_data_full.copy()[
+                ["Nom", "Prénom", "ID Scopus"] + author_status_by_year_columns
             ]
-            self.au_names: list = []
-            self.au_ids = []
-            if all(
-                [
-                    col in input_data_full.columns
-                    for col in author_status_by_year_columns
-                ]
-            ):
-                # Extract 3IT full member author names (remove collaborators))
-                authors = input_data_full.copy()[
-                    ["Nom", "Prénom", "ID Scopus"] + author_status_by_year_columns
-                ]
-                authors["status"] = [
-                    "Régulier" if "Régulier" in yearly_status else "Collaborateur"
-                    for yearly_status in authors[
-                        author_status_by_year_columns
-                    ].values.tolist()
-                ]
-                authors.drop(
-                    authors[authors.status == "Collaborateur"].index, inplace=True
-                )
-                self.au_names = authors[["Nom", "Prénom"]].values.tolist()
-
-                # Extract Scopus IDs, replaced non-integer values with 0
-                for scopus_id in authors["ID Scopus"].values.tolist():
-                    try:
-                        self.au_ids.append(int(scopus_id))
-                    except ValueError:
-                        self.au_ids.append(0)
-            else:
-                raise IOError(
-                    f"Range of years [{self.pub_year_first}-{self.pub_year_last}] exceeds "
-                    f"the available data in '{in_excel_file}'!"
-                ) from None
-
+            authors["status"] = [
+                "Régulier" if "Régulier" in yearly_status else "Collaborateur"
+                for yearly_status in authors[
+                    author_status_by_year_columns
+                ].values.tolist()
+            ]
+            authors.drop(authors[authors.status == "Collaborateur"].index, inplace=True)
+        # Author information without member filtering, as no status/year info provided
+        elif not any(
+            [
+                re.search(r"\d{4}-\d{4}", column)
+                for column in input_data_full.columns.tolist()
+            ]
+        ):
+            authors = input_data_full.copy()[["Nom", "Prénom", "ID Scopus"]]
+        # Else, raise error because queried range of years exceeds available data
         else:
-            # Fetch list of author names from input Excel file
-            self.au_names: list = pd.read_excel(
-                self.in_excel_file,
-                sheet_name=in_excel_file_author_sheet,
-                usecols=["Nom", "Prénom"],
-            ).values.tolist()
+            raise IOError(
+                f"Range of years [{self.pub_year_first}-{self.pub_year_last}] exceeds "
+                f"the available data in '{in_excel_file}'!"
+            ) from None
+        # Extract author names
+        self.au_names = authors[["Nom", "Prénom"]].values.tolist()
 
-            # Fetch author Scopus IDs column from input Excel file, if it exists
+        # Extract Scopus IDs, replace non-integer values with 0
+        self.au_ids = []
+        for scopus_id in authors["ID Scopus"].values.tolist():
             try:
-                self.au_ids: list = pd.read_excel(
-                    self.in_excel_file,
-                    sheet_name=in_excel_file_author_sheet,
-                    usecols=["Scopus ID"],
-                ).values.tolist()
-                self.au_ids = list(chain.from_iterable(self.au_ids))
-                self.au_ids = [0 if math.isnan(n) else int(n) for n in self.au_ids]
+                self.au_ids.append(int(scopus_id))
             except ValueError:
-                self.au_ids = [0] * len(self.au_names)
+                self.au_ids.append(0)
 
 
 def _to_lower_no_accents_no_hyphens(s: str | pd.Series) -> str:
@@ -1128,7 +1113,6 @@ def main():
     reference_query: ReferenceQuery = ReferenceQuery(
         in_excel_file=in_excel_file,
         in_excel_file_author_sheet=toml_dict["in_excel_file_author_sheet"],
-        in_excel_file_format_3it=toml_dict["in_excel_file_format_3it"],
         out_excel_file=out_excel_file,
         pub_year_first=toml_dict["pub_year_first"],
         pub_year_last=toml_dict["pub_year_last"],
