@@ -362,7 +362,7 @@ def _export_publications_df_to_excel_sheet(
         ].to_excel(writer, index=False, sheet_name=sheet_name)
 
 
-def _tabulate_joint_patents(
+def _tabulate_patents_per_author(
     reference_query: ReferenceQuery, patents: pd.DataFrame
 ) -> tuple[list, int]:
     """
@@ -377,9 +377,7 @@ def _tabulate_joint_patents(
     """
 
     author_patent_counts: list = []
-    patent_joint_author_counts: list = []
     joint_patents: int = 0
-
     if not patents.empty:
         # Count patents per author
         for [lastname, firstname] in reference_query.au_names:
@@ -405,30 +403,8 @@ def _tabulate_joint_patents(
 
         # Count joint patents
         for _, row in patents.iterrows():
-            patent_joint_author_counts.append(
-                sum(
-                    [
-                        (
-                            1
-                            if any(
-                                [
-                                    _to_lower_no_accents_no_hyphens(lastname)
-                                    in _to_lower_no_accents_no_hyphens(inventor)
-                                    and _to_lower_no_accents_no_hyphens(firstname)
-                                    in _to_lower_no_accents_no_hyphens(inventor)
-                                    for inventor in row["Inventeurs"]
-                                ]
-                            )
-                            else 0
-                        )
-                        for [lastname, firstname] in reference_query.au_names
-                    ]
-                )
-            )
-            if patent_joint_author_counts[-1] > 1:
+            if row["Nb co-inventeurs"] is not None and row["Nb co-inventeurs"] > 1:
                 joint_patents += 1
-            else:
-                patent_joint_author_counts[-1] = ""
 
     return author_patent_counts, joint_patents
 
@@ -461,7 +437,7 @@ def write_reference_query_results_to_excel(
         (
             joint_patent_applications_by_author,
             joint_patent_applications_count,
-        ) = _tabulate_joint_patents(
+        ) = _tabulate_patents_per_author(
             reference_query=reference_query, patents=patent_applications
         )
         author_profiles_by_ids_df["Brevets US (déposés)"] = (
@@ -470,7 +446,7 @@ def write_reference_query_results_to_excel(
     else:
         joint_patent_applications_count = 0
     if not patents.empty:
-        joint_patents_by_author, joint_patents_count = _tabulate_joint_patents(
+        joint_patents_by_author, joint_patents_count = _tabulate_patents_per_author(
             reference_query=reference_query, patents=patents
         )
         author_profiles_by_ids_df["Brevets US (délivrés)"] = joint_patents_by_author
