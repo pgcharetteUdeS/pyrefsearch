@@ -88,6 +88,7 @@ class ReferenceQuery:
             f"{year}-{year+1}"
             for year in range(self.pub_year_first, self.pub_year_last + 1)
         ]
+
         # Author information filtered by member status/year, remove collaborators
         if all(
             [col in input_data_full.columns for col in author_status_by_year_columns]
@@ -102,6 +103,7 @@ class ReferenceQuery:
                 ].values.tolist()
             ]
             authors.drop(authors[authors.status == "Collaborateur"].index, inplace=True)
+
         # Author information without member filtering, as no status/year info provided
         elif not any(
             [
@@ -110,6 +112,7 @@ class ReferenceQuery:
             ]
         ):
             authors = input_data_full.copy()[["Nom", "Prénom", "ID Scopus"]]
+
         # Else, raise error because queried range of years exceeds available data
         else:
             raise IOError(
@@ -121,11 +124,12 @@ class ReferenceQuery:
 
         # Extract Scopus IDs, replace non-integer values with 0
         self.au_ids = []
-        for scopus_id in authors["ID Scopus"].values.tolist():
-            try:
-                self.au_ids.append(int(scopus_id))
-            except ValueError:
-                self.au_ids.append(0)
+        if "ID Scopus" in authors:
+            for scopus_id in authors["ID Scopus"].values.tolist():
+                try:
+                    self.au_ids.append(int(scopus_id))
+                except ValueError:
+                    self.au_ids.append(0)
 
 
 def _to_lower_no_accents_no_hyphens(s: str | pd.Series) -> str:
