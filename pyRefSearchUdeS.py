@@ -347,17 +347,31 @@ def _export_publications_df_to_excel_sheet(
     """
 
     if not df.empty:
+        df.rename(
+            columns={
+                "coverDate": "Date",
+                "title": "Titre",
+                "Nb co-auteurs": "Nb co-auteurs",
+                "Auteurs locaux": "Auteurs locaux",
+                "author_names": "Auteurs",
+                "publicationName": "Publication",
+                "volume": "Volume",
+                "pageRange": "Pages",
+                "doi": "DOI",
+            },
+            inplace=True,
+        )
         df[
             [
-                "coverDate",
-                "title",
+                "Date",
+                "Titre",
                 "Nb co-auteurs",
                 "Auteurs locaux",
-                "author_names",
-                "publicationName",
-                "volume",
-                "pageRange",
-                "doi",
+                "Auteurs",
+                "Publication",
+                "Volume",
+                "Pages",
+                "DOI",
             ]
         ].to_excel(writer, index=False, sheet_name=sheet_name)
 
