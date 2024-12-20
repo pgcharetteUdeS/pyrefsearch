@@ -30,6 +30,7 @@ import sys
 import toml
 import unidecode
 from version import __version__
+import warnings
 
 
 class ReferenceQuery:
@@ -51,6 +52,7 @@ class ReferenceQuery:
         self,
         in_excel_file: Path,
         in_excel_file_author_sheet: str,
+        in_excel_file_format_3it: bool,
         out_excel_file: Path,
         pub_year_first: int,
         pub_year_last: int,
@@ -73,26 +75,66 @@ class ReferenceQuery:
         self.check_excel_file_access(self.in_excel_file)
         self.check_excel_file_access(self.out_excel_file)
 
-        input_data = pd.read_excel(self.in_excel_file)
+        if in_excel_file_format_3it:
+            # 3IT-formatted input Excel file
+            warnings.simplefilter(action="ignore", category=UserWarning)
+            input_data_full = pd.read_excel(
+                self.in_excel_file, sheet_name=in_excel_file_author_sheet
+            )
+            author_status_by_year_columns = [
+                f"Statut {year-2000}-{year-2000+1}"
+                for year in range(self.pub_year_first, self.pub_year_last + 1)
+            ]
+            self.au_names: list = []
+            self.au_ids = []
+            if all(
+                [
+                    col in input_data_full.columns
+                    for col in author_status_by_year_columns
+                ]
+            ):
+                authors = input_data_full.copy()[
+                    ["Nom", "Prénom", "ID Scopus"] + author_status_by_year_columns
+                ]
+                authors["status"] = [
+                    "Régulier" if "Régulier" in yearly_status else "Collaborateur"
+                    for yearly_status in authors[
+                        author_status_by_year_columns
+                    ].values.tolist()
+                ]
+                authors.drop(
+                    authors[authors.status == "Collaborateur"].index, inplace=True
+                )
+                self.au_names = authors[["Nom", "Prénom"]].values.tolist()
+                self.au_ids = [
+                    int(n) if isinstance(n, str) else 0 if math.isnan(n) else int(n)
+                    for n in authors["ID Scopus"].values.tolist()
+                ]
+            else:
+                raise IOError(
+                    f"Range of years [{self.pub_year_first}-{self.pub_year_last}]exceeds "
+                    f"the available data in '{in_excel_file}'!"
+                ) from None
 
-        # Fetch list of author names from input Excel file
-        self.au_names: list = pd.read_excel(
-            self.in_excel_file,
-            sheet_name=in_excel_file_author_sheet,
-            usecols=["Nom", "Prénom"],
-        ).values.tolist()
-
-        # Fetch author Scopus IDs column from input Excel file, if it exists
-        try:
-            self.au_ids: list = pd.read_excel(
+        else:
+            # Fetch list of author names from input Excel file
+            self.au_names: list = pd.read_excel(
                 self.in_excel_file,
                 sheet_name=in_excel_file_author_sheet,
-                usecols=["Scopus ID"],
+                usecols=["Nom", "Prénom"],
             ).values.tolist()
-            self.au_ids = list(chain.from_iterable(self.au_ids))
-            self.au_ids = [0 if math.isnan(n) else int(n) for n in self.au_ids]
-        except ValueError:
-            self.au_ids = [0] * len(self.au_names)
+
+            # Fetch author Scopus IDs column from input Excel file, if it exists
+            try:
+                self.au_ids: list = pd.read_excel(
+                    self.in_excel_file,
+                    sheet_name=in_excel_file_author_sheet,
+                    usecols=["Scopus ID"],
+                ).values.tolist()
+                self.au_ids = list(chain.from_iterable(self.au_ids))
+                self.au_ids = [0 if math.isnan(n) else int(n) for n in self.au_ids]
+            except ValueError:
+                self.au_ids = [0] * len(self.au_names)
 
 
 def _to_lower_no_accents_no_hyphens(s: str | pd.Series) -> str:
@@ -683,11 +725,20 @@ def query_scopus_publications(
                 f" AND PUBYEAR < {reference_query.pub_year_last + 1}"
                 f" AND ({pub_types_search_string})"
             )
-            query_results = ScopusSearch(
-                query=query_str,
-                refresh=reference_query.scopus_database_refresh,
-                verbose=True,
-            )
+            try:
+                query_results = ScopusSearch(
+                    query=query_str,
+                    refresh=reference_query.scopus_database_refresh,
+                    verbose=True,
+                )
+            except ScopusException as e:
+                print(
+                    f"[red]Erreur dans la recherche Scopus pour l'identifiant {au_id}, "
+                    f"causes possibles: identifiant inconnu ou tentative d'accès "
+                    f"hors du réseau universitaire UdeS (VPN requis) - '{e}'[/red]"
+                )
+                exit()
+
             author_pubs_df = pd.DataFrame(query_results.results)
             pub_type_counts_by_author.append(
                 _count_publications_by_type_in_df(
@@ -791,10 +842,14 @@ def query_us_patents(
             .to_pandas()
         )
 
-    # Loop through results to extract lists of inventors and assignees, filter out
-    # patents without Canadian inventors, sort by date
+    # Clean up USPTO search results
     if not patents.empty:
-        patents.assign(CA=False, inplace=True)
+        # Loop to extract inventors and assignees lists (names only), flag patents
+        # without at least one Canadian inventor to attempt to filter out patents with
+        # inventors having same names as the authors but not being the same persons,
+        # and flag incorrect hits caused by USPTO not searching correctly for
+        # multi-word names such as "Maude Josée" that will pick up all authors with
+        # either "Maude" or "Josée" in their names.
         for i, row in patents.iterrows():
             patents.at[i, "inventors"] = list(
                 tuple(
@@ -802,20 +857,40 @@ def query_us_patents(
                     for j in range(len(row["inventors"]))
                 )
             )
+            patents.at[i, "author_error"] = not any(
+                any(
+                    (
+                        _to_lower_no_accents_no_hyphens(lastname)
+                        in _to_lower_no_accents_no_hyphens(inventor)
+                    )
+                    and (
+                        _to_lower_no_accents_no_hyphens(firstname)
+                        in _to_lower_no_accents_no_hyphens(inventor)
+                    )
+                    for [lastname, firstname] in reference_query.au_names
+                )
+                for inventor in row["inventors"]
+            )
             patents.at[i, "assignees"] = list(
                 tuple(row["assignees"][j][2][1] for j in range(len(row["assignees"])))
             )
             patents.at[i, "noCA"] = all(
                 "(CA)" not in inventor for inventor in row["inventors"]
             )
+
+        # Remove the rows with incorrect inventors flagged above
+        patents.drop(patents[patents["author_error"]].index, inplace=True)
+        patents.drop(columns=["author_error"], inplace=True)
         patents.drop(patents[patents["noCA"]].index, inplace=True)
         patents.drop(columns=["noCA"], inplace=True)
+
+        # Sort by date
         if applications:
             patents.sort_values(by=["app_filing_date"], inplace=True)
         else:
             patents.sort_values(by=["publication_date"], inplace=True)
 
-        # Compile list of application ids, then remove column
+        # Compile list of application ids, then remove the un-needed ids column
         application_ids = patents["appl_id"].to_list()
         patents.drop(columns=["appl_id"], inplace=True)
 
@@ -999,6 +1074,7 @@ def main():
     reference_query: ReferenceQuery = ReferenceQuery(
         in_excel_file=in_excel_file,
         in_excel_file_author_sheet=toml_dict["in_excel_file_author_sheet"],
+        in_excel_file_format_3it=toml_dict["in_excel_file_format_3it"],
         out_excel_file=out_excel_file,
         pub_year_first=toml_dict["pub_year_first"],
         pub_year_last=toml_dict["pub_year_last"],
