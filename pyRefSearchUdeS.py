@@ -81,7 +81,6 @@ class ReferenceQuery:
         input_data_full.dropna(subset=["Nom"], inplace=True)
 
         # Extract author names from input Excel file
-        self.au_names: list = []
         author_status_by_year_columns = [
             f"{year}-{year+1}"
             for year in range(self.pub_year_first, self.pub_year_last + 1)
