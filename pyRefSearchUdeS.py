@@ -80,19 +80,17 @@ class ReferenceQuery:
         )
         input_data_full.dropna(subset=["Nom"], inplace=True)
 
-        # Validate that either the range of years specified in the input Excel file
-        # covers the range of years specified in the query, or that no particular range
-        # of years is specified in the input Excel. If not, exit with error.
+        # Extract author names from input Excel file
         self.au_names: list = []
         author_status_by_year_columns = [
             f"{year}-{year+1}"
             for year in range(self.pub_year_first, self.pub_year_last + 1)
         ]
-
-        # Author information filtered by member status/year, remove collaborators
-        if all(
-            [col in input_data_full.columns for col in author_status_by_year_columns]
-        ):
+        if all(col in input_data_full.columns for col in author_status_by_year_columns):
+            # Author information is tabulated by fiscal year (XXXX-YYYY) and status (full
+            # member or collaborator). Validate that the range of years specified
+            # in the input data covers the range of years specified in the query,
+            # filter by member status/year to remove collaborators.
             authors = input_data_full.copy()[
                 ["Nom", "Prénom", "ID Scopus"] + author_status_by_year_columns
             ]
@@ -104,22 +102,18 @@ class ReferenceQuery:
             ]
             authors.drop(authors[authors.status == "Collaborateur"].index, inplace=True)
 
-        # Author information without member filtering, as no status/year info provided
         elif not any(
-            [
-                re.search(r"\d{4}-\d{4}", column)
-                for column in input_data_full.columns.tolist()
-            ]
+            # Author information is supplied as a simple list of names, no filtering
+            re.search(r"\d{4}-\d{4}", column)
+            for column in input_data_full.columns.tolist()
         ):
             authors = input_data_full.copy()[["Nom", "Prénom", "ID Scopus"]]
 
-        # Else, raise error because queried range of years exceeds available data
         else:
             raise IOError(
                 f"Range of years [{self.pub_year_first}-{self.pub_year_last}] exceeds "
                 f"the available data in '{in_excel_file}'!"
             ) from None
-        # Extract author names
         self.au_names = authors[["Nom", "Prénom"]].values.tolist()
 
         # Extract Scopus IDs, replace non-integer values with 0
@@ -377,50 +371,180 @@ def _export_publications_df_to_excel_sheet(
 
 
 def _tabulate_patents_per_author(
-    reference_query: ReferenceQuery, patents: pd.DataFrame
-) -> tuple[list, int]:
+    reference_query: ReferenceQuery,
+    patent_applications: pd.DataFrame,
+    patents: pd.DataFrame,
+) -> tuple[list, int, list, int]:
     """
-    Count the number of patents for each author and the number of joint patents
+    Count number of patents & applications for each author and number of joint patents
 
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
-        patents (pd.DataFrame): patents or patent application search results
+        patent_applications (pd.DataFrame): patent application search results
+        patents (pd.DataFrame): patent search results
 
-    Returns : Number of patents per author (list), number of joint patents (int)
+    Returns: Number of patent applications per author (list),
+             number of joint patent applications (int),
+             number of patents per author (list),
+             number of joint patents (int)
 
     """
 
-    author_patent_counts: list = []
-    joint_patents: int = 0
-    if not patents.empty:
-        # Count patents per author
-        for [lastname, firstname] in reference_query.au_names:
-            author_patent_counts.append(
-                sum(
-                    [
-                        1
-                        for _, row in patents.iterrows()
-                        if any(
-                            [
+    def _tabulate(docs: pd.DataFrame) -> tuple[list, int]:
+        """
+        Count number of patents or applications for each author and joint patents
+
+        Args:
+            docs (pd.DataFrame): patents or patent application search results
+
+        Returns : Number of patents per author (list), number of joint patents (int)
+
+        """
+
+        author_docs_counts: list = []
+        joint_docs: int = 0
+        if not docs.empty:
+            # Count patents/applications per author
+            for [lastname, firstname] in reference_query.au_names:
+                author_docs_counts.append(
+                    sum(
+                        any(
+                            (
                                 _to_lower_no_accents_no_hyphens(lastname)
                                 in _to_lower_no_accents_no_hyphens(inventor)
                                 and _to_lower_no_accents_no_hyphens(firstname)
                                 in _to_lower_no_accents_no_hyphens(inventor)
                                 for inventor in row["Inventeurs"]
-                            ]
+                            )
                         )
-                    ]
+                        for _, row in docs.iterrows()
+                    )
                 )
-            )
-            if author_patent_counts[-1] == 0:
-                author_patent_counts[-1] = ""
+                if author_docs_counts[-1] == 0:
+                    author_docs_counts[-1] = ""
 
-        # Count joint patents
-        for _, row in patents.iterrows():
-            if row["Nb co-inventeurs"] is not None and row["Nb co-inventeurs"] > 1:
-                joint_patents += 1
+            # Count joint patents/applications
+            for _, row in docs.iterrows():
+                if row["Nb co-inventeurs"] is not None and row["Nb co-inventeurs"] > 1:
+                    joint_docs += 1
 
-    return author_patent_counts, joint_patents
+        return author_docs_counts, joint_docs
+
+    joint_patent_applications_by_author: list = []
+    joint_patent_applications_count: int = 0
+    joint_patents_by_author: list = []
+    joint_patents_count: int = 0
+
+    if not patent_applications.empty:
+        (
+            joint_patent_applications_by_author,
+            joint_patent_applications_count,
+        ) = _tabulate(docs=patent_applications)
+    if not patents.empty:
+        joint_patents_by_author, joint_patents_count = _tabulate(docs=patents)
+
+    return (
+        joint_patent_applications_by_author,
+        joint_patent_applications_count,
+        joint_patents_by_author,
+        joint_patents_count,
+    )
+
+
+def _add_coauthor_columns_and_clean_up_publications(
+    publications_df_in: pd.DataFrame, reference_query: ReferenceQuery
+) -> pd.DataFrame:
+    """
+    Add columns listing names and counts of local coauthors to the publications DataFrame,
+    and sort by publication date
+
+    Args:
+        publications_df_in (pd.DataFrame): DataFrame with publications
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+
+    Returns: DataFrame with added columns and sorted by publication date
+    """
+
+    # Remove duplicates
+    publications_df = publications_df_in.drop_duplicates("eid").copy()
+
+    # Add columns listing names and counts of local coauthors
+    local_coauthors: list = []
+    local_coauthors_counts: list = []
+    for _, row in publications_df.iterrows():
+        co_authors_local: list = [
+            reference_query.au_names[i][0]
+            for i, local_author_id in enumerate(reference_query.au_ids)
+            if any([str(local_author_id) in row["author_ids"]]) and local_author_id > 0
+        ]
+        local_coauthors.append(co_authors_local)
+        local_coauthors_counts.append(len(co_authors_local))
+    publications_df["Auteurs locaux"] = local_coauthors
+    publications_df["Nb co-auteurs"] = local_coauthors_counts
+
+    # Sort by publication date
+    publications_df.sort_values(by=["coverDate"], inplace=True)
+
+    return publications_df
+
+
+def _create_results_summary_df(
+    reference_query: ReferenceQuery,
+    publications_by_type_dfs: list,
+    patent_applications: pd.DataFrame,
+    joint_patent_applications_count: int,
+    patents: pd.DataFrame,
+    joint_patents_count: int,
+) -> pd.DataFrame:
+    """
+    Create results summary dataframe
+
+    Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+        publications_by_type_dfs (list): list of DataFrames with search results by type
+        patent_applications (pd.DataFrame): patent application search results
+        joint_patent_applications_count (int): number of joint patent applications
+        patents (pd.DataFrame): patent search results
+        joint_patents_count (int): number of joint patents
+
+    Returns: DataFrame with results summary
+
+    """
+    # Create results summary dataframe
+
+    results: list[str] = [
+        "",
+        "Nb d'auteur.e.s",
+        "Année de début",
+        "Année de fin",
+    ]
+    results += reference_query.publication_types
+    results += ["Brevets US (en instance)", "Brevets US (délivrés)"]
+    values: list = [
+        "",
+        len(reference_query.au_ids),
+        reference_query.pub_year_first,
+        reference_query.pub_year_last,
+    ]
+    if publications_by_type_dfs:
+        values += [0 if df.empty else len(df) for df in publications_by_type_dfs]
+    else:
+        values += [0] * len(reference_query.publication_types)
+    values += [
+        len(patent_applications),
+        len(patents),
+    ]
+    co_authors: list = ["Conjointes", "", "", ""]
+    if publications_by_type_dfs:
+        co_authors += [
+            "" if df.empty else len(df[df["Nb co-auteurs"] > 1])
+            for df in publications_by_type_dfs
+        ]
+    else:
+        co_authors += [0] * len(reference_query.publication_types)
+    co_authors += [joint_patent_applications_count, joint_patents_count]
+
+    return pd.DataFrame([results, values, co_authors]).T
 
 
 def write_reference_query_results_to_excel(
@@ -446,60 +570,31 @@ def write_reference_query_results_to_excel(
 
     """
 
-    # Tabulate joint patents and patent applications by author
-    if not patent_applications.empty:
-        (
-            joint_patent_applications_by_author,
-            joint_patent_applications_count,
-        ) = _tabulate_patents_per_author(
-            reference_query=reference_query, patents=patent_applications
-        )
-        author_profiles_by_ids_df["Brevets US (déposés)"] = (
-            joint_patent_applications_by_author
-        )
-    else:
-        joint_patent_applications_count = 0
-    if not patents.empty:
-        joint_patents_by_author, joint_patents_count = _tabulate_patents_per_author(
-            reference_query=reference_query, patents=patents
-        )
-        author_profiles_by_ids_df["Brevets US (délivrés)"] = joint_patents_by_author
-    else:
-        joint_patents_count = 0
+    # Load patents/applications and number of joint patents into author profiles
+    (
+        joint_patent_applications_by_author,
+        joint_patent_applications_count,
+        joint_patents_by_author,
+        joint_patents_count,
+    ) = _tabulate_patents_per_author(
+        reference_query=reference_query,
+        patent_applications=patent_applications,
+        patents=patents,
+    )
+    author_profiles_by_ids_df["Brevets US (en instance)"] = (
+        joint_patent_applications_by_author
+    )
+    author_profiles_by_ids_df["Brevets US (délivrés)"] = joint_patents_by_author
 
     # Create results summary dataframe
-    results: list[str] = [
-        "",
-        "Nb d'auteur.e.s",
-        "Année de début",
-        "Année de fin",
-    ]
-    results += reference_query.publication_types
-    results += ["Brevets US (déposés)", "Brevets US (délivrés)"]
-    values: list = [
-        "",
-        len(reference_query.au_ids),
-        reference_query.pub_year_first,
-        reference_query.pub_year_last,
-    ]
-    if publications_by_type_dfs:
-        values += [0 if df.empty else len(df) for df in publications_by_type_dfs]
-    else:
-        values += [0] * len(reference_query.publication_types)
-    values += [
-        len(patent_applications),
-        len(patents),
-    ]
-    co_authors: list = ["Conjointes", "", "", ""]
-    if publications_by_type_dfs:
-        co_authors += [
-            "" if df.empty else len(df[df["Nb co-auteurs"] > 1])
-            for df in publications_by_type_dfs
-        ]
-    else:
-        co_authors += [0] * len(reference_query.publication_types)
-    co_authors += [joint_patent_applications_count, joint_patents_count]
-    results_df = pd.DataFrame([results, values, co_authors]).T
+    results_df = _create_results_summary_df(
+        reference_query=reference_query,
+        publications_by_type_dfs=publications_by_type_dfs,
+        patent_applications=patent_applications,
+        joint_patent_applications_count=joint_patent_applications_count,
+        patents=patents,
+        joint_patents_count=joint_patents_count,
+    )
 
     # Write dataframes in separate sheets to the output Excel file
     with pd.ExcelWriter(reference_query.out_excel_file) as writer:
@@ -526,7 +621,7 @@ def write_reference_query_results_to_excel(
         # USPTO search result sheets
         if not patent_applications.empty:
             patent_applications.to_excel(
-                writer, index=False, sheet_name="Brevets US (déposés)"
+                writer, index=False, sheet_name="Brevets US (en instance)"
             )
         if not patents.empty:
             patents.to_excel(writer, index=False, sheet_name="Brevets US (délivrés)")
@@ -731,26 +826,9 @@ def query_scopus_publications(
             )
 
     if not publications_df.empty:
-        # Remove duplicates
-        publications_df.drop_duplicates("eid", inplace=True)
-
-        # Add columns listing names and counts of local coauthors
-        local_coauthors: list = []
-        local_coauthors_counts: list = []
-        for _, row in publications_df.iterrows():
-            co_authors_local: list = [
-                reference_query.au_names[i][0]
-                for i, local_author_id in enumerate(reference_query.au_ids)
-                if any([str(local_author_id) in row["author_ids"]])
-                and local_author_id > 0
-            ]
-            local_coauthors.append(co_authors_local)
-            local_coauthors_counts.append(len(co_authors_local))
-        publications_df["Auteurs locaux"] = local_coauthors
-        publications_df["Nb co-auteurs"] = local_coauthors_counts
-
-        # Sort by publication date
-        publications_df.sort_values(by=["coverDate"], inplace=True)
+        publications_df = _add_coauthor_columns_and_clean_up_publications(
+            publications_df, reference_query
+        )
 
     return publications_df, pub_type_counts_by_author
 
@@ -856,9 +934,7 @@ def query_us_patents(
                 if len(validated_inventor_last_names) > 1
                 else None
             )
-            patents.at[i, "author_error"] = (
-                True if len(validated_inventor_last_names) == 0 else False
-            )
+            patents.at[i, "author_error"] = not validated_inventor_last_names
             patents.at[i, "assignees"] = [
                 row["assignees"][j][2][1] for j in range(len(row["assignees"]))
             ]
@@ -1012,7 +1088,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         applications=True,
         application_ids_to_remove=patent_application_ids,
     )
-    print("Brevets US (déposés): ", len(patent_applications))
+    print("Brevets US (en instance): ", len(patent_applications))
 
     # Write results to output Excel file
     write_reference_query_results_to_excel(
