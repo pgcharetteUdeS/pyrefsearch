@@ -30,7 +30,7 @@ suivantes du feuillet *in_excel_file_sheet_name*:
 
 - *Nom* : Nom de famille de l’auteur.e
 - *Prénom* : Prénom de l’auteur.e
-- *Scopus ID* : Identifiant Scopus de l’auteur.e pour une recherche de publications/brevets 
+- *ID Scopus* : Identifiant Scopus de l’auteur.e pour une recherche de publications/brevets 
 (laisser la cellule vide si aucun identifiant Scopus n'est disponible)
 
 ## Fichier Excel de sortie :
