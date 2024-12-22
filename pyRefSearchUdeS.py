@@ -7,8 +7,9 @@
     The script uses the "pybliometrics" for Scopus searches,
     see https://pybliometrics.readthedocs.io/en/stable/
 
-    NB: A "key" is required to query the Scopus API, see https://dev.elsevier.com/index.jsp.
-    The first execution of the script will prompt the user to enter the key.
+      NB: A "key" is required to query the Scopus API,
+          see https://dev.elsevier.com/index.jsp. The first execution of the script
+          will prompt the user to enter the key.
 
     The script uses the "patent_client" package for searches in the USPTO database,
     see https://patent-client.readthedocs.io/en/latest/user_guide/fulltext.html
