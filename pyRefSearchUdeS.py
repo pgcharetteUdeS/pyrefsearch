@@ -527,7 +527,9 @@ def _create_results_summary_df(
         reference_query.pub_year_last,
     ]
     if publications_dfs_list_by_pub_type:
-        values += [0 if df.empty else len(df) for df in publications_dfs_list_by_pub_type]
+        values += [
+            0 if df.empty else len(df) for df in publications_dfs_list_by_pub_type
+        ]
     else:
         values += [None] * len(reference_query.publication_types)
     values += [
@@ -1074,7 +1076,8 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             # to the author profiles dataframe
             if len(publications_dfs_list_by_pub_type[i]) > 0:
                 author_profiles_by_ids_df[pub_type] = [
-                    row[i] if row[i] and row[i] > 0 else None for row in pub_type_counts_by_author
+                    row[i] if row[i] and row[i] > 0 else None
+                    for row in pub_type_counts_by_author
                 ]
             print(f"{pub_type}: {len(publications_dfs_list_by_pub_type[i])}")
 
