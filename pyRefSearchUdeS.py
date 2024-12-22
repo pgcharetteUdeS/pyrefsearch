@@ -81,7 +81,8 @@ class ReferenceQuery:
         )
         input_data_full = input_data_full.dropna(subset=["Nom"])
 
-        # Extract author names from input Excel file
+        # Extract author names from input Excel file, formatted either as a 3IT database
+        # (author status tabulated by fiscal year) or as a simple list of names
         author_status_by_year_columns: list[str] = [
             f"{year}-{year+1}"
             for year in range(self.pub_year_first, self.pub_year_last + 1)

@@ -33,6 +33,11 @@ suivantes du feuillet *in_excel_file_sheet_name*:
 - *ID Scopus* : Identifiant Scopus de l’auteur.e pour une recherche de publications/brevets 
 (laisser la cellule vide si aucun identifiant Scopus n'est disponible)
 
+Le fichier peut être soit dans le format de base de données du 3IT (avec statut
+des auteur.e.s tabulé par année fiscale, seules des recherches pour les membres
+"Réguliers" sont effectuées), ou soit consister d'une simple liste d'auteur.e.s.
+
+
 ## Fichier Excel de sortie :
 - Recherche de publications/brevets:
   - Nom du fichier: *\<in_excel_file mantissa\>\_publications\_\<first_year\>-\<last_year\>.xlsx*
