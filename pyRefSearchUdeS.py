@@ -853,7 +853,7 @@ def query_us_patents(
 
     # Clean up USPTO search results
     application_ids: list[int] = []
-    patent_counts_by_author: list = [int]
+    patent_counts_by_author: list[int | None] = [None] * len(reference_query.au_ids)
     if not patents.empty:
         # Loop to extract inventor and assignee lists (names only), flag patents
         # without at least one Canadian inventor to attempt to filter out patents with
@@ -971,7 +971,7 @@ def query_us_patents(
         patents = patents[new_columns]
 
         # Tabulate number of patents or patent applications per author
-        patent_counts_by_author: list = _tabulate_patents_per_author(
+        patent_counts_by_author = _tabulate_patents_per_author(
             reference_query=reference_query, patents=patents
         )
 
