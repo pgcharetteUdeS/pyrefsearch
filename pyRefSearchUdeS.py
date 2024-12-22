@@ -190,7 +190,7 @@ def _flag_matched_scopus_author_ids_and_affiliations(
 
     """
 
-    local_column: list[str] = [""] * len(author_profiles_df)
+    local_column: list = [None] * len(author_profiles_df)
     for i, row in author_profiles_df.iterrows():
         if row.affiliation is not None:
             local_affiliation_match: bool = any(
@@ -237,7 +237,7 @@ def _check_author_name_correspondance(
 
     """
 
-    query_errors: list[str] = [""] * len(reference_query.au_ids)
+    query_errors: list = [None] * len(reference_query.au_ids)
     for i, [input_last_name, input_first_name] in enumerate(reference_query.au_names):
         # Check for missing Scopus ID
         if authors_df["Nom de famille"][i] is None:
@@ -280,7 +280,7 @@ def _check_author_name_correspondance(
             ):
                 query_errors[i] = (
                     "Affiliation non locale"
-                    if query_errors[i] == ""
+                    if query_errors[i] is None
                     else "Disparité de noms de famille / Affiliation non locale"
                 )
                 print(
@@ -307,10 +307,11 @@ def _count_publications_by_type_in_df(
 
     """
 
-    pub_type_counts: list = [0] * len(reference_query.publication_type_codes)
+    pub_type_counts: list = [None] * len(reference_query.publication_type_codes)
     if not df.empty:
         for i, pub_type in enumerate(reference_query.publication_type_codes):
-            pub_type_counts[i] = len(df[df["subtype"] == pub_type])
+            if len(df[df["subtype"] == pub_type]) > 0:
+                pub_type_counts[i] = len(df[df["subtype"] == pub_type])
     return pub_type_counts
 
 
@@ -400,7 +401,7 @@ def _tabulate_patents_per_author(
 
         """
 
-        author_docs_counts: list = []
+        author_docs_counts: list[int | None] = []
         joint_docs: int = 0
         if not docs.empty:
             # Count patents/applications per author
@@ -420,7 +421,7 @@ def _tabulate_patents_per_author(
                     )
                 )
                 if author_docs_counts[-1] == 0:
-                    author_docs_counts[-1] = ""
+                    author_docs_counts[-1] = None
 
             # Count joint patents/applications
             for _, row in docs.iterrows():
@@ -429,9 +430,9 @@ def _tabulate_patents_per_author(
 
         return author_docs_counts, joint_docs
 
-    joint_patent_applications_by_author: list = []
+    joint_patent_applications_by_author: list[int] = []
     joint_patent_applications_count: int = 0
-    joint_patents_by_author: list = []
+    joint_patents_by_author: list[int] = []
     joint_patents_count: int = 0
 
     if not patent_applications.empty:
@@ -489,7 +490,7 @@ def _add_coauthor_columns_and_clean_up_publications(
 
 def _create_results_summary_df(
     reference_query: ReferenceQuery,
-    publications_by_type_dfs: list,
+    publications_dfs_list_by_pub_type: list,
     patent_applications: pd.DataFrame,
     joint_patent_applications_count: int,
     patents: pd.DataFrame,
@@ -500,7 +501,7 @@ def _create_results_summary_df(
 
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
-        publications_by_type_dfs (list): list of DataFrames with search results by type
+        publications_dfs_list_by_pub_type (list): list of DataFrames with search results by type
         patent_applications (pd.DataFrame): patent application search results
         joint_patent_applications_count (int): number of joint patent applications
         patents (pd.DataFrame): patent search results
@@ -511,8 +512,8 @@ def _create_results_summary_df(
     """
     # Create results summary dataframe
 
-    results: list[str] = [
-        "",
+    results: list = [
+        None,
         "Nb d'auteur.e.s",
         "Année de début",
         "Année de fin",
@@ -520,27 +521,27 @@ def _create_results_summary_df(
     results += reference_query.publication_types
     results += ["Brevets US (en instance)", "Brevets US (délivrés)"]
     values: list = [
-        "",
+        None,
         len(reference_query.au_ids),
         reference_query.pub_year_first,
         reference_query.pub_year_last,
     ]
-    if publications_by_type_dfs:
-        values += [0 if df.empty else len(df) for df in publications_by_type_dfs]
+    if publications_dfs_list_by_pub_type:
+        values += [0 if df.empty else len(df) for df in publications_dfs_list_by_pub_type]
     else:
-        values += [0] * len(reference_query.publication_types)
+        values += [None] * len(reference_query.publication_types)
     values += [
         len(patent_applications),
         len(patents),
     ]
-    co_authors: list = ["Conjointes", "", "", ""]
-    if publications_by_type_dfs:
+    co_authors: list = ["Conjointes", None, None, None]
+    if publications_dfs_list_by_pub_type:
         co_authors += [
-            "" if df.empty else len(df[df["Nb co-auteurs"] > 1])
-            for df in publications_by_type_dfs
+            None if df.empty else len(df[df["Nb co-auteurs"] > 1])
+            for df in publications_dfs_list_by_pub_type
         ]
     else:
-        co_authors += [0] * len(reference_query.publication_types)
+        co_authors += [None] * len(reference_query.publication_types)
     co_authors += [joint_patent_applications_count, joint_patents_count]
 
     return pd.DataFrame([results, values, co_authors]).T
@@ -548,7 +549,7 @@ def _create_results_summary_df(
 
 def write_reference_query_results_to_excel(
     reference_query: ReferenceQuery,
-    publications_by_type_dfs: list[pd.DataFrame],
+    publications_dfs_list_by_pub_type: list[pd.DataFrame],
     patents: pd.DataFrame,
     patent_applications: pd.DataFrame,
     author_profiles_by_ids_df: pd.DataFrame,
@@ -559,7 +560,7 @@ def write_reference_query_results_to_excel(
 
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
-        publications_by_type_dfs (list): list of DataFrames with search results by type
+        publications_dfs_list_by_pub_type (list): list of DataFrames with search results by type
         patents (pd.DataFrame): patent application search results by filing date
         patent_applications (pd.DataFrame): patent search results by publication date
         author_profiles_by_ids_df (pd.DataFrame): author search results by ids
@@ -588,7 +589,7 @@ def write_reference_query_results_to_excel(
     # Create results summary dataframe
     results_df = _create_results_summary_df(
         reference_query=reference_query,
-        publications_by_type_dfs=publications_by_type_dfs,
+        publications_dfs_list_by_pub_type=publications_dfs_list_by_pub_type,
         patent_applications=patent_applications,
         joint_patent_applications_count=joint_patent_applications_count,
         patents=patents,
@@ -601,11 +602,11 @@ def write_reference_query_results_to_excel(
         results_df.to_excel(writer, index=False, header=False, sheet_name="Résultats")
 
         # Scopus search result sheets by publication type
-        for i, df in enumerate(publications_by_type_dfs):
+        for i, df in enumerate(publications_dfs_list_by_pub_type):
             if not df.empty:
-                # Remove singlets in co-publication count column (replace with "")
-                joint_publication_counts = [
-                    count if count > 1 else "" for count in df["Nb co-auteurs"].values
+                # Remove singlets in co-publication count column
+                joint_publication_counts: list[int] = [
+                    count if count > 1 else None for count in df["Nb co-auteurs"].values
                 ]
                 df_copy = df.drop("Nb co-auteurs", axis=1).copy()
                 df_copy["Nb co-auteurs"] = joint_publication_counts
@@ -821,7 +822,7 @@ def query_scopus_publications(
             publications_df = pd.concat([publications_df, author_pubs_df])
         else:
             pub_type_counts_by_author.append(
-                [0] * len(reference_query.publication_type_codes)
+                [None] * len(reference_query.publication_type_codes)
             )
 
     if not publications_df.empty:
@@ -905,8 +906,8 @@ def query_us_patents(
         # and double-check search results by inventor because the USPTO interface does
         # not handle multi-word names such as "Maude Josée" and will pick up all
         # authors with either "Maude" or "Josée" in their names.
-        patents["local inventors"] = ""
-        patents["Nb co-inventors"] = ""
+        patents["local inventors"] = None
+        patents["Nb co-inventors"] = None
         for i, row in patents.iterrows():
             patents.at[i, "inventors"] = [
                 f'{row["inventors"][j][0][1]} ({row["inventors"][j][2][1]})'
@@ -1055,20 +1056,27 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     publications_all_df, pub_type_counts_by_author = query_scopus_publications(
         reference_query=reference_query
     )
-    publications_by_type_dfs: list[pd.DataFrame] = []
+
+    # Loop to parse publications by type and store in separate dataframes in a list
+    publications_dfs_list_by_pub_type: list[pd.DataFrame] = []
     if not publications_all_df.empty:
         for i, pub_type in enumerate(reference_query.publication_types):
-            publications_by_type_dfs.append(
+            # Extract all publications of a given type, store in a separate dataframe
+            # add the dataframe to the list of dataframes
+            publications_dfs_list_by_pub_type.append(
                 publications_all_df[
                     publications_all_df["subtype"]
                     == reference_query.publication_type_codes[i]
                 ]
             )
-            if len(publications_by_type_dfs[i]) > 0:
+
+            # If there were publications of this type, add the publication count
+            # to the author profiles dataframe
+            if len(publications_dfs_list_by_pub_type[i]) > 0:
                 author_profiles_by_ids_df[pub_type] = [
-                    row[i] if row[i] > 0 else "" for row in pub_type_counts_by_author
+                    row[i] if row[i] and row[i] > 0 else None for row in pub_type_counts_by_author
                 ]
-            print(f"{pub_type}: {len(publications_by_type_dfs[i])}")
+            print(f"{pub_type}: {len(publications_dfs_list_by_pub_type[i])}")
 
     # Fetch author Scopus profiles corresponding to user-supplied names, check for
     # author names with multiple Scopus IDs ("homonyms")
@@ -1092,7 +1100,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     # Write results to output Excel file
     write_reference_query_results_to_excel(
         reference_query=reference_query,
-        publications_by_type_dfs=publications_by_type_dfs,
+        publications_dfs_list_by_pub_type=publications_dfs_list_by_pub_type,
         patents=patents,
         patent_applications=patent_applications,
         author_profiles_by_ids_df=author_profiles_by_ids_df,
