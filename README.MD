@@ -34,8 +34,9 @@ suivantes du feuillet *in_excel_file_sheet_name*:
 (laisser la cellule vide si aucun identifiant Scopus n'est disponible)
 
 Le fichier peut être soit dans le format de base de données du 3IT (avec statut
-des auteur.e.s tabulé par année fiscale, seules des recherches pour les membres
-"Réguliers" sont effectuées), ou soit consister d'une simple liste d'auteur.e.s.
+des auteur.e.s tabulé par année fiscale: seules des recherches pour les membres qui ont
+été "Régulier" pendant au moins une année dans la gamme d'années spécifiée sont
+effectuées), ou soit consister d'une simple liste d'auteur.e.s.
 
 
 ## Fichier Excel de sortie :
