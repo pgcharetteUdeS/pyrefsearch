@@ -417,7 +417,7 @@ def _tabulate_patents_per_author(
     return author_patent_counts
 
 
-def _add_coauthor_columns_and_clean_up_publications(
+def _add_coauthor_columns_and_clean_up_publications_df(
     publications_in: pd.DataFrame, reference_query: ReferenceQuery
 ) -> pd.DataFrame:
     """
@@ -452,6 +452,125 @@ def _add_coauthor_columns_and_clean_up_publications(
     publications = publications.sort_values(by=["coverDate"])
 
     return publications
+
+
+def _query_uspto(
+    reference_query: ReferenceQuery, applications: bool = True
+) -> pd.DataFrame:
+    """
+    Query the USPTO database for patent applications or published patents
+
+    Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+        applications (bool): Search filed applications if True, else search published patents if False
+
+    Returns: DataFrame with patent search results
+
+    """
+
+    max_results: int = 500
+    if applications:
+        query_str: str = _build_patent_query_string(
+            reference_query=reference_query, field_code="AD"
+        )
+        return (
+            PublishedApplication.objects.filter(query=query_str)
+            .limit(max_results)
+            .values(
+                "app_filing_date",
+                "guid",
+                "appl_id",
+                "patent_title",
+                "inventors",
+                "assignees",
+            )
+            .to_pandas()
+        )
+
+    else:
+        query_str: str = _build_patent_query_string(
+            reference_query=reference_query, field_code="PD"
+        )
+        return (
+            Patent.objects.filter(query=query_str)
+            .limit(max_results)
+            .values(
+                "publication_date",
+                "app_filing_date",
+                "guid",
+                "appl_id",
+                "patent_title",
+                "inventors",
+                "assignees",
+            )
+            .to_pandas()
+        )
+
+
+def _reformat_uspto_search_results(
+    patents: pd.DataFrame, applications: bool
+) -> pd.DataFrame:
+    """
+    Reorder USPTO search results by filing date for applications or publication date for
+    patents, chamge column names to French, and remove unnecessary columns
+
+    Args:
+        applications (bool): Search filed applications if True, else search published patents if False
+        patents (pd.DataFrame): DataFrame with patent search results
+
+    Returns: DataFrame with reordered search results
+
+    """
+    if applications:
+        patents.rename(
+            columns={
+                "app_filing_date": "Date de dépôt",
+                "guid": "GUID",
+                "patent_title": "Titre",
+                "Nb co-inventors": "Nb co-inventeurs",
+                "local inventors": "Inventeurs locaux",
+                "inventors": "Inventeurs",
+                "assignees": "Cessionnaires",
+            },
+            inplace=True,
+        )
+        new_columns: list[str] = [
+            "Date de dépôt",
+            "GUID",
+            "Titre",
+            "Nb co-inventeurs",
+            "Inventeurs locaux",
+            "Inventeurs",
+            "Cessionnaires",
+        ]
+        patents = patents.sort_values(by=["Date de dépôt"])
+    else:
+        patents.rename(
+            columns={
+                "publication_date": "Date de délivrance",
+                "app_filing_date": "Date de dépôt",
+                "guid": "GUID",
+                "patent_title": "Titre",
+                "Nb co-inventors": "Nb co-inventeurs",
+                "local inventors": "Inventeurs locaux",
+                "inventors": "Inventeurs",
+                "assignees": "Cessionnaires",
+            },
+            inplace=True,
+        )
+        new_columns: list[str] = [
+            "Date de délivrance",
+            "Date de dépôt",
+            "GUID",
+            "Titre",
+            "Nb co-inventeurs",
+            "Inventeurs locaux",
+            "Inventeurs",
+            "Cessionnaires",
+        ]
+        patents = patents.sort_values(by=["Date de délivrance"])
+
+    return patents[new_columns]
 
 
 def _create_results_summary_df(
@@ -673,6 +792,7 @@ def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.Da
 
     """
 
+    author_profiles = []
     columns: list[str] = [
         "Nom de famille",
         "Prénom",
@@ -680,7 +800,6 @@ def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.Da
         "Affiliation mère",
         "Période active",
     ]
-    author_profiles = []
     for i, au_id in enumerate(reference_query.au_ids):
         try:
             if au_id > 0:
@@ -717,7 +836,21 @@ def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.Da
             )
             exit()
 
-    return pd.DataFrame(author_profiles, columns=columns)
+    # Create author profiles DataFrame, flag discrepancies between input and Scopus data
+    author_profiles_by_ids: pd.DataFrame = pd.DataFrame()
+    if author_profiles:
+        author_profiles_by_ids = pd.DataFrame(author_profiles, columns=columns)
+        author_profiles_by_ids.insert(
+            loc=0,
+            column="Erreurs",
+            value=pd.Series(
+                _check_author_name_correspondance(
+                    reference_query=reference_query, authors=author_profiles_by_ids
+                )
+            ),
+        )
+
+    return author_profiles_by_ids
 
 
 def query_scopus_publications(
@@ -781,7 +914,7 @@ def query_scopus_publications(
             )
 
     if not publications.empty:
-        publications = _add_coauthor_columns_and_clean_up_publications(
+        publications = _add_coauthor_columns_and_clean_up_publications_df(
             publications, reference_query
         )
 
@@ -813,44 +946,10 @@ def query_us_patents(
 
     """
 
-    max_results: int = 500
     # Execute USPTO query (patent applications or delivered patents)
-    if applications:
-        query_str: str = _build_patent_query_string(
-            reference_query=reference_query, field_code="AD"
-        )
-        patents: pd.DataFrame = (
-            PublishedApplication.objects.filter(query=query_str)
-            .limit(max_results)
-            .values(
-                "app_filing_date",
-                "guid",
-                "appl_id",
-                "patent_title",
-                "inventors",
-                "assignees",
-            )
-            .to_pandas()
-        )
-
-    else:
-        query_str: str = _build_patent_query_string(
-            reference_query=reference_query, field_code="PD"
-        )
-        patents: pd.DataFrame = (
-            Patent.objects.filter(query=query_str)
-            .limit(max_results)
-            .values(
-                "publication_date",
-                "app_filing_date",
-                "guid",
-                "appl_id",
-                "patent_title",
-                "inventors",
-                "assignees",
-            )
-            .to_pandas()
-        )
+    patents: pd.DataFrame = _query_uspto(
+        reference_query=reference_query, applications=applications
+    )
 
     # Clean up USPTO search results
     application_ids: list[int] = []
@@ -921,55 +1020,9 @@ def query_us_patents(
             )
 
         # Reorder columns, change names to French, sort by date
-        if applications:
-            patents.rename(
-                columns={
-                    "app_filing_date": "Date de dépôt",
-                    "guid": "GUID",
-                    "patent_title": "Titre",
-                    "Nb co-inventors": "Nb co-inventeurs",
-                    "local inventors": "Inventeurs locaux",
-                    "inventors": "Inventeurs",
-                    "assignees": "Cessionnaires",
-                },
-                inplace=True,
-            )
-            new_columns: list[str] = [
-                "Date de dépôt",
-                "GUID",
-                "Titre",
-                "Nb co-inventeurs",
-                "Inventeurs locaux",
-                "Inventeurs",
-                "Cessionnaires",
-            ]
-            patents = patents.sort_values(by=["Date de dépôt"])
-        else:
-            patents.rename(
-                columns={
-                    "publication_date": "Date de délivrance",
-                    "app_filing_date": "Date de dépôt",
-                    "guid": "GUID",
-                    "patent_title": "Titre",
-                    "Nb co-inventors": "Nb co-inventeurs",
-                    "local inventors": "Inventeurs locaux",
-                    "inventors": "Inventeurs",
-                    "assignees": "Cessionnaires",
-                },
-                inplace=True,
-            )
-            new_columns: list[str] = [
-                "Date de délivrance",
-                "Date de dépôt",
-                "GUID",
-                "Titre",
-                "Nb co-inventeurs",
-                "Inventeurs locaux",
-                "Inventeurs",
-                "Cessionnaires",
-            ]
-            patents = patents.sort_values(by=["Date de délivrance"])
-        patents = patents[new_columns]
+        patents = _reformat_uspto_search_results(
+            patents=patents, applications=applications
+        )
 
         # Tabulate number of patents or patent applications per author
         patent_counts_by_author = _tabulate_patents_per_author(
@@ -1001,15 +1054,6 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     # the user-supplied names, flag any inconsistencies in the "Erreurs" column
     author_profiles_by_ids: pd.DataFrame = query_scopus_author_profiles_by_id(
         reference_query=reference_query
-    )
-    author_profiles_by_ids.insert(
-        loc=0,
-        column="Erreurs",
-        value=pd.Series(
-            _check_author_name_correspondance(
-                reference_query=reference_query, authors=author_profiles_by_ids
-            )
-        ),
     )
 
     # Fetch publications by type in Scopus database, count publication types by author
