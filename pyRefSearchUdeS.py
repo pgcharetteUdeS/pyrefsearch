@@ -389,7 +389,7 @@ def _export_publications_df_to_excel_sheet(
     """
 
     if not df.empty:
-        df.rename(
+        df_copy: pd.DataFrame = df.rename(
             columns={
                 "coverDate": "Date",
                 "title": "Titre",
@@ -401,9 +401,8 @@ def _export_publications_df_to_excel_sheet(
                 "pageRange": "Pages",
                 "doi": "DOI",
             },
-            inplace=True,
-        )
-        df[
+        ).copy()
+        df_copy[
             [
                 "Date",
                 "Titre",
@@ -483,7 +482,8 @@ def _add_coauthor_columns_and_clean_up_publications_df(
         find_local_coauthors
     )
     publications["Nb co-auteurs"] = [
-        len(co_authors) for co_authors in publications["Auteurs locaux"]
+        len(co_authors) if len(co_authors) > 1 else None
+        for co_authors in publications["Auteurs locaux"]
     ]
 
     # Sort by publication date
@@ -713,22 +713,14 @@ def write_reference_query_results_to_excel(
         # Results (first) sheet
         results.to_excel(writer, index=False, header=False, sheet_name="Résultats")
 
-        # Loop through Scopus search result sheets by publication type
+        # Write Scopus search results dataframes to separate sheets by publication type
         for df, pub_type in zip(
             publications_dfs_list_by_pub_type, reference_query.publication_types
         ):
             if not df.empty:
-                # Remove singlets in co-publication count column
-                joint_publication_counts: list[int] = [
-                    count if count > 1 else None for count in df["Nb co-auteurs"].values
-                ]
-                df_copy: pd.DataFrame = df.drop("Nb co-auteurs", axis=1).copy()
-                df_copy["Nb co-auteurs"] = joint_publication_counts
-
-                # Write dataframe to sheet
                 _export_publications_df_to_excel_sheet(
                     writer=writer,
-                    df=df_copy,
+                    df=df,
                     sheet_name=pub_type,
                 )
 
@@ -999,7 +991,7 @@ def query_us_patents(
     )
     print("terminé!")
 
-    # Clean up USPTO search results
+    # Clean up USPTO search result dataframes
     application_ids: list[int] = []
     patent_counts_by_author: list[int | None] = [None] * len(reference_query.au_ids)
     if not patents.empty:
@@ -1013,7 +1005,13 @@ def query_us_patents(
             lambda assignees: [assignee[2][1] for assignee in assignees]
         )
 
-        # Add column with list of local inventors
+        # Remove dataframe rows with no Canadian inventors
+        no_canadian_inventors: pd.Series = patents["inventors"].apply(
+            lambda inventors: all("(CA)" not in inventor for inventor in inventors)
+        )
+        patents.drop(patents[no_canadian_inventors].index, inplace=True)
+
+        # Add dataframe columns with lists and counts of local inventors
         patents["local inventors"] = patents["inventors"].apply(
             lambda inventors: [
                 lastname
@@ -1031,21 +1029,15 @@ def query_us_patents(
                 )
             ]
         )
-        no_local_inventors: pd.Series = patents["local inventors"].apply(
-            lambda inventors: not inventors
-        )
-
-        # Remove patents with no Canadian inventors
-        no_canadian_inventors: pd.Series = patents["inventors"].apply(
-            lambda inventors: all("(CA)" not in inventor for inventor in inventors)
-        )
-        patents.drop(patents[no_canadian_inventors].index, inplace=True)
-
-        # Remove patents with no local inventors
-        patents.drop(patents[no_local_inventors].index, inplace=True)
         patents["Nb co-inventors"] = patents["local inventors"].apply(
             lambda inventors: len(inventors) if len(inventors) > 1 else None
         )
+
+        # Remove dataframe rows with no local inventors
+        no_local_inventors: pd.Series = patents["local inventors"].apply(
+            lambda inventors: not inventors
+        )
+        patents.drop(patents[no_local_inventors].index, inplace=True)
 
         # Compile list of patent/application ids, then remove the un-needed ids column
         application_ids: list = patents["appl_id"].to_list()
@@ -1108,7 +1100,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         reference_query=reference_query
     )
 
-    # Loop to parse publications by type in separate dataframes, store in a list
+    # Loop to parse publications by type into separate dataframes, store dfs in a list
     publications_dfs_list_by_pub_type: list[pd.DataFrame] = []
     if not publications_all.empty:
         for [pub_type, pub_code, pub_counts] in zip(
@@ -1116,7 +1108,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             reference_query.publication_type_codes,
             pub_type_counts_by_author,
         ):
-            # Extract "pub_type" publications into a dataframe, add dataframe to the list
+            # Extract "pub_type" publications into a dataframe, add dataframe to list
             df: pd.DataFrame = publications_all[publications_all["subtype"] == pub_code]
             publications_dfs_list_by_pub_type.append(df)
             print(f"{pub_type}: {len(df)}")
@@ -1125,14 +1117,14 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             if len(df) > 0:
                 author_profiles_by_ids[pub_type] = pub_counts
 
-    # Fetch US patent applications and published patents into dataframes, add
-    # document counts to the author profiles
+    # Fetch US patent applications and published patents into separate dataframes
     patents: pd.DataFrame
     patent_application_ids: list
     patent_counts_by_author: list
     patents, patent_application_ids, patent_counts_by_author = query_us_patents(
         reference_query=reference_query, applications=False
     )
+    print("Brevets US (délivrés): ", len(patents))
     patent_applications: pd.DataFrame
     patent_application_counts_by_author: list
     patent_applications, _, patent_application_counts_by_author = query_us_patents(
@@ -1140,12 +1132,13 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         applications=True,
         application_ids_to_remove=patent_application_ids,
     )
+    print("Brevets US (en instance): ", len(patent_applications))
+
+    # Add patent & application counts to the author profiles
     author_profiles_by_ids["Brevets US (en instance)"] = (
         patent_application_counts_by_author
     )
     author_profiles_by_ids["Brevets US (délivrés)"] = patent_counts_by_author
-    print("Brevets US (en instance): ", len(patent_applications))
-    print("Brevets US (délivrés): ", len(patents))
 
     # Fetch Scopus author profiles corresponding to user-supplied names, check for
     # author names with multiple Scopus IDs ("homonyms"), load into dataframe

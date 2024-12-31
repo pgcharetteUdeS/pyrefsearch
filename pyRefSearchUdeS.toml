@@ -8,11 +8,13 @@ search_type = "Publications"
 # (colonnes "Nom", "Prénom", ainsi que "Scopus ID" pour les recherches de publications)
 #in_excel_file = "pyRefSearchUdeS.xlsx"
 in_excel_file = "Liste chercheurs-membres_VF.xlsx"
+#in_excel_file = "PIsFCI-Tous.xlsx"
+#in_excel_file = "PIsFCI-UdeS-Seulement.xlsx"
 in_excel_file_author_sheet = "Membres"
 
 # Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)
 pub_year_first = 2019
-pub_year_last = 2023
+pub_year_last = 2024
 
 # Noms et codes Scopus des types de publications désirées pour la recherche par publications
 #   Article-ar / Abstract Report-ab / Book-bk / Book Chapter-ch / Conference Paper-cp /
