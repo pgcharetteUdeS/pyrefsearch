@@ -2,14 +2,13 @@
 #   - "Publications" : recherche de publications par identifiant Scopus
 #   - "Profils"      : recherche de profils d'auteurs par noms, pour une éventuelle
 #                      recherche de publications par identifiants Scopus
+#search_type = "Profils"
 search_type = "Publications"
 
 # Fichier Excel d'entrée et nom du feuillet contenant les information des auteur.e.s
 # (colonnes "Nom", "Prénom", ainsi que "Scopus ID" pour les recherches de publications)
 #in_excel_file = "pyRefSearchUdeS.xlsx"
 in_excel_file = "Liste chercheurs-membres_VF.xlsx"
-#in_excel_file = "PIsFCI-Tous.xlsx"
-#in_excel_file = "PIsFCI-UdeS-Seulement.xlsx"
 in_excel_file_author_sheet = "Membres"
 
 # Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)

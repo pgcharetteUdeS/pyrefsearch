@@ -1174,8 +1174,18 @@ def query_author_profiles(reference_query: ReferenceQuery) -> None:
         reference_query=reference_query,
         homonyms_only=False,
     )
+    author_profiles_by_name.rename(
+        columns={
+            "eid": "ID Scopus",
+        },
+        inplace=True,
+    )
     with pd.ExcelWriter(reference_query.out_excel_file) as writer:
         author_profiles_by_name.to_excel(writer, index=False, sheet_name="Profils")
+    print(
+        "Résultats de la recherche sauvegardés "
+        f"dans le fichier '{reference_query.out_excel_file}'"
+    )
 
 
 def run_reference_search(reference_query: ReferenceQuery, search_type: str) -> None:
