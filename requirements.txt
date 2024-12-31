@@ -2,6 +2,6 @@ pybliometrics~=4.1
 pandas~=2.2.3
 Unidecode~=1.3.8
 toml~=0.10.2
-patent_client~=5.0.18
 pathlib~=1.0.1
 rich~=13.9.1
+numpy~=2.1.3
