@@ -131,7 +131,7 @@ class ReferenceQuery:
                     self.au_ids.append(0)
 
 
-@lru_cache(maxsize=128)
+@lru_cache(maxsize=1024)
 def _to_lower_no_accents_no_hyphens(s: str | pd.Series) -> str:
     """
     Convert string to lower case and remove accents and hyphens
@@ -1134,7 +1134,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     )
     print("Brevets US (en instance): ", len(patent_applications))
 
-    # Add patent & application counts to the author profiles
+    # Add patent application and published patent counts to the author profiles
     author_profiles_by_ids["Brevets US (en instance)"] = (
         patent_application_counts_by_author
     )
