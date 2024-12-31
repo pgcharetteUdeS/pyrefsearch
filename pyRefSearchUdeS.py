@@ -4,6 +4,8 @@
     query references (publications in Scopus, patents in the USPTO database) OR
     author profiles (Scopus database), and write the results to an output Excel file.
 
+    All execution parameters specified in the file "pyRefSearchUdeS.toml"
+
     The script uses the "pybliometrics" for Scopus searches,
     see https://pybliometrics.readthedocs.io/en/stable/
     NB: A "key" is required to query the Scopus API,
