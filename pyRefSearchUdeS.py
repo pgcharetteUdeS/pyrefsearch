@@ -524,7 +524,6 @@ def _query_uspto(
                 "inventors",
                 "assignees",
                 "related_apps",
-                bob = 1
             )
             .to_pandas()
         )
