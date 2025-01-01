@@ -20,7 +20,6 @@ pub_year_last = 2024
 #   Article-ar / Abstract Report-ab / Book-bk / Book Chapter-ch / Conference Paper-cp /
 #   Conference Review-cr / Data Paper-dp / Editorial-ed / Erratum-er / Letter-le /
 #   Multimedia-mm / Note-no / Report-rp / Retracted-tb / Review-re / Short Survey-sh
-#   NB: la recherche de brevets ne fonctionne pas...
 publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Livres", "bk"],
     ["Chap. de livres", "ch"], ["Lettres", "le"], ["Rapports", "rp"]]
 

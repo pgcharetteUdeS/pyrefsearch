@@ -24,7 +24,7 @@ from functools import lru_cache
 import numpy as np
 import pybliometrics
 import pandas as pd
-from patent_client import Patent, PublishedApplication
+from patent_client import Inpadoc, Patent, PublishedApplication
 from pathlib import Path
 from pybliometrics.scopus import AuthorRetrieval, AuthorSearch, ScopusSearch
 from pybliometrics.scopus.exception import ScopusException
@@ -349,32 +349,6 @@ def _count_publications_by_type_in_df(
         ]
 
 
-def _build_patent_query_string(reference_query: ReferenceQuery, field_code: str) -> str:
-    """
-    Build USPTO patent search query string
-
-    Args:
-        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
-        field_code (str): search field code ("AD": application, "PD": patent)
-
-    Returns: USPTO patent search query string
-    """
-
-    def inventor_query_str(inventor: list[str]) -> str:
-        return f"({inventor[1]} NEAR2 {inventor[0]})"
-
-    query_str: str = (
-        f'@{field_code}>="{reference_query.pub_year_first}0101"'
-        f'<="{reference_query.pub_year_last}1231" AND ('
-    )
-    query_str += inventor_query_str(reference_query.au_names[0])
-    for name in reference_query.au_names[1:]:
-        query_str += " OR "
-        query_str += inventor_query_str(name)
-    query_str += ")"
-    return query_str
-
-
 def _export_publications_df_to_excel_sheet(
     writer: pd.ExcelWriter, df: pd.DataFrame, sheet_name: str
 ) -> None:
@@ -508,11 +482,24 @@ def _query_uspto(
 
     """
 
+    def inventor_query_str(inventor: list[str]) -> str:
+        return f"({inventor[1]} NEAR2 {inventor[0]})"
+
+    def build_uspto_patent_query_string(field_code: str) -> str:
+        s: str = (
+            f'@{field_code}>="{reference_query.pub_year_first}0101"'
+            f'<="{reference_query.pub_year_last}1231" AND ('
+        )
+        s += inventor_query_str(reference_query.au_names[0])
+        for name in reference_query.au_names[1:]:
+            s += " OR "
+            s += inventor_query_str(name)
+        s += ")"
+        return s
+
     max_results: int = 500
     if applications:
-        query_str: str = _build_patent_query_string(
-            reference_query=reference_query, field_code="AD"
-        )
+        query_str: str = build_uspto_patent_query_string(field_code="AD")
         return (
             PublishedApplication.objects.filter(query=query_str)
             .limit(max_results)
@@ -529,9 +516,7 @@ def _query_uspto(
         )
 
     else:
-        query_str: str = _build_patent_query_string(
-            reference_query=reference_query, field_code="PD"
-        )
+        query_str: str = build_uspto_patent_query_string(field_code="PD")
         return (
             Patent.objects.filter(query=query_str)
             .limit(max_results)
@@ -1081,13 +1066,34 @@ def query_epo_patents(reference_query: ReferenceQuery) -> None:
     """
 
     To connect to the European Patent Office’s Open Patent Services, an API key is
-    required, see: https://patent-client.readthedocs.io/en/stable/getting_started.html
+    required, see:
+    - https://patent-client.readthedocs.io/en/stable/getting_started.html
+    - https://www.epo.org/en/searching-for-patents/data/web-services/ops
 
+    Espacenet query string example (https://worldwide.espacenet.com/patent/search):
+    (in=("charette" prox/distance<1 "paul") OR in=("hunter" prox/distance<1 "ian")) AND pd within "1990,2020"
 
     """
-    from patent_client import Inpadoc
 
-    results = Inpadoc.objects.filter(cql_query='inventor="Paul Charette"')
+    def inventor_query_str(inventor: list[str]) -> str:
+        return f'in=("{inventor[1]}" prox/distance<1 "{inventor[0]}")'
+
+    def build_epo_patent_query_string() -> str:
+        s: str = "("
+        s += inventor_query_str(reference_query.au_names[0])
+        for name in reference_query.au_names[1:]:
+            s += " OR "
+            s += inventor_query_str(name)
+        s += (
+            f") AND pd within "
+            f'"{reference_query.pub_year_first},{reference_query.pub_year_last}"'
+        )
+        return s
+
+    max_results: int = 500
+    query_str: str = build_epo_patent_query_string()
+
+    results = Inpadoc.objects.filter(cql_query='inventor="Charette Paul"')
     l = len(results)
     print("EPO search done!")
 
