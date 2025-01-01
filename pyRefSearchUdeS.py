@@ -524,6 +524,7 @@ def _query_uspto(
                 "inventors",
                 "assignees",
                 "related_apps",
+                bob = 1
             )
             .to_pandas()
         )
@@ -1087,7 +1088,7 @@ def query_epo_patents(reference_query: ReferenceQuery) -> None:
     """
     from patent_client import Inpadoc
 
-    results = Inpadoc.objects.filter(cql_query='inventor="Charette"')
+    results = Inpadoc.objects.filter(cql_query='inventor="Paul Charette"')
     l = len(results)
     print("EPO search done!")
 
@@ -1281,7 +1282,7 @@ def main():
         scopus_database_refresh=toml_dict["scopus_database_refresh"],
     )
 
-    # query_epo_patents(reference_query)
+    #query_epo_patents(reference_query)
 
     # Run the bibliographic search!
     run_reference_search(
