@@ -4,18 +4,28 @@
 [![Python 3.10](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
 ## Fonctions:
-1) Recherche de publications (base de données Scopus) et de brevets US (base de données USPTO) pour une liste d'auteur.e.s sur une gamme d'années donnée
+1) Recherche de publications (base de données Scopus) et de brevets US et Européens
+   (bases de données USPTO et EPO) pour une liste d'auteur.e.s sur une gamme d'années donnée
 2) Recherche de profils Scopus pour une liste d'auteur.e.s
+
+## Pré-requis:
+- Une clé API est requise pour accéder à Scopus, obtenue à partir de cette
+  [page web](https://dev.elsevier.com/index.jsp), click sur *I want an API Key*
+  puis *Create API Key*. La première exécution du script demande de saisir la clé,
+  celle-ci est ensuite sauvegardée sur le poste de travail. Le script doit être exécuté
+  à partir d'un poste sur le réseau universitaire pour que l'accès à Scopus soit autorisé.
+- Une clé API est requise pour faire des recherches de brevets via l'EPO (*European
+  patent office*). Il faut d'abord ouvrir un compte en ligne pour accéder aux
+  [*Open Patent Services (OPS)*](https://developers.epo.org/user/register). Une fois
+  le compte activé, il faut définir les variables environnementales
+  *PATENT_CLIENT_EPO_API_KEY* et *PATENT_CLIENT_EPO_SECRET* sur le poste de travail selon
+  [*How to get an EPO OPS API key*](https://patent-client.readthedocs.io/en/stable/getting_started.html).
 
 ## Utilisation:
 - Appel du script: *python.exe pyRefSearchUdeS.py*
 - Les paramètres d'exécution sont lus dans le fichier *pyRefSearchUdeS.toml*
 - Les données d'auteur.e.s sont lues dans un fichier Excel d'entrée (voir *pyRefSearchUdeS.toml*)
 - Les résultats de la recherche sont écrits dans un fichier Excel de sortie (voir *pyRefSearchUdeS.toml*)
-- Le script doit être exécuté à partir d'un poste sur le réseau universitaire
-pour que l'accès à Scopus soit autorisé (une “clé” est requise pour interroger l’API Scopus,
-voir https://dev.elsevier.com/index.jsp. La première exécution du script demandera à
-l’utilisateur de saisir la clé).
 
 ## Fichier des paramètres d'exécution *pyRefSearchUdeS.toml* (voir le fichier pour plus d'infos sur les paramètres) :
 - *search_type* ("Publications" ou "Profils"): Type de recherche (publications & brevets ou profils d'auteur.e.s)
@@ -74,12 +84,9 @@ effectuées), ou soit consister d'une simple liste d'auteur.e.s.
   jusqu'à une semaine, il faut ensuite mettre à jour la copie locale de la base de données
   via le paramètre *scopus_database_refresh* dans le fichier *pyScopus.toml* avant
   de lancer une nouvelle recherche avec le script.
-- Google Scholar semble être plus fiable, en particulier pour les conférences,
+- Google Scholar semble être plus complet que Scopus, en particulier pour les conférences,
   mais il ne semble pas y avoir de moyen facile de faire des recherches scriptées
-  dans cette base de données.
-- Le script uses la librairie *[patent_client](https://patent-client.readthedocs.io/en/latest/index.html)*
-  pour la recherche de brevets US dans la base de données USPTO. L'auteur affiche sur
-  son site que l'accès à la base de données pour de brevets Européens (EPO) est en développement.
+  dans Google Scholar.
 
 ## Installation:
 - Projet *pyRefSearchUdeS* disponible sur [github](https://github.com/pgcharetteUdeS/pyRefSearchUdeS)
