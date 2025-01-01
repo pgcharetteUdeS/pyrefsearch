@@ -9,6 +9,7 @@ search_type = "Publications"
 # (colonnes "Nom", "Prénom", ainsi que "Scopus ID" pour les recherches de publications)
 #in_excel_file = "pyRefSearchUdeS.xlsx"
 in_excel_file = "Liste chercheurs-membres_VF.xlsx"
+#in_excel_file = "Liste chercheurs-membres_VF - TEST.xlsx"
 in_excel_file_author_sheet = "Membres"
 
 # Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)

@@ -88,7 +88,7 @@ class ReferenceQuery:
         # Extract author names from input Excel file, formatted either as a 3IT database
         # (author status tabulated by fiscal year) or as a simple list of names
         author_status_by_year_columns: list[str] = [
-            f"{year}-{year+1}"
+            f"{year}-{year + 1}"
             for year in range(self.pub_year_first, self.pub_year_last + 1)
         ]
         if all(col in input_data_full.columns for col in author_status_by_year_columns):
@@ -523,6 +523,7 @@ def _query_uspto(
                 "patent_title",
                 "inventors",
                 "assignees",
+                "related_apps",
             )
             .to_pandas()
         )
@@ -542,6 +543,7 @@ def _query_uspto(
                 "patent_title",
                 "inventors",
                 "assignees",
+                "related_apps",
             )
             .to_pandas()
         )
@@ -571,6 +573,7 @@ def _reformat_uspto_search_results(
                 "local inventors": "Inventeurs locaux",
                 "inventors": "Inventeurs",
                 "assignees": "Cessionnaires",
+                "related_apps": "Applications liées",
             },
             inplace=True,
         )
@@ -582,6 +585,7 @@ def _reformat_uspto_search_results(
             "Inventeurs locaux",
             "Inventeurs",
             "Cessionnaires",
+            "Applications liées",
         ]
         patents = patents.sort_values(by=["Date de dépôt"])
     else:
@@ -595,6 +599,7 @@ def _reformat_uspto_search_results(
                 "local inventors": "Inventeurs locaux",
                 "inventors": "Inventeurs",
                 "assignees": "Cessionnaires",
+                "related_apps": "Applications liées",
             },
             inplace=True,
         )
@@ -607,6 +612,7 @@ def _reformat_uspto_search_results(
             "Inventeurs locaux",
             "Inventeurs",
             "Cessionnaires",
+            "Applications liées",
         ]
         patents = patents.sort_values(by=["Date de délivrance"])
 
@@ -1071,6 +1077,21 @@ def query_us_patents(
     return patents, application_ids, patent_counts_by_author
 
 
+def query_epo_patents(reference_query: ReferenceQuery) -> None:
+    """
+
+    To connect to the European Patent Office’s Open Patent Services, an API key is
+    required, see: https://patent-client.readthedocs.io/en/stable/getting_started.html
+
+
+    """
+    from patent_client import Inpadoc
+
+    results = Inpadoc.objects.filter(cql_query='inventor="Charette"')
+    l = len(results)
+    print("EPO search done!")
+
+
 def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     """
     Search for publications in Scopus and patents in the USPTO database
@@ -1259,6 +1280,8 @@ def main():
         local_affiliations=toml_dict["local_affiliations"],
         scopus_database_refresh=toml_dict["scopus_database_refresh"],
     )
+
+    # query_epo_patents(reference_query)
 
     # Run the bibliographic search!
     run_reference_search(
