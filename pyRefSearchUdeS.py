@@ -553,6 +553,7 @@ def _reformat_uspto_search_results(
             columns={
                 "app_filing_date": "Date de dépôt",
                 "guid": "GUID",
+                "appl_id": "ID de l'application",
                 "patent_title": "Titre",
                 "Nb co-inventors": "Nb co-inventeurs",
                 "local inventors": "Inventeurs locaux",
@@ -565,6 +566,7 @@ def _reformat_uspto_search_results(
         new_columns: list[str] = [
             "Date de dépôt",
             "GUID",
+            "ID de l'application",
             "Titre",
             "Nb co-inventeurs",
             "Inventeurs locaux",
@@ -579,6 +581,7 @@ def _reformat_uspto_search_results(
                 "publication_date": "Date de délivrance",
                 "app_filing_date": "Date de dépôt",
                 "guid": "GUID",
+                "appl_id": "ID de l'application",
                 "patent_title": "Titre",
                 "Nb co-inventors": "Nb co-inventeurs",
                 "local inventors": "Inventeurs locaux",
@@ -592,6 +595,7 @@ def _reformat_uspto_search_results(
             "Date de délivrance",
             "Date de dépôt",
             "GUID",
+            "ID de l'application",
             "Titre",
             "Nb co-inventeurs",
             "Inventeurs locaux",
@@ -1034,7 +1038,7 @@ def query_us_patents(
 
         # Compile list of patent/application ids, then remove the un-needed ids column
         application_ids: list = patents["appl_id"].to_list()
-        patents.drop(columns=["appl_id"], inplace=True)
+        #patents.drop(columns=["appl_id"], inplace=True)
 
         # Filter out applications for which patents have been delivered
         # (patent applications having same ids as delivered patents)
@@ -1094,7 +1098,7 @@ def query_epo_patents(reference_query: ReferenceQuery) -> None:
     query_str: str = build_epo_patent_query_string()
 
     results = Inpadoc.objects.filter(cql_query='inventor="Charette Paul"')
-    l = len(results)
+    n = len(results)
     print("EPO search done!")
 
 

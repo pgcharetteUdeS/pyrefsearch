@@ -48,8 +48,8 @@ suivantes du feuillet *in_excel_file_sheet_name*:
 - *ID Scopus* : Identifiant Scopus de l’auteur.e pour une recherche de publications 
 (laisser la cellule vide si aucun identifiant Scopus n'est disponible)
 
-Il a 2 options pout le format du fichier:
-1) Base de données du 3IT où le statut des auteur.e.s est spécifié par année
+Il a 2 options pour le format du fichier:
+1) Base de données du 3IT, où le statut des auteur.e.s est spécifié par année
    fiscale (*Régulier* ou *Collaborateur*): seuls les membres ayant eu un statut
    *Régulier* pendant au moins une année dans la gamme d'années spécifiée
    seront inclus dans les recherches
