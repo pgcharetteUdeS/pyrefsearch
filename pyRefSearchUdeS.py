@@ -164,10 +164,10 @@ def _reindex_author_profiles_df(df: pd.DataFrame) -> pd.DataFrame:
     df = df[
         pd.Index(
             [
-                "Affl/ID",
                 "surname",
                 "givenname",
                 "initials",
+                "Affl/ID",
                 "Start",
                 "End",
                 "eid",
@@ -380,8 +380,8 @@ def _export_publications_df_to_excel_sheet(
         ).copy()
         df_copy[
             [
-                "Date",
                 "Titre",
+                "Date",
                 "Nb co-auteurs locaux",
                 "Auteurs locaux",
                 "Auteurs",
@@ -390,7 +390,7 @@ def _export_publications_df_to_excel_sheet(
                 "Pages",
                 "DOI",
             ]
-        ].to_excel(writer, index=False, sheet_name=sheet_name, freeze_panes=(1, 0))
+        ].to_excel(writer, index=False, sheet_name=sheet_name, freeze_panes=(1, 1))
 
 
 def _tabulate_patents_per_author(
@@ -564,8 +564,8 @@ def _reformat_uspto_search_results(
             inplace=True,
         )
         new_columns: list[str] = [
-            "Date de dépôt",
             "GUID",
+            "Date de dépôt",
             "ID de l'application",
             "Titre",
             "Nb co-inventeurs locaux",
@@ -592,9 +592,9 @@ def _reformat_uspto_search_results(
             inplace=True,
         )
         new_columns: list[str] = [
+            "GUID",
             "Date de délivrance",
             "Date de dépôt",
-            "GUID",
             "ID de l'application",
             "Titre",
             "Nb co-inventeurs locaux",
@@ -729,24 +729,24 @@ def write_reference_query_results_to_excel(
                 writer,
                 index=False,
                 sheet_name="Brevets US (en instance)",
-                freeze_panes=(1, 0),
+                freeze_panes=(1, 1),
             )
         if not patents.empty:
             patents.to_excel(
                 writer,
                 index=False,
                 sheet_name="Brevets US (délivrés)",
-                freeze_panes=(1, 0),
+                freeze_panes=(1, 1),
             )
 
         # Author profile sheets
         col: pd.Series = author_profiles_by_ids.pop("Période active")
         author_profiles_by_ids["Période active"] = col
         author_profiles_by_ids.to_excel(
-            writer, index=False, sheet_name="Auteurs - Profils", freeze_panes=(1, 0)
+            writer, index=False, sheet_name="Auteurs - Profils", freeze_panes=(1, 1)
         )
         author_profiles_by_names.to_excel(
-            writer, index=False, sheet_name="Auteurs - Homonymes", freeze_panes=(1, 0)
+            writer, index=False, sheet_name="Auteurs - Homonymes", freeze_panes=(1, 1)
         )
     print(
         "Résultats de la recherche sauvegardés "
@@ -882,7 +882,7 @@ def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.Da
     if author_profiles:
         author_profiles_by_ids = pd.DataFrame(author_profiles, columns=columns)
         author_profiles_by_ids.insert(
-            loc=0,
+            loc=2,
             column="Erreurs",
             value=pd.Series(
                 _check_author_name_correspondance(
