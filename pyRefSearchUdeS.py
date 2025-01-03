@@ -503,7 +503,7 @@ def _query_uspto(
     max_results: int = 500
     if applications:
         query_str: str = build_uspto_patent_query_string(field_code="AD")
-        return (
+        patents: pd.DataFrame = (
             PublishedApplication.objects.filter(query=query_str)
             .limit(max_results)
             .values(
@@ -520,7 +520,7 @@ def _query_uspto(
 
     else:
         query_str: str = build_uspto_patent_query_string(field_code="PD")
-        return (
+        patents: pd.DataFrame = (
             Patent.objects.filter(query=query_str)
             .limit(max_results)
             .values(
@@ -535,6 +535,9 @@ def _query_uspto(
             )
             .to_pandas()
         )
+
+    patents["appl_id"] = patents["appl_id"].astype(int)
+    return patents
 
 
 def _reformat_uspto_search_results(
