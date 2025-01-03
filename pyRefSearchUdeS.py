@@ -1318,7 +1318,7 @@ def main():
         pub_year_last=toml_dict["pub_year_last"],
         publication_types=toml_dict["publication_types"],
         local_affiliations=toml_dict["local_affiliations"],
-        scopus_database_refresh=toml_dict["scopus_database_refresh"],
+        scopus_database_refresh=toml_dict.get("scopus_database_refresh", 0),
         include_patents=toml_dict.get("include_patents", True),
     )
 

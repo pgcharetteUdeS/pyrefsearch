@@ -13,15 +13,8 @@ in_excel_file = "Liste chercheurs-membres_VF.xlsx"
 in_excel_file_author_sheet = "Membres"
 
 # Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)
-pub_year_first = 2019
+pub_year_first = 2024
 pub_year_last = 2024
-
-# Noms et codes Scopus des types de publications désirées pour la recherche par publications
-#   Article-ar / Abstract Report-ab / Book-bk / Book Chapter-ch / Conference Paper-cp /
-#   Conference Review-cr / Data Paper-dp / Editorial-ed / Erratum-er / Letter-le /
-#   Multimedia-mm / Note-no / Report-rp / Retracted-tb / Review-re / Short Survey-sh
-publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Livres", "bk"],
-    ["Chap. de livres", "ch"], ["Lettres", "le"], ["Rapports", "rp"]]
 
 # Noms d'institutions et d'affiliations considérées commme "locales", pour valider
 # les profils d'auteurs dans les recherches
@@ -33,16 +26,19 @@ local_affiliations = [
     "Laboratoire nanotechnologies et nanosystèmes",
 ]
 
-# Intervalle de mise à jour de la copie locale de la base de données Scopus.
+# SCOPUS : Noms et codes à deux lettres pour la recherche par publications
+# (Article-ar / Abstract Report-ab / Book-bk / Book Chapter-ch / Conference Paper-cp /
+# Conference Review-cr / Data Paper-dp / Editorial-ed / Erratum-er / Letter-le /
+# Multimedia-mm / Note-no / Report-rp / Retracted-tb / Review-re / Short Survey-sh)
+publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Livres", "bk"],
+    ["Chap. de livres", "ch"], ["Lettres", "le"], ["Rapports", "rp"]]
+
+# SCOPUS : Intervalle de mise à jour (en nombre de jours) de la copie locale de la base de données.
 # Une recherche en ligne dans Scopus prend beaucoup de temps, les résultats sont
 # sauvegardés dans une base de données locale pour éviter de refaire la recherche
 # en ligne à chaque fois. Cette base de données locale doit est mise à jour à
-# intervalles réguliers.
-#  - "False" : aucune mise à jour
-#  - Nombre : nombre de jours entre chaque mise à jour
+# intervalles réguliers (valeur par défaut = 0, i.e. mise à jour à chaque recherche).
 scopus_database_refresh = 7
 
 # Debugging flags
 include_patents = true
-
-
