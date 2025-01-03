@@ -369,7 +369,7 @@ def _export_publications_df_to_excel_sheet(
             columns={
                 "coverDate": "Date",
                 "title": "Titre",
-                "Nb co-auteurs": "Nb co-auteurs",
+                "Nb co-auteurs locaux": "Nb co-auteurs locaux",
                 "Auteurs locaux": "Auteurs locaux",
                 "author_names": "Auteurs",
                 "publicationName": "Publication",
@@ -382,7 +382,7 @@ def _export_publications_df_to_excel_sheet(
             [
                 "Date",
                 "Titre",
-                "Nb co-auteurs",
+                "Nb co-auteurs locaux",
                 "Auteurs locaux",
                 "Auteurs",
                 "Publication",
@@ -390,7 +390,7 @@ def _export_publications_df_to_excel_sheet(
                 "Pages",
                 "DOI",
             ]
-        ].to_excel(writer, index=False, sheet_name=sheet_name)
+        ].to_excel(writer, index=False, sheet_name=sheet_name, freeze_panes=(1, 0))
 
 
 def _tabulate_patents_per_author(
@@ -457,7 +457,7 @@ def _add_coauthor_columns_and_clean_up_publications_df(
     publications["Auteurs locaux"] = publications["author_ids"].apply(
         find_local_coauthors
     )
-    publications["Nb co-auteurs"] = [
+    publications["Nb co-auteurs locaux"] = [
         len(co_authors) if len(co_authors) > 1 else None
         for co_authors in publications["Auteurs locaux"]
     ]
@@ -555,7 +555,7 @@ def _reformat_uspto_search_results(
                 "guid": "GUID",
                 "appl_id": "ID de l'application",
                 "patent_title": "Titre",
-                "Nb co-inventors": "Nb co-inventeurs",
+                "Nb co-inventors": "Nb co-inventeurs locaux",
                 "local inventors": "Inventeurs locaux",
                 "inventors": "Inventeurs",
                 "assignees": "Cessionnaires",
@@ -568,7 +568,7 @@ def _reformat_uspto_search_results(
             "GUID",
             "ID de l'application",
             "Titre",
-            "Nb co-inventeurs",
+            "Nb co-inventeurs locaux",
             "Inventeurs locaux",
             "Inventeurs",
             "Cessionnaires",
@@ -583,7 +583,7 @@ def _reformat_uspto_search_results(
                 "guid": "GUID",
                 "appl_id": "ID de l'application",
                 "patent_title": "Titre",
-                "Nb co-inventors": "Nb co-inventeurs",
+                "Nb co-inventors": "Nb co-inventeurs locaux",
                 "local inventors": "Inventeurs locaux",
                 "inventors": "Inventeurs",
                 "assignees": "Cessionnaires",
@@ -597,7 +597,7 @@ def _reformat_uspto_search_results(
             "GUID",
             "ID de l'application",
             "Titre",
-            "Nb co-inventeurs",
+            "Nb co-inventeurs locaux",
             "Inventeurs locaux",
             "Inventeurs",
             "Cessionnaires",
@@ -655,18 +655,20 @@ def _create_results_summary_df(
     co_authors: list = ["Conjointes", None, None, None]
     if publications_dfs_list_by_pub_type:
         co_authors += [
-            None if df.empty else len(df[df["Nb co-auteurs"] > 1])
+            None if df.empty else len(df[df["Nb co-auteurs locaux"] > 1])
             for df in publications_dfs_list_by_pub_type
         ]
     else:
         co_authors += [None] * len(reference_query.publication_types)
 
     joint_patent_applications_count: int = sum(
-        row["Nb co-inventeurs"] is not None and row["Nb co-inventeurs"] > 1
+        row["Nb co-inventeurs locaux"] is not None
+        and row["Nb co-inventeurs locaux"] > 1
         for _, row in patent_applications.iterrows()
     )
     joint_patents_count: int = sum(
-        row["Nb co-inventeurs"] is not None and row["Nb co-inventeurs"] > 1
+        row["Nb co-inventeurs locaux"] is not None
+        and row["Nb co-inventeurs locaux"] > 1
         for _, row in patents.iterrows()
     )
     co_authors += [joint_patent_applications_count, joint_patents_count]
@@ -724,19 +726,27 @@ def write_reference_query_results_to_excel(
         # USPTO search result sheets
         if not patent_applications.empty:
             patent_applications.to_excel(
-                writer, index=False, sheet_name="Brevets US (en instance)"
+                writer,
+                index=False,
+                sheet_name="Brevets US (en instance)",
+                freeze_panes=(1, 0),
             )
         if not patents.empty:
-            patents.to_excel(writer, index=False, sheet_name="Brevets US (délivrés)")
+            patents.to_excel(
+                writer,
+                index=False,
+                sheet_name="Brevets US (délivrés)",
+                freeze_panes=(1, 0),
+            )
 
         # Author profile sheets
         col: pd.Series = author_profiles_by_ids.pop("Période active")
         author_profiles_by_ids["Période active"] = col
         author_profiles_by_ids.to_excel(
-            writer, index=False, sheet_name="Auteurs - Profils"
+            writer, index=False, sheet_name="Auteurs - Profils", freeze_panes=(1, 0)
         )
         author_profiles_by_names.to_excel(
-            writer, index=False, sheet_name="Auteurs - Homonymes"
+            writer, index=False, sheet_name="Auteurs - Homonymes", freeze_panes=(1, 0)
         )
     print(
         "Résultats de la recherche sauvegardés "
@@ -1038,7 +1048,7 @@ def query_us_patents(
 
         # Compile list of patent/application ids, then remove the un-needed ids column
         application_ids: list = patents["appl_id"].to_list()
-        #patents.drop(columns=["appl_id"], inplace=True)
+        # patents.drop(columns=["appl_id"], inplace=True)
 
         # Filter out applications for which patents have been delivered
         # (patent applications having same ids as delivered patents)
@@ -1291,7 +1301,7 @@ def main():
         scopus_database_refresh=toml_dict["scopus_database_refresh"],
     )
 
-    #query_epo_patents(reference_query)
+    # query_epo_patents(reference_query)
 
     # Run the bibliographic search!
     run_reference_search(
