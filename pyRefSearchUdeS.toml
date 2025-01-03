@@ -42,3 +42,7 @@ local_affiliations = [
 #  - Nombre : nombre de jours entre chaque mise à jour
 scopus_database_refresh = 7
 
+# Debugging flags
+include_patents = true
+
+

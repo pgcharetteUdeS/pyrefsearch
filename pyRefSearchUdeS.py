@@ -22,6 +22,7 @@
 
 from functools import lru_cache
 import numpy as np
+from openpyxl import load_workbook
 import pybliometrics
 import pandas as pd
 from patent_client import Inpadoc, Patent, PublishedApplication
@@ -62,6 +63,7 @@ class ReferenceQuery:
         publication_types: list[str],
         local_affiliations: list[str],
         scopus_database_refresh: bool | int,
+        include_patents: bool = True,
     ):
         self.in_excel_file: Path = in_excel_file
         self.out_excel_file: Path = out_excel_file
@@ -73,6 +75,7 @@ class ReferenceQuery:
             _to_lower_no_accents_no_hyphens(s) for s in local_affiliations
         ]
         self.scopus_database_refresh: bool | int = scopus_database_refresh
+        self.include_patents: bool = include_patents
 
         # Check input/output Excel file access, script fails if files already open
         self.check_excel_file_access(self.in_excel_file)
@@ -753,6 +756,22 @@ def write_reference_query_results_to_excel(
         f"dans le fichier '{reference_query.out_excel_file}'"
     )
 
+    # Attempt to adjust column widths in the output Excel file to reasonable values.
+    # The solution is a hack because the auto_size/bestFit properties in
+    # openpyxl.worksheet.dimensions.ColumnDimension() don't seem to work and the actual
+    # column width sizing in Excel is system-dependant and a bit of a black box.
+    workbook = load_workbook(reference_query.out_excel_file)
+    col_width_max: int = 100
+    for sheet_name in workbook.sheetnames:
+        for i, col in enumerate(workbook[sheet_name].columns):
+            # workbook[sheet_name].column_dimensions[col[0].column_letter].bestFit = True
+            col_width: int = int(max(len(str(cell.value)) for cell in col) * 0.85)
+            col_width_min: int = 18 if i == 0 else 10
+            workbook[sheet_name].column_dimensions[col[0].column_letter].width = max(
+                min(col_width_max, col_width), col_width_min
+            )
+    workbook.save(reference_query.out_excel_file)
+
 
 def query_scopus_author_profiles_by_name(
     reference_query: ReferenceQuery,
@@ -1046,12 +1065,9 @@ def query_us_patents(
         )
         patents.drop(patents[no_local_inventors].index, inplace=True)
 
-        # Compile list of patent/application ids, then remove the un-needed ids column
+        # Compile list of patent/application ids. Remove applications for which patents
+        # have been delivered(patent applications having same IDs as delivered patents)
         application_ids: list = patents["appl_id"].to_list()
-        # patents.drop(columns=["appl_id"], inplace=True)
-
-        # Filter out applications for which patents have been delivered
-        # (patent applications having same ids as delivered patents)
         if applications and application_ids_to_remove:
             patents.drop(
                 patents[
@@ -1160,28 +1176,29 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             if len(df) > 0:
                 author_profiles_by_ids[pub_type] = pub_counts
 
-    # Fetch US patent applications and published patents into separate dataframes
-    patents: pd.DataFrame
-    patent_application_ids: list
-    patent_counts_by_author: list
-    patents, patent_application_ids, patent_counts_by_author = query_us_patents(
-        reference_query=reference_query, applications=False
-    )
-    print("Brevets US (délivrés): ", len(patents))
-    patent_applications: pd.DataFrame
-    patent_application_counts_by_author: list
-    patent_applications, _, patent_application_counts_by_author = query_us_patents(
-        reference_query=reference_query,
-        applications=True,
-        application_ids_to_remove=patent_application_ids,
-    )
-    print("Brevets US (en instance): ", len(patent_applications))
+    # Fetch US applications and published patents into separate dataframes, if required
+    patents: pd.DataFrame = pd.DataFrame()
+    patent_applications: pd.DataFrame = pd.DataFrame()
+    if reference_query.include_patents:
+        patent_application_ids: list
+        patent_counts_by_author: list
+        patents, patent_application_ids, patent_counts_by_author = query_us_patents(
+            reference_query=reference_query, applications=False
+        )
+        print("Brevets US (délivrés): ", len(patents))
+        patent_application_counts_by_author: list
+        patent_applications, _, patent_application_counts_by_author = query_us_patents(
+            reference_query=reference_query,
+            applications=True,
+            application_ids_to_remove=patent_application_ids,
+        )
+        print("Brevets US (en instance): ", len(patent_applications))
 
-    # Add patent application and published patent counts to the author profiles
-    author_profiles_by_ids["Brevets US (en instance)"] = (
-        patent_application_counts_by_author
-    )
-    author_profiles_by_ids["Brevets US (délivrés)"] = patent_counts_by_author
+        # Add patent application and published patent counts to the author profiles
+        author_profiles_by_ids["Brevets US (en instance)"] = (
+            patent_application_counts_by_author
+        )
+        author_profiles_by_ids["Brevets US (délivrés)"] = patent_counts_by_author
 
     # Fetch Scopus author profiles corresponding to user-supplied names, check for
     # author names with multiple Scopus IDs ("homonyms"), load into dataframe
@@ -1299,6 +1316,7 @@ def main():
         publication_types=toml_dict["publication_types"],
         local_affiliations=toml_dict["local_affiliations"],
         scopus_database_refresh=toml_dict["scopus_database_refresh"],
+        include_patents=toml_dict.get("include_patents", True),
     )
 
     # query_epo_patents(reference_query)
