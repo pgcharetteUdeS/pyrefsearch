@@ -63,7 +63,8 @@ class ReferenceQuery:
         publication_types: list[str],
         local_affiliations: list[str],
         scopus_database_refresh: bool | int,
-        include_patents: bool = True,
+        uspto_patent_search: bool,
+        epo_patent_search: bool,
     ):
         self.in_excel_file: Path = in_excel_file
         self.out_excel_file: Path = out_excel_file
@@ -75,7 +76,8 @@ class ReferenceQuery:
             _to_lower_no_accents_no_hyphens(s) for s in local_affiliations
         ]
         self.scopus_database_refresh: bool | int = scopus_database_refresh
-        self.include_patents: bool = include_patents
+        self.uspto_patent_search: bool = uspto_patent_search
+        self.epo_patent_search: bool = epo_patent_search
 
         # Check input/output Excel file access, script fails if files already open
         self.check_excel_file_access(self.in_excel_file)
@@ -1182,7 +1184,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     # Fetch US applications and published patents into separate dataframes, if required
     patents: pd.DataFrame = pd.DataFrame()
     patent_applications: pd.DataFrame = pd.DataFrame()
-    if reference_query.include_patents:
+    if reference_query.uspto_patent_search:
         patent_application_ids: list
         patent_counts_by_author: list
         patents, patent_application_ids, patent_counts_by_author = query_us_patents(
@@ -1319,10 +1321,13 @@ def main():
         publication_types=toml_dict["publication_types"],
         local_affiliations=toml_dict["local_affiliations"],
         scopus_database_refresh=toml_dict.get("scopus_database_refresh", 0),
-        include_patents=toml_dict.get("include_patents", True),
+        uspto_patent_search=toml_dict.get("uspto_patent_search", True),
+        epo_patent_search=toml_dict.get("epo_patent_search", True),
     )
 
-    # query_epo_patents(reference_query)
+    # DEBUG
+    if reference_query.epo_patent_search:
+        query_epo_patents(reference_query)
 
     # Run the bibliographic search!
     run_reference_search(
