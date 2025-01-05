@@ -13,7 +13,7 @@ in_excel_file = "Liste chercheurs-membres_VF.xlsx"
 in_excel_file_author_sheet = "Membres"
 
 # Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)
-pub_year_first = 2024
+pub_year_first = 2019
 pub_year_last = 2024
 
 # Noms d'institutions et d'affiliations considérées commme "locales", pour valider
@@ -26,11 +26,12 @@ local_affiliations = [
     "Laboratoire nanotechnologies et nanosystèmes",
 ]
 
-# SCOPUS : Noms et codes à deux lettres pour la recherche par publications
-# (Article-ar / Abstract Report-ab / Book-bk / Book Chapter-ch / Conference Paper-cp /
-# Conference Review-cr / Data Paper-dp / Editorial-ed / Erratum-er / Letter-le /
-# Multimedia-mm / Note-no / Report-rp / Retracted-tb / Review-re / Short Survey-sh)
-publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Livres", "bk"],
+# SCOPUS : Paires de descriptifs (au choix de l'usager) et codes à deux lettres Scopus
+# correspondants pour la recherche par publications. Codes Scopus disponibles :
+#   Article-ar / Abstract Report-ab / Book-bk / Book Chapter-ch / Conference Paper-cp /
+#   Conference Review-cr / Data Paper-dp / Editorial-ed / Erratum-er / Letter-le /
+#   Multimedia-mm / Note-no / Report-rp / Retracted-tb / Review-re / Short Survey-sh
+publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Absracts", "ab"], ["Livres", "bk"],
     ["Chap. de livres", "ch"], ["Lettres", "le"], ["Rapports", "rp"]]
 
 # SCOPUS : Intervalle de mise à jour (en nombre de jours) de la copie locale de la base de
@@ -41,5 +42,5 @@ publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Livres", "bk"],
 scopus_database_refresh = 7
 
 # BREVETS : Activer/désactiver (true/false) la recherche de brevets US et européens (EPO)
-uspto_patent_search = true
+uspto_patent_search = false
 epo_patent_search = false
