@@ -40,6 +40,6 @@ publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Livres", "bk"],
 # intervalles réguliers (valeur par défaut = 0, i.e. mise à jour à chaque recherche).
 scopus_database_refresh = 7
 
-# BREVETS : Recherche de brevets US et européens (activer/désactiver: true/false)
+# BREVETS : Activer/désactiver (true/false) la recherche de brevets US et européens (EPO)
 uspto_patent_search = true
 epo_patent_search = false
