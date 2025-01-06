@@ -1120,7 +1120,7 @@ def query_epo_patents(reference_query: ReferenceQuery) -> None:
             s += " OR "
             s += inventor_query_str(name)
         s += (
-            f") AND pd within "
+            ") AND pd within "
             f'"{reference_query.pub_year_first},{reference_query.pub_year_last}"'
         )
         return s

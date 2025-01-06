@@ -37,7 +37,7 @@ publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Absracts", "ab"], ["
 # SCOPUS : Intervalle de mise à jour (en nombre de jours) de la copie locale de la base de
 # données. Une recherche en ligne dans Scopus prend beaucoup de temps, les résultats sont
 # sauvegardés dans une base de données locale pour éviter de refaire la recherche
-# en ligne à chaque fois. Cette base de données locale doit est mise à jour à
+# en ligne à chaque fois. Cette base de données locale est mise à jour à
 # intervalles réguliers (valeur par défaut = 0, i.e. mise à jour à chaque recherche).
 scopus_database_refresh = 7
 
