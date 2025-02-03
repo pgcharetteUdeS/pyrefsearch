@@ -23,6 +23,7 @@
 from functools import lru_cache
 import numpy as np
 from openpyxl import load_workbook
+from operator import itemgetter
 import pybliometrics
 import pandas as pd
 from patent_client import Inpadoc, Patent, PublishedApplication
@@ -62,7 +63,7 @@ class ReferenceQuery:
         pub_year_last: int,
         publication_types: list[str],
         local_affiliations: list[str],
-        scopus_database_refresh: bool | int,
+        scopus_database_refresh_days: bool | int,
         uspto_patent_search: bool,
         epo_patent_search: bool,
     ):
@@ -75,9 +76,10 @@ class ReferenceQuery:
         self.local_affiliations: list[str] = [
             _to_lower_no_accents_no_hyphens(s) for s in local_affiliations
         ]
-        self.scopus_database_refresh: bool | int = scopus_database_refresh
+        self.scopus_database_refresh_days: bool | int = scopus_database_refresh_days
         self.uspto_patent_search: bool = uspto_patent_search
         self.epo_patent_search: bool = epo_patent_search
+        print(f"Période de recherche: [{self.pub_year_first} - {self.pub_year_last}]")
 
         # Check input/output Excel file access, script fails if files already open
         self.check_excel_file_access(self.in_excel_file)
@@ -102,7 +104,16 @@ class ReferenceQuery:
             # in the input data covers the range of years specified in the query,
             # filter by member status/year to remove collaborators.
             authors: pd.DataFrame = input_data_full.copy()[
-                ["Nom", "Prénom", "ID Scopus"] + author_status_by_year_columns
+                [
+                    "Nom",
+                    "Prénom",
+                    "ID Scopus",
+                    "Faculté / Service",
+                    "Statut",
+                    "Résidence",
+                    "Sexe",
+                ]
+                + author_status_by_year_columns
             ]
             authors["status"] = [
                 "Régulier" if "Régulier" in yearly_status else "Collaborateur"
@@ -112,6 +123,32 @@ class ReferenceQuery:
             ]
             authors.drop(authors[authors.status == "Collaborateur"].index, inplace=True)
 
+            # Show 3IT member statistics on console
+            n_members_women: int = len(authors[authors["Sexe"] == "F"])
+            n_eng_members: int = len(authors[authors["Faculté / Service"] == "FGEN"])
+            n_eng_members_regular_profs_only: int = len(
+                authors[
+                    (authors["Faculté / Service"] == "FGEN")
+                    & (authors["Statut"] == "Régulier")
+                ]
+            )
+            n_eng_members_regular_profs_with_office = len(
+                authors[
+                    (authors["Faculté / Service"] == "FGEN")
+                    & (authors["Résidence"] != "Aucun bureau")
+                    & (authors["Statut"] == "Régulier")
+                ]
+            )
+            print(f"Membres réguliers du 3IT: {len(authors)} ({n_members_women/len(authors)*100:.0f}% de femmes)")
+            print(
+                f"Membres réguliers du 3IT en génie: {n_eng_members} "
+                f"(Profs Réguliers: {n_eng_members_regular_profs_only}, "
+                f"Profs Associés: {n_eng_members-n_eng_members_regular_profs_only})"
+            )
+            print(
+                f"Profs réguliers en génie qui ont un bureau au 3IT: {n_eng_members_regular_profs_with_office}"
+            )
+
         elif not any(
             # Author information is supplied as a simple list of names, no filtering
             re.search(r"\d{4}-\d{4}", column)
@@ -120,6 +157,9 @@ class ReferenceQuery:
             authors: pd.DataFrame = input_data_full.copy()[
                 ["Nom", "Prénom", "ID Scopus"]
             ]
+            print(
+                f"Nombre d'auteur.e.s dans le fichier '{self.in_excel_file}': {len(authors)}"
+            )
 
         else:
             raise IOError(
@@ -690,7 +730,7 @@ def write_reference_query_results_to_excel(
     patents: pd.DataFrame,
     patent_applications: pd.DataFrame,
     author_profiles_by_ids: pd.DataFrame,
-    author_profiles_by_names: pd.DataFrame,
+    author_profiles_by_name: pd.DataFrame,
 ) -> None:
     """
     Write publications search results to the output Excel file
@@ -701,7 +741,7 @@ def write_reference_query_results_to_excel(
         patents (pd.DataFrame): patent application search results by filing date
         patent_applications (pd.DataFrame): patent search results by publication date
         author_profiles_by_ids (pd.DataFrame): author search results by ids
-        author_profiles_by_names (pd.DataFrame): author search results by names
+        author_profiles_by_name (pd.DataFrame): author search results by names
 
     Returns: None
 
@@ -753,7 +793,7 @@ def write_reference_query_results_to_excel(
         author_profiles_by_ids.to_excel(
             writer, index=False, sheet_name="Auteurs - Profils", freeze_panes=(1, 1)
         )
-        author_profiles_by_names.to_excel(
+        author_profiles_by_name.to_excel(
             writer, index=False, sheet_name="Auteurs - Homonymes", freeze_panes=(1, 1)
         )
     print(
@@ -799,7 +839,7 @@ def query_scopus_author_profiles_by_name(
         query_string: str = f"AUTHLAST({lastname}) and AUTHFIRST({firstname})"
         author_profiles_from_name_search_results = AuthorSearch(
             query=query_string,
-            refresh=reference_query.scopus_database_refresh,
+            refresh=reference_query.scopus_database_refresh_days,
             verbose=True,
         )
         if author_profiles_from_name_search_results.authors:
@@ -816,7 +856,8 @@ def query_scopus_author_profiles_by_name(
             ) = zip(
                 *[
                     AuthorRetrieval(
-                        author_id=au_id, refresh=reference_query.scopus_database_refresh
+                        author_id=au_id,
+                        refresh=reference_query.scopus_database_refresh_days,
                     ).publication_range
                     for au_id in author_profiles_from_name.eid.to_list()
                 ]
@@ -859,6 +900,7 @@ def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.Da
     columns: list[str] = [
         "Nom de famille",
         "Prénom",
+        "ID Scopus",
         "Affiliation",
         "Affiliation mère",
         "Période active",
@@ -869,12 +911,14 @@ def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.Da
         try:
             if au_id > 0:
                 author = AuthorRetrieval(
-                    author_id=au_id, refresh=reference_query.scopus_database_refresh
+                    author_id=au_id,
+                    refresh=reference_query.scopus_database_refresh_days,
                 )
                 author_profiles.append(
                     [
                         author.surname,
                         author.given_name,
+                        au_id,
                         author.affiliation_current[0].__getattribute__(
                             "preferred_name"
                         ),
@@ -906,7 +950,7 @@ def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.Da
     if author_profiles:
         author_profiles_by_ids = pd.DataFrame(author_profiles, columns=columns)
         author_profiles_by_ids.insert(
-            loc=2,
+            loc=3,
             column="Erreurs",
             value=pd.Series(
                 _check_author_name_correspondance(
@@ -955,7 +999,7 @@ def query_scopus_publications(
             try:
                 query_results = ScopusSearch(
                     query=query_str,
-                    refresh=reference_query.scopus_database_refresh,
+                    refresh=reference_query.scopus_database_refresh_days,
                     verbose=True,
                 )
             except ScopusException as e:
@@ -1097,40 +1141,157 @@ def query_us_patents(
     return patents, application_ids, patent_counts_by_author
 
 
-def query_epo_patents(reference_query: ReferenceQuery) -> None:
+def query_espacenet(reference_query: ReferenceQuery) -> None:
     """
 
-    To connect to the European Patent Office’s Open Patent Services, an API key is
-    required, see:
-    - https://patent-client.readthedocs.io/en/stable/getting_started.html
-    - https://www.epo.org/en/searching-for-patents/data/web-services/ops
+    Query the INPADOC worldwide patent library via espacenet
 
-    Espacenet query string example (https://worldwide.espacenet.com/patent/search):
-    (in=("charette" prox/distance<1 "paul") OR in=("hunter" prox/distance<1 "ian")) AND pd within "1990,2020"
+    To connect to the INPADOC worldwide patent search services, API keys are
+    required and must then be defined locally as environmental variables, see:
+      - https://patent-client.readthedocs.io/en/stable/getting_started.html
+      - https://www.epo.org/en/searching-for-patents/data/web-services/ops
+
+    Espacenet/Inpadoc search, see:
+        https://link.epo.org/web/technical/espacenet/espacenet-pocket-guide-en.pdf
+        New interface: https://worldwide.espacenet.com/patent/search
+        Old interface: https://worldwide.espacenet.com/?locale=en_EP
+        NB: Old interface does not accept hyphens, which seems to be the case for
+            this library!
+
+        Example search string:
+          '(in=("charette" prox/distance<1 "paul") OR in=("hunter" prox/distance<1 "ian")) AND pd within "1990,2020"'
+
+          Search for granted (type "B") US patents:  'AND pn any "USB"'
+          Search for granted (type "B") European patents: 'AND pn any "EPB"'
+
+          NB: EspaceNet can only be searched by patent publication date,
+              NOT by date of application NOR granting: 'AND pd within "2021,2024"'
 
     """
 
-    def inventor_query_str(inventor: list[str]) -> str:
-        return f'in=("{inventor[1]}" prox/distance<1 "{inventor[0]}")'
+    def inventor_query_str(last_name: str, first_name: str) -> str:
+        """
+        Build inventor query string that convers all combinations
+        of first and last names that may contain hyphens
+        """
+        query_str: str
+        if "-" in last_name and "-" in first_name:
+            last_name0, last_name1 = last_name.split("-")
+            first_name0, first_name1 = first_name.split("-")
+            query_str = (
+                f'(in=("{last_name0}" prox/distance<1 "{last_name1}")'
+                f' AND in=("{last_name0}" prox/distance<3 "{first_name0}")'
+                f' AND in=("{last_name0}" prox/distance<3 "{first_name1}"))'
+            )
+        elif "-" in last_name:
+            last_name0, last_name1 = last_name.split("-")
+            query_str = (
+                f'(in=("{last_name0}" prox/distance<1 "{last_name1}")'
+                f' AND in=("{last_name0}" prox/distance<3 "{first_name}")'
+                f' AND in=("{last_name0}" prox/distance<3 "{first_name}"))'
+            )
+        elif "-" in first_name:
+            first_name0, first_name1 = first_name.split("-")
+            query_str = (
+                f'(in=("{last_name}" prox/distance<3 "{first_name0}")'
+                f' AND in=("{last_name}" prox/distance<3 "{first_name1}")'
+                f' AND in=("{first_name0}" prox/distance<1 "{first_name1}"))'
+            )
+        else:
+            query_str = f'in=("{last_name}" prox/distance<3 "{first_name}")'
+        return query_str
 
-    def build_epo_patent_query_string() -> str:
-        s: str = "("
-        s += inventor_query_str(reference_query.au_names[0])
-        for name in reference_query.au_names[1:]:
-            s += " OR "
-            s += inventor_query_str(name)
-        s += (
-            ") AND pd within "
+    def inventor_and_date_query_string(author_name: str) -> str:
+        return (
+            f"{inventor_query_str(last_name=author_name[1], first_name=author_name[0])}"
+            " AND pd within "
             f'"{reference_query.pub_year_first},{reference_query.pub_year_last}"'
         )
-        return s
 
-    max_results: int = 500
-    query_str: str = build_epo_patent_query_string()
+    # Loop to build dataframe from patents in Inpadoc database
+    family_ids: list = []
+    patent_applications_list: list[dict] = []
+    patent_granted_list: list[dict] = []
+    for name in reference_query.au_names:
+        patents = Inpadoc.objects.filter(
+            cql_query=inventor_and_date_query_string(name)
+        ).to_pandas()
+        for _, row in patents.iterrows():
+            patent_id_info = dict(row.values)
+            patent_id = f"{patent_id_info['country']}{patent_id_info['doc_number']}{patent_id_info['kind']}"
+            patent = Inpadoc.objects.get(patent_id)
 
-    results = Inpadoc.objects.filter(cql_query='inventor="Charette Paul"')
-    n = len(results)
-    print("EPO search done!")
+            # Filter out patents already in the dataframe or with no Canadian inventors
+            if patent.family_id in family_ids or all(
+                "[CA]" not in s for s in patent.inventors_epodoc
+            ):
+                continue
+
+            # Filter out patents with no US, EP, CA or WO applications or publications
+            family_ids.append(patent.family_id)
+            applications = [
+                [p.application_number, p.application_reference[0]["date"]]
+                for p in patent.family
+                if (
+                    "US" in p.application_number
+                    or "EP" in p.application_number
+                    or "CA" in p.application_number
+                    or "WO" in p.application_number
+                )
+            ]
+            publications = [
+                [p.publication_number, p.publication_reference[0]["date"]]
+                for p in patent.family
+                if (
+                    "US" in p.publication_number
+                    or "EP" in p.publication_number
+                    or "CA" in p.publication_number
+                    or "WO" in p.publication_number
+                )
+            ]
+            if not publications or not applications:
+                continue
+
+            # Append patent data dictionary to applications or patents dict lists
+            applications.sort(key=itemgetter(1), reverse=True)
+            publications.sort(key=itemgetter(1), reverse=True)
+            patent_dict: dict = {
+                "patent_id": patent_id,
+                "title": patent.title,
+                "inventors": patent.inventors_epodoc,
+                "applicants": patent.applicants_epodoc,
+                "family_id": patent.family_id,
+                "application_ids": [a[0] for a in applications],
+                "application_dates": [str(a[1]) for a in applications],
+                "publication_ids": [p[0] for p in publications],
+                "publication_dates": [str(p[1]) for p in publications],
+            }
+            if any("B" in p for p in patent_dict["publication_ids"]):
+                patent_granted_list.append(patent_dict)
+            else:
+                patent_applications_list.append(patent_dict)
+
+    patent_granted_df = pd.DataFrame(patent_granted_list).sort_values(
+        by=["title"], ignore_index=True
+    )
+    patent_applications_df = pd.DataFrame(patent_applications_list).sort_values(
+        by=["title"], ignore_index=True
+    )
+    patents_merged = pd.concat(
+        [patent_granted_df, patent_applications_df], ignore_index=True
+    ).sort_values(by=["title"], ignore_index=True)
+
+    # Write dataframes in separate sheets to the output Excel file
+    with pd.ExcelWriter("espacenet_results.xlsx") as writer:
+        patent_granted_df.to_excel(
+            writer, index=False, header=True, sheet_name="Brevets émis"
+        )
+        patent_applications_df.to_excel(
+            writer, index=False, header=True, sheet_name="Brevets en instance"
+        )
+        patents_merged.to_excel(writer, index=False, header=True, sheet_name="Tous")
+
+    print("")
 
 
 def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
@@ -1219,7 +1380,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         patents=patents,
         patent_applications=patent_applications,
         author_profiles_by_ids=author_profiles_by_ids,
-        author_profiles_by_names=author_profiles_by_name,
+        author_profiles_by_name=author_profiles_by_name,
     )
 
 
@@ -1268,18 +1429,6 @@ def run_reference_search(reference_query: ReferenceQuery, search_type: str) -> N
 
     """
 
-    # Console info starting messages
-    python_version: str = (
-        f"{str(sys.version_info.major)}"
-        f".{str(sys.version_info.minor)}"
-        f".{str(sys.version_info.micro)}"
-    )
-    print(f"{Path(__file__).stem} {__version__} " f"(running python {python_version})")
-    print(
-        f"Nombre d'auteur.e.s dans le fichier '{reference_query.in_excel_file}': "
-        f"{len(reference_query.au_ids)}"
-    )
-
     # Init Scopus API
     pybliometrics.scopus.init()
 
@@ -1296,6 +1445,14 @@ def run_reference_search(reference_query: ReferenceQuery, search_type: str) -> N
 
 
 def main():
+    # Console info starting messages
+    python_version: str = (
+        f"{str(sys.version_info.major)}"
+        f".{str(sys.version_info.minor)}"
+        f".{str(sys.version_info.micro)}"
+    )
+    print(f"{Path(__file__).stem} {__version__} " f"(running python {python_version})")
+
     # Load search parameters from toml file
     toml_dict: dict = toml.load("pyRefSearchUdeS.toml")
 
@@ -1320,14 +1477,14 @@ def main():
         pub_year_last=toml_dict["pub_year_last"],
         publication_types=toml_dict["publication_types"],
         local_affiliations=toml_dict["local_affiliations"],
-        scopus_database_refresh=toml_dict.get("scopus_database_refresh", 0),
+        scopus_database_refresh_days=toml_dict.get("scopus_database_refresh_days", 0),
         uspto_patent_search=toml_dict.get("uspto_patent_search", True),
         epo_patent_search=toml_dict.get("epo_patent_search", True),
     )
 
     # DEBUG
     if reference_query.epo_patent_search:
-        query_epo_patents(reference_query)
+        query_espacenet(reference_query)
 
     # Run the bibliographic search!
     run_reference_search(
