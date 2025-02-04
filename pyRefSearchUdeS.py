@@ -132,6 +132,7 @@ class ReferenceQuery:
                     & (authors["Statut"] == "Régulier")
                 ]
             )
+            n_members_with_office = len(authors[authors["Résidence"] != "Aucun bureau"])
             n_eng_members_regular_profs_with_office = len(
                 authors[
                     (authors["Faculté / Service"] == "FGEN")
@@ -139,7 +140,13 @@ class ReferenceQuery:
                     & (authors["Statut"] == "Régulier")
                 ]
             )
-            print(f"Membres réguliers du 3IT: {len(authors)} ({n_members_women/len(authors)*100:.0f}% de femmes)")
+            print(
+                f"Membres réguliers du 3IT: {len(authors)} ({n_members_women/len(authors)*100:.0f}% de femmes)"
+            )
+            print(
+                "Membres réguliers qui ont un bureau au 3IT: "
+                f"{n_members_with_office}/{len(authors)}"
+            )
             print(
                 f"Membres réguliers du 3IT en génie: {n_eng_members} "
                 f"(Profs Réguliers: {n_eng_members_regular_profs_only}, "
