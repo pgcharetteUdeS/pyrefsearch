@@ -54,6 +54,40 @@ class ReferenceQuery:
                 f"Could not open '{filename}', close it " "if it's already open!"
             ) from None
 
+    @staticmethod
+    def show_3it_members_stats_on_console(authors: pd.DataFrame):
+        n_members_women: int = len(authors[authors["Sexe"] == "F"])
+        n_eng_members: int = len(authors[authors["Faculté / Service"] == "FGEN"])
+        n_eng_members_regular_profs_only: int = len(
+            authors[
+                (authors["Faculté / Service"] == "FGEN")
+                & (authors["Statut professoral"] == "Régulier")
+            ]
+        )
+        n_members_with_office = len(authors[authors["Résidence"] != "Aucun bureau"])
+        n_eng_members_regular_profs_with_office = len(
+            authors[
+                (authors["Faculté / Service"] == "FGEN")
+                & (authors["Résidence"] != "Aucun bureau")
+                & (authors["Statut professoral"] == "Régulier")
+            ]
+        )
+        print(
+            f"Membres réguliers du 3IT: {len(authors)} ({n_members_women / len(authors) * 100:.0f}% de femmes)"
+        )
+        print(
+            "Membres réguliers qui ont un bureau au 3IT: "
+            f"{n_members_with_office}/{len(authors)}"
+        )
+        print(
+            f"Membres réguliers du 3IT en génie: {n_eng_members} "
+            f"(Profs Réguliers: {n_eng_members_regular_profs_only}, "
+            f"Profs Associés: {n_eng_members - n_eng_members_regular_profs_only})"
+        )
+        print(
+            f"Profs réguliers en génie qui ont un bureau au 3IT: {n_eng_members_regular_profs_with_office}"
+        )
+
     def __init__(
         self,
         in_excel_file: Path,
@@ -109,7 +143,7 @@ class ReferenceQuery:
                     "Prénom",
                     "ID Scopus",
                     "Faculté / Service",
-                    "Statut",
+                    "Statut professoral",
                     "Résidence",
                     "Sexe",
                 ]
@@ -122,39 +156,7 @@ class ReferenceQuery:
                 ].values.tolist()
             ]
             authors.drop(authors[authors.status == "Collaborateur"].index, inplace=True)
-
-            # Show 3IT member statistics on console
-            n_members_women: int = len(authors[authors["Sexe"] == "F"])
-            n_eng_members: int = len(authors[authors["Faculté / Service"] == "FGEN"])
-            n_eng_members_regular_profs_only: int = len(
-                authors[
-                    (authors["Faculté / Service"] == "FGEN")
-                    & (authors["Statut"] == "Régulier")
-                ]
-            )
-            n_members_with_office = len(authors[authors["Résidence"] != "Aucun bureau"])
-            n_eng_members_regular_profs_with_office = len(
-                authors[
-                    (authors["Faculté / Service"] == "FGEN")
-                    & (authors["Résidence"] != "Aucun bureau")
-                    & (authors["Statut"] == "Régulier")
-                ]
-            )
-            print(
-                f"Membres réguliers du 3IT: {len(authors)} ({n_members_women/len(authors)*100:.0f}% de femmes)"
-            )
-            print(
-                "Membres réguliers qui ont un bureau au 3IT: "
-                f"{n_members_with_office}/{len(authors)}"
-            )
-            print(
-                f"Membres réguliers du 3IT en génie: {n_eng_members} "
-                f"(Profs Réguliers: {n_eng_members_regular_profs_only}, "
-                f"Profs Associés: {n_eng_members-n_eng_members_regular_profs_only})"
-            )
-            print(
-                f"Profs réguliers en génie qui ont un bureau au 3IT: {n_eng_members_regular_profs_with_office}"
-            )
+            self.show_3it_members_stats_on_console(authors)
 
         elif not any(
             # Author information is supplied as a simple list of names, no filtering
