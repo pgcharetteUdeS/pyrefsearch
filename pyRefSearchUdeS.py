@@ -1221,16 +1221,19 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
     family_ids: list = []
     patent_applications_list: list[dict] = []
     patent_granted_list: list[dict] = []
+    patents_list = []
+    df_all = pd.DataFrame(columns=('Title', 'Inventors', 'Applicants', 'ID', 'Date', 'ID', 'Date'))
     for name in reference_query.au_names:
         patents = Inpadoc.objects.filter(
             cql_query=inventor_and_date_query_string(name)
         ).to_pandas()
         for _, row in patents.iterrows():
+            # Fetch patent info
             patent_id_info = dict(row.values)
             patent_id = f"{patent_id_info['country']}{patent_id_info['doc_number']}{patent_id_info['kind']}"
             patent = Inpadoc.objects.get(patent_id)
 
-            # Filter out patents already in the dataframe or with no Canadian inventors
+            # Filter out patents from families already downloaded or without Canadian inventors
             if patent.family_id in family_ids or all(
                 "[CA]" not in s for s in patent.inventors_epodoc
             ):
@@ -1261,44 +1264,42 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
             if not publications or not applications:
                 continue
 
-            # Append patent data dictionary to applications or patents dict lists
-            applications.sort(key=itemgetter(1), reverse=True)
-            publications.sort(key=itemgetter(1), reverse=True)
-            patent_dict: dict = {
-                "patent_id": patent_id,
-                "title": patent.title,
-                "inventors": patent.inventors_epodoc,
-                "applicants": patent.applicants_epodoc,
-                "family_id": patent.family_id,
-                "application_ids": [a[0] for a in applications],
-                "application_dates": [str(a[1]) for a in applications],
-                "publication_ids": [p[0] for p in publications],
-                "publication_dates": [str(p[1]) for p in publications],
-            }
-            if any("B" in p for p in patent_dict["publication_ids"]):
-                patent_granted_list.append(patent_dict)
+            # Create dataframe of applications & patents
+            df = pd.DataFrame(columns=('Title', 'Inventors', 'Applicants', 'Application ID', 'Date', 'Publication ID', 'Date'))
+            if len(applications) > len(publications):
+                for a, p in zip(applications[:len(publications)], publications):
+                    if len(df) == 0:
+                        df.loc[0] = [patent.title, str(patent.inventors_epodoc), str(patent.applicants_epodoc),
+                                     a[0], str(a[1]), p[0], str(p[1])]
+                    else:
+                        df.loc[len(df)] = [None, None, None, a[0], str(a[1]), p[0], str(p[1])]
+                for a in applications[len(publications):]:
+                    df.loc[len(df)] = [None, None, None, a[0], str(a[1]), None, None]
             else:
-                patent_applications_list.append(patent_dict)
+                for a, p in zip(applications, publications):
+                    if len(df) == 0:
+                        df.loc[0] = [patent.title, str(patent.inventors_epodoc), str(patent.applicants_epodoc),
+                                     a[0], str(a[1]), p[0], str(p[1])]
+                    else:
+                        df.loc[len(df)] = [None, None, None, a[0], str(a[1]), p[0], str(p[1])]
+                for p in publications[len(applications):]:
+                    df.loc[len(df)] = [None, None, None, None, None, p[0], str(p[1])]
+            if not df.loc[0, "Title"]:
+                df.loc[0, "Title"] = ""
 
-    patent_granted_df = pd.DataFrame(patent_granted_list).sort_values(
-        by=["title"], ignore_index=True
-    )
-    patent_applications_df = pd.DataFrame(patent_applications_list).sort_values(
-        by=["title"], ignore_index=True
-    )
-    patents_merged = pd.concat(
-        [patent_granted_df, patent_applications_df], ignore_index=True
-    ).sort_values(by=["title"], ignore_index=True)
+            # Append dataframe to list
+            df.loc[len(df)] = [None, None, None, None, None, None, None]
+            patents_list.append(df)
 
-    # Write dataframes in separate sheets to the output Excel file
+    # Sort list of dataframes by patent title, convert list to a single dataframe
+    patents_list.sort(key=lambda d : d.loc[0, "Title"])
+    df_all = pd.concat(patents_list)
+
+    # Write dataframe to output Excel file
     with pd.ExcelWriter("espacenet_results.xlsx") as writer:
-        patent_granted_df.to_excel(
+        df_all.to_excel(
             writer, index=False, header=True, sheet_name="Brevets émis"
         )
-        patent_applications_df.to_excel(
-            writer, index=False, header=True, sheet_name="Brevets en instance"
-        )
-        patents_merged.to_excel(writer, index=False, header=True, sheet_name="Tous")
 
     print("")
 
