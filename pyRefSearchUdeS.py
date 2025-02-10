@@ -177,6 +177,14 @@ class ReferenceQuery:
             ) from None
         self.au_names = authors[["Nom", "Prénom"]].values.tolist()
 
+        # Show warning is any space characters are present in the names
+        for name in self.au_names:
+            if " " in name[0] or " " in name[1]:
+                print(
+                    f"[yellow]ATTENTION: Le nom d'auteur.e '{name[1]}' '{name[0]}' contient des espaces, "
+                    "ce qui peut causer des erreurs de recherche![/yellow]"
+                )
+
         # Extract Scopus IDs, replace non-integer values with 0
         self.au_ids = []
         if "ID Scopus" in authors:
@@ -1322,7 +1330,9 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
     df_all = pd.concat(patents_df_list_sorted_by_date)
 
     # Write dataframe to output Excel file
-    with pd.ExcelWriter("espacenet_results.xlsx") as writer:
+    with pd.ExcelWriter(
+        f"espacenet_results_{reference_query.pub_year_first}_{reference_query.pub_year_last}.xlsx"
+    ) as writer:
         df_all.to_excel(
             writer,
             index=False,
