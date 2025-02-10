@@ -10,8 +10,8 @@ search_type = "Publications"
 # Le fichier maître est sur le SharePoint du 3IT: "\USherbrooke\3IT - Gestion Centrale - General\Membres\Liste chercheurs-membres_VF.xlsx"
 #
 #in_excel_file = "pyRefSearchUdeS.xlsx"
-in_excel_file = "pyRefSearchUdeS - TEST.xlsx"
-#in_excel_file = "Liste chercheurs-membres_VF.xlsx"
+#in_excel_file = "pyRefSearchUdeS - TEST.xlsx"
+in_excel_file = "Liste chercheurs-membres_VF.xlsx"
 in_excel_file_author_sheet = "Membres"
 
 # Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)

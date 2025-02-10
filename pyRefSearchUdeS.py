@@ -23,7 +23,7 @@
 from functools import lru_cache
 import numpy as np
 from openpyxl import load_workbook
-from operator import itemgetter
+from openpyxl.styles import PatternFill
 import pybliometrics
 import pandas as pd
 from patent_client import Inpadoc, Patent, PublishedApplication
@@ -1150,10 +1150,66 @@ def query_us_patents(
     return patents, application_ids, patent_counts_by_author
 
 
+def get_inpadoc_patent_df(
+    patent_id: str, patent_ids: list
+) -> tuple[Inpadoc | None, pd.DataFrame | None]:
+    """
+    Create dataframe with INPADOC database patent information if patent has not been
+    processed (it's not in the "patent_ids" list) and meets the following criteria:
+    1) From a relevant country: "US", "CA", "WO"
+    2) Type "A", "B", or "C"
+    3) At least one canadian inventor
+
+    Args:
+        patent_id (str): Patent ID
+        patent_ids (list): List of processed patent IDs
+
+    Returns: Tuple with INPADOC patent object and dataframe with patent info
+    """
+
+    # Exclude patents already in list, not from relevant countries, or not type "A", "B", or "C"
+    if (
+        patent_id in patent_ids
+        or patent_id[:2] not in ["US", "CA", "WO"]
+        or (
+            "A" not in patent_id[-2:]
+            and "B" not in patent_id[-2:]
+            and "C" not in patent_id[-2:]
+        )
+    ):
+        return None, None
+
+    # Fetch INPADOC patent info
+    patent: Inpadoc = Inpadoc.objects.get(patent_id)
+
+    # Exclude patents without at least one canadian author or without a title
+    if all("[CA]" not in s for s in patent.inventors_epodoc) or not patent.title:
+        return None, None
+
+    # Create dataframe with patent info, add it to the list
+    df = pd.DataFrame(
+        [
+            {
+                "Title": patent.title,
+                "Publication number": patent.publication_number,
+                "Publication date": str(patent.publication_reference_epodoc.date),
+                "Application number": patent.application_number,
+                "Application date": str(patent.application_reference_epodoc.date),
+                "Inventors": patent.inventors_original,
+                "Applicants": patent.applicants_original,
+            }
+        ]
+    )
+    patent_ids.append(patent_id)
+    return patent, df
+
+
 def query_espacenet(reference_query: ReferenceQuery) -> None:
     """
 
-    Query the INPADOC worldwide patent library via espacenet
+    Query the INPADOC worldwide patent library via espacenet. INPADOC (International
+    Patent Documentation) is a free database of patent information. The European
+    Patent Office (EPO) produces and maintains the database.
 
     To connect to the INPADOC worldwide patent search services, API keys are
     required and must then be defined locally as environmental variables, see:
@@ -1217,89 +1273,52 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
             f'"{reference_query.pub_year_first},{reference_query.pub_year_last}"'
         )
 
-    # Loop to build dataframe from patents in Inpadoc database
-    family_ids: list = []
-    patent_applications_list: list[dict] = []
-    patent_granted_list: list[dict] = []
-    patents_list = []
-    df_all = pd.DataFrame(columns=('Title', 'Inventors', 'Applicants', 'ID', 'Date', 'ID', 'Date'))
+    # Loop to fetch entries in INPADOC database by author name
+    patent_ids: list = []
+    patents_df_list = []
     for name in reference_query.au_names:
+        # Fetch INPADOC entries this author
         patents = Inpadoc.objects.filter(
             cql_query=inventor_and_date_query_string(name)
         ).to_pandas()
+
+        # Loop through INPADOC entries for this author
         for _, row in patents.iterrows():
-            # Fetch patent info
-            patent_id_info = dict(row.values)
-            patent_id = f"{patent_id_info['country']}{patent_id_info['doc_number']}{patent_id_info['kind']}"
-            patent = Inpadoc.objects.get(patent_id)
+            # Patent info
+            patent_id_info: dict = dict(row.values)
+            patent_id: str = (
+                f"{patent_id_info['country']}{patent_id_info['doc_number']}{patent_id_info['kind']}"
+            )
 
-            # Filter out patents from families already downloaded or without Canadian inventors
-            if patent.family_id in family_ids or all(
-                "[CA]" not in s for s in patent.inventors_epodoc
-            ):
+            # Add patent to the list if it meets the requirements
+            (patent, df) = get_inpadoc_patent_df(patent_id, patent_ids)
+            if patent is None:
                 continue
+            patents_df_list.append(df)
 
-            # Filter out patents with no US, EP, CA or WO applications or publications
-            family_ids.append(patent.family_id)
-            applications = [
-                [p.application_number, p.application_reference[0]["date"]]
-                for p in patent.family
-                if (
-                    "US" in p.application_number
-                    or "EP" in p.application_number
-                    or "CA" in p.application_number
-                    or "WO" in p.application_number
+            # Loop through family member patents and add them if they meet requirements
+            for member in patent.family:
+                (member_patent, df) = get_inpadoc_patent_df(
+                    member.publication_number, patent_ids
                 )
-            ]
-            publications = [
-                [p.publication_number, p.publication_reference[0]["date"]]
-                for p in patent.family
-                if (
-                    "US" in p.publication_number
-                    or "EP" in p.publication_number
-                    or "CA" in p.publication_number
-                    or "WO" in p.publication_number
-                )
-            ]
-            if not publications or not applications:
-                continue
-
-            # Create dataframe of applications & patents
-            df = pd.DataFrame(columns=('Title', 'Inventors', 'Applicants', 'Application ID', 'Date', 'Publication ID', 'Date'))
-            if len(applications) > len(publications):
-                for a, p in zip(applications[:len(publications)], publications):
-                    if len(df) == 0:
-                        df.loc[0] = [patent.title, str(patent.inventors_epodoc), str(patent.applicants_epodoc),
-                                     a[0], str(a[1]), p[0], str(p[1])]
-                    else:
-                        df.loc[len(df)] = [None, None, None, a[0], str(a[1]), p[0], str(p[1])]
-                for a in applications[len(publications):]:
-                    df.loc[len(df)] = [None, None, None, a[0], str(a[1]), None, None]
-            else:
-                for a, p in zip(applications, publications):
-                    if len(df) == 0:
-                        df.loc[0] = [patent.title, str(patent.inventors_epodoc), str(patent.applicants_epodoc),
-                                     a[0], str(a[1]), p[0], str(p[1])]
-                    else:
-                        df.loc[len(df)] = [None, None, None, a[0], str(a[1]), p[0], str(p[1])]
-                for p in publications[len(applications):]:
-                    df.loc[len(df)] = [None, None, None, None, None, p[0], str(p[1])]
-            if not df.loc[0, "Title"]:
-                df.loc[0, "Title"] = ""
-
-            # Append dataframe to list
-            df.loc[len(df)] = [None, None, None, None, None, None, None]
-            patents_list.append(df)
+                if member_patent is not None:
+                    patents_df_list.append(df)
 
     # Sort list of dataframes by patent title, convert list to a single dataframe
-    patents_list.sort(key=lambda d : d.loc[0, "Title"])
-    df_all = pd.concat(patents_list)
+    patents_df_list.sort(key=lambda d: d.loc[0, "Title"])
+    df_all = pd.concat(patents_df_list)
 
     # Write dataframe to output Excel file
     with pd.ExcelWriter("espacenet_results.xlsx") as writer:
         df_all.to_excel(
-            writer, index=False, header=True, sheet_name="Brevets émis"
+            writer,
+            index=False,
+            header=True,
+            sheet_name="Brevets",
+            freeze_panes=(1, 1),
         )
+
+    # sheet['B1'].fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
 
     print("")
 
