@@ -21,6 +21,7 @@
 """
 
 from functools import lru_cache
+from itertools import groupby
 import numpy as np
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
@@ -1306,8 +1307,17 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
 
     # Sort list of dataframes by patent title, convert list to a single dataframe
     patents_df_list.sort(key=lambda d: d.loc[0, "Title"])
-    df_all = pd.concat(patents_df_list)
-    df_all.loc[df_all.duplicated(subset=["Title"]).values, "Title"] = None
+    blanc_line_df = pd.DataFrame([None] * len(patents_df_list[0].columns)).T
+    patents_df_list_sorted_by_date: list = []
+    for _, single_patent_dfs in groupby(patents_df_list, lambda d: d.loc[0, "Title"]):
+        single_patent_dfs_list = list(single_patent_dfs)
+        single_patent_dfs_list.sort(key=lambda d: d.loc[0, "Publication date"])
+        if len(single_patent_dfs_list) > 1:
+            for df in single_patent_dfs_list[1:]:
+                df.at[0, "Title"] = None
+        single_patent_dfs_list.append(blanc_line_df)
+        patents_df_list_sorted_by_date += single_patent_dfs_list
+    df_all = pd.concat(patents_df_list_sorted_by_date)
 
     # Write dataframe to output Excel file
     with pd.ExcelWriter("espacenet_results.xlsx") as writer:
