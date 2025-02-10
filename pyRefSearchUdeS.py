@@ -24,7 +24,6 @@ from functools import lru_cache
 from itertools import groupby
 import numpy as np
 from openpyxl import load_workbook
-from openpyxl.styles import PatternFill
 import pybliometrics
 import pandas as pd
 from patent_client import Inpadoc, Patent, PublishedApplication
@@ -1192,6 +1191,9 @@ def get_inpadoc_patent_df(
         [
             {
                 "Title": patent.title.upper(),
+                "Delivered": (
+                    "X" if "B" in patent_id[-2:] or "C" in patent_id[-2:] else None
+                ),
                 "Publication number": patent.publication_number,
                 "Publication date": str(patent.publication_reference_epodoc.date),
                 "Application number": patent.application_number,
@@ -1305,7 +1307,7 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
                 if member_patent is not None:
                     patents_df_list.append(df)
 
-    # Sort list of dataframes by patent title, convert list to a single dataframe
+    # Sort list of dataframes by patent title & publication dare, concatenate list to single dataframe
     patents_df_list.sort(key=lambda d: d.loc[0, "Title"])
     blanc_line_df = pd.DataFrame([None] * len(patents_df_list[0].columns)).T
     patents_df_list_sorted_by_date: list = []
@@ -1328,10 +1330,6 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
             sheet_name="Brevets",
             freeze_panes=(1, 1),
         )
-
-    # sheet['B1'].fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-
-    print("")
 
 
 def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
