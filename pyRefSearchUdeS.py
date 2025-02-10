@@ -1190,7 +1190,7 @@ def get_inpadoc_patent_df(
     df = pd.DataFrame(
         [
             {
-                "Title": patent.title,
+                "Title": patent.title.upper(),
                 "Publication number": patent.publication_number,
                 "Publication date": str(patent.publication_reference_epodoc.date),
                 "Application number": patent.application_number,
@@ -1307,6 +1307,7 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
     # Sort list of dataframes by patent title, convert list to a single dataframe
     patents_df_list.sort(key=lambda d: d.loc[0, "Title"])
     df_all = pd.concat(patents_df_list)
+    df_all.loc[df_all.duplicated(subset=["Title"]).values, "Title"] = None
 
     # Write dataframe to output Excel file
     with pd.ExcelWriter("espacenet_results.xlsx") as writer:
