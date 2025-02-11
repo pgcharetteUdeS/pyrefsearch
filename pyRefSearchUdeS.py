@@ -1203,7 +1203,7 @@ def get_inpadoc_patent_df(
             {
                 "Title": patent.title.upper(),
                 "Parent": "X" if parent else None,
-                "Delivered": (
+                "Granted": (
                     "X" if "B" in patent_id[-2:] or "C" in patent_id[-2:] else None
                 ),
                 "Publication number": patent.publication_number,
