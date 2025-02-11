@@ -1254,7 +1254,7 @@ def _gen_sorted_dataframe_from_list(patents_df_list: list) -> pd.DataFrame:
     return pd.concat(patents_df_list_sorted_by_date).fillna("")
 
 
-def _add_local_inventors_column_to__df(
+def _add_local_inventors_column_to_df(
     reference_query: ReferenceQuery, patents_df: pd.DataFrame, column: str
 ) -> None:
     """
@@ -1408,7 +1408,7 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
     patents_df = _gen_sorted_dataframe_from_list(patents_df_list)
 
     # Add local inventors column to dataframe
-    _add_local_inventors_column_to__df(
+    _add_local_inventors_column_to_df(
         reference_query=reference_query, patents_df=patents_df, column="Inventors"
     )
 
