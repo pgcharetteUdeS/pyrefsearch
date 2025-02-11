@@ -20,6 +20,7 @@
 
 """
 
+from datetime import datetime
 from functools import lru_cache
 from itertools import groupby
 import numpy as np
@@ -1161,7 +1162,7 @@ def query_us_patents(
 
 
 def _get_inpadoc_patent_df(
-    patent_id: str, patent_ids: list, parent: bool = True
+    reference_query: ReferenceQuery, patent_id: str, patent_ids: list
 ) -> tuple[Inpadoc | None, pd.DataFrame | None]:
     """
     Create dataframe with INPADOC database patent information if patent has not been
@@ -1171,9 +1172,9 @@ def _get_inpadoc_patent_df(
     3) At least one canadian inventor
 
     Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
         patent_id (str): Patent ID
         patent_ids (list): List of processed patent IDs
-        parent (Boolean): Root patent
 
     Returns: Tuple with INPADOC patent object and dataframe with patent info
     """
@@ -1198,11 +1199,20 @@ def _get_inpadoc_patent_df(
         return None, None
 
     # Create dataframe with patent info, add it to the list
+    pub_year = datetime.strptime(
+        str(patent.publication_reference_epodoc.date), "%Y-%m-%d"
+    ).year
     df = pd.DataFrame(
         [
             {
                 "Title": patent.title.upper(),
-                "Parent": "X" if parent else None,
+                "Hit": (
+                    "X"
+                    if reference_query.pub_year_first
+                    <= pub_year
+                    <= reference_query.pub_year_last
+                    else None
+                ),
                 "Granted": (
                     "X" if "B" in patent_id[-2:] or "C" in patent_id[-2:] else None
                 ),
@@ -1242,6 +1252,48 @@ def _gen_sorted_dataframe_from_list(patents_df_list: list) -> pd.DataFrame:
         single_patent_dfs_list.append(blanc_line_df)
         patents_df_list_sorted_by_date += single_patent_dfs_list
     return pd.concat(patents_df_list_sorted_by_date).fillna("")
+
+
+def _add_local_inventors_column_to__df(
+    reference_query: ReferenceQuery, patents_df: pd.DataFrame, column: str
+) -> None:
+    """
+    Add column with lists of local inventors to dataframe
+
+    Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+        patents_df (pd.DataFrame): DataFrame with patent information
+        column (str): Column name with inventors
+
+    """
+
+    # Add dataframe column with lists of local inventors
+    local_inventors = patents_df[column].apply(
+        lambda inventors: (
+            [
+                lastname
+                for [lastname, firstname] in reference_query.au_names
+                if any(
+                    (
+                        _to_lower_no_accents_no_hyphens(lastname)
+                        in _to_lower_no_accents_no_hyphens(inventor)
+                    )
+                    and (
+                        _to_lower_no_accents_no_hyphens(firstname)
+                        in _to_lower_no_accents_no_hyphens(inventor)
+                    )
+                    for inventor in inventors
+                )
+            ]
+            if len(inventors) > 1
+            else None
+        )
+    )
+    patents_df.insert(
+        loc=patents_df.columns.get_loc(column),
+        column="Local inventors",
+        value=local_inventors,
+    )
 
 
 def query_espacenet(reference_query: ReferenceQuery) -> None:
@@ -1337,7 +1389,9 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
 
             # Add parent patent to the list if it meets the requirements
             # (not already in the list, from a relevant country, type "A", "B", or "C")
-            (patent, df) = _get_inpadoc_patent_df(patent_id, patent_ids)
+            (patent, df) = _get_inpadoc_patent_df(
+                reference_query, patent_id, patent_ids
+            )
             if patent is None:
                 continue
             patents_df_list.append(df)
@@ -1345,7 +1399,7 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
             # Loop through family member patents and add them if they meet requirements
             for member in patent.family:
                 (member_patent, df) = _get_inpadoc_patent_df(
-                    member.publication_number, patent_ids, parent=False
+                    reference_query, member.publication_number, patent_ids
                 )
                 if member_patent is not None:
                     patents_df_list.append(df)
@@ -1353,30 +1407,9 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
     # Sort list of patents by title & publication date, concatenate to a single dataframe
     patents_df = _gen_sorted_dataframe_from_list(patents_df_list)
 
-    # Add dataframe column with lists of local inventors
-    local_inventors = patents_df["Inventors"].apply(
-        lambda inventors: (
-            [
-                lastname
-                for [lastname, firstname] in reference_query.au_names
-                if any(
-                    (
-                        _to_lower_no_accents_no_hyphens(lastname)
-                        in _to_lower_no_accents_no_hyphens(inventor)
-                    )
-                    and (
-                        _to_lower_no_accents_no_hyphens(firstname)
-                        in _to_lower_no_accents_no_hyphens(inventor)
-                    )
-                    for inventor in inventors
-                )
-            ] if len(inventors) > 1 else None
-        )
-    )
-    patents_df.insert(
-        loc=patents_df.columns.get_loc("Inventors"),
-        column="Local inventors",
-        value=local_inventors,
+    # Add local inventors column to dataframe
+    _add_local_inventors_column_to__df(
+        reference_query=reference_query, patents_df=patents_df, column="Inventors"
     )
 
     # Write dataframe to output Excel file
