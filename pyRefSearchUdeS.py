@@ -1160,7 +1160,7 @@ def query_us_patents(
     return patents, application_ids, patent_counts_by_author
 
 
-def get_inpadoc_patent_df(
+def _get_inpadoc_patent_df(
     patent_id: str, patent_ids: list, parent: bool = True
 ) -> tuple[Inpadoc | None, pd.DataFrame | None]:
     """
@@ -1219,7 +1219,7 @@ def get_inpadoc_patent_df(
     return patent, df
 
 
-def gen_sorted_dataframe_from_list(patents_df_list: list) -> pd.DataFrame:
+def _gen_sorted_dataframe_from_list(patents_df_list: list) -> pd.DataFrame:
     """
     Generate a sorted dataframe from a list of dataframes with patent information,
     where the patents are sorted by title and the patent family members are sorted
@@ -1338,21 +1338,21 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
 
             # Add parent patent to the list if it meets the requirements
             # (not already in the list, from a relevant country, type "A", "B", or "C")
-            (patent, df) = get_inpadoc_patent_df(patent_id, patent_ids)
+            (patent, df) = _get_inpadoc_patent_df(patent_id, patent_ids)
             if patent is None:
                 continue
             patents_df_list.append(df)
 
             # Loop through family member patents and add them if they meet requirements
             for member in patent.family:
-                (member_patent, df) = get_inpadoc_patent_df(
+                (member_patent, df) = _get_inpadoc_patent_df(
                     member.publication_number, patent_ids, parent=False
                 )
                 if member_patent is not None:
                     patents_df_list.append(df)
 
     # Sort list of patents by title & publication date, concatenate to a single dataframe
-    df_all = gen_sorted_dataframe_from_list(patents_df_list)
+    df_all = _gen_sorted_dataframe_from_list(patents_df_list)
 
     # Write dataframe to output Excel file
     with pd.ExcelWriter(
