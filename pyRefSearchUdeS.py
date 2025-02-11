@@ -35,6 +35,8 @@ from rich import print
 import sys
 import toml
 import unidecode
+from yankee.xml.schema.fields import Boolean
+
 from version import __version__
 import warnings
 
@@ -1159,7 +1161,7 @@ def query_us_patents(
 
 
 def get_inpadoc_patent_df(
-    patent_id: str, patent_ids: list
+    patent_id: str, patent_ids: list, parent: bool = True
 ) -> tuple[Inpadoc | None, pd.DataFrame | None]:
     """
     Create dataframe with INPADOC database patent information if patent has not been
@@ -1171,6 +1173,7 @@ def get_inpadoc_patent_df(
     Args:
         patent_id (str): Patent ID
         patent_ids (list): List of processed patent IDs
+        parent (Boolean): Root patent
 
     Returns: Tuple with INPADOC patent object and dataframe with patent info
     """
@@ -1199,6 +1202,7 @@ def get_inpadoc_patent_df(
         [
             {
                 "Title": patent.title.upper(),
+                "Parent": "X" if parent else None,
                 "Delivered": (
                     "X" if "B" in patent_id[-2:] or "C" in patent_id[-2:] else None
                 ),
@@ -1213,6 +1217,32 @@ def get_inpadoc_patent_df(
     )
     patent_ids.append(patent_id)
     return patent, df
+
+
+def gen_sorted_dataframe_from_list(patents_df_list: list) -> pd.DataFrame:
+    """
+    Generate a sorted dataframe from a list of dataframes with patent information,
+    where the patents are sorted by title and the patent family members are sorted
+    by date.
+
+    Args:
+        patents_df_list (list): List of dataframes with patent information
+
+    Returns: DataFrame with sorted patent information
+    """
+
+    patents_df_list.sort(key=lambda d: d.loc[0, "Title"])
+    blanc_line_df = pd.DataFrame([None] * len(patents_df_list[0].columns)).T
+    patents_df_list_sorted_by_date: list = []
+    for _, single_patent_dfs in groupby(patents_df_list, lambda d: d.loc[0, "Title"]):
+        single_patent_dfs_list = list(single_patent_dfs)
+        single_patent_dfs_list.sort(key=lambda d: d.loc[0, "Publication date"])
+        if len(single_patent_dfs_list) > 1:
+            for df in single_patent_dfs_list[1:]:
+                df.at[0, "Title"] = None
+        single_patent_dfs_list.append(blanc_line_df)
+        patents_df_list_sorted_by_date += single_patent_dfs_list
+    return pd.concat(patents_df_list_sorted_by_date)
 
 
 def query_espacenet(reference_query: ReferenceQuery) -> None:
@@ -1242,6 +1272,11 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
 
           NB: EspaceNet can only be searched by patent publication date,
               NOT by date of application NOR granting: 'AND pd within "2021,2024"'
+
+    ** IMPORTANT ** The date specified in the search is the date of EARLIEST publication,
+                    as a result the grated patents don't come up directly in the
+                    search results by date (they appear as "family members" of
+                    the original applications)
 
     """
 
@@ -1301,7 +1336,8 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
                 f"{patent_id_info['country']}{patent_id_info['doc_number']}{patent_id_info['kind']}"
             )
 
-            # Add patent to the list if it meets the requirements
+            # Add parent patent to the list if it meets the requirements
+            # (not already in the list, from a relevant country, type "A", "B", or "C")
             (patent, df) = get_inpadoc_patent_df(patent_id, patent_ids)
             if patent is None:
                 continue
@@ -1310,24 +1346,13 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
             # Loop through family member patents and add them if they meet requirements
             for member in patent.family:
                 (member_patent, df) = get_inpadoc_patent_df(
-                    member.publication_number, patent_ids
+                    member.publication_number, patent_ids, parent=False
                 )
                 if member_patent is not None:
                     patents_df_list.append(df)
 
-    # Sort list of dataframes by patent title & publication dare, concatenate list to single dataframe
-    patents_df_list.sort(key=lambda d: d.loc[0, "Title"])
-    blanc_line_df = pd.DataFrame([None] * len(patents_df_list[0].columns)).T
-    patents_df_list_sorted_by_date: list = []
-    for _, single_patent_dfs in groupby(patents_df_list, lambda d: d.loc[0, "Title"]):
-        single_patent_dfs_list = list(single_patent_dfs)
-        single_patent_dfs_list.sort(key=lambda d: d.loc[0, "Publication date"])
-        if len(single_patent_dfs_list) > 1:
-            for df in single_patent_dfs_list[1:]:
-                df.at[0, "Title"] = None
-        single_patent_dfs_list.append(blanc_line_df)
-        patents_df_list_sorted_by_date += single_patent_dfs_list
-    df_all = pd.concat(patents_df_list_sorted_by_date)
+    # Sort list of patents by title & publication date, concatenate to a single dataframe
+    df_all = gen_sorted_dataframe_from_list(patents_df_list)
 
     # Write dataframe to output Excel file
     with pd.ExcelWriter(
