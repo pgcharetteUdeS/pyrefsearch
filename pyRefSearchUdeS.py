@@ -1324,10 +1324,16 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
           NB: EspaceNet can only be searched by patent publication date,
               NOT by date of application NOR granting: 'AND pd within "2021,2024"'
 
-    ** IMPORTANT ** The date specified in the search is the date of EARLIEST publication,
-                    as a result the grated patents don't come up directly in the
-                    search results by date (they appear as "family members" of
-                    the original applications)
+    ** IMPORTANT **
+            1) Because granted patents don't come up in espacenet search, must search
+               for applications back several years and then look for the
+               granted patents in the patent family. Go back 5 years or more?
+            2) Keep running list of families, don't process families already traversed
+            3) Traverse family to keep only earliest patent application (type "A")
+               publication date, which is either CA or WO, keep WO if both are present.
+            4) Traverse family to keep only earliest granted patent (type "B" or "C")
+               publication date.
+            4) Keep only #3 and #4 that match the search range criteria
 
     """
 
