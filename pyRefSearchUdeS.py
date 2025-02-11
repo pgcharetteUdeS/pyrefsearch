@@ -1208,7 +1208,6 @@ def _get_inpadoc_patent_df(
                 ),
                 "Publication number": patent.publication_number,
                 "Publication date": str(patent.publication_reference_epodoc.date),
-                "Application number": patent.application_number,
                 "Application date": str(patent.application_reference_epodoc.date),
                 "Inventors": patent.inventors_original,
                 "Applicants": patent.applicants_original,
@@ -1232,7 +1231,7 @@ def _gen_sorted_dataframe_from_list(patents_df_list: list) -> pd.DataFrame:
     """
 
     patents_df_list.sort(key=lambda d: d.loc[0, "Title"])
-    blanc_line_df = pd.DataFrame([None] * len(patents_df_list[0].columns)).T
+    blanc_line_df = pd.DataFrame({c: [""] for c in patents_df_list[0].columns})
     patents_df_list_sorted_by_date: list = []
     for _, single_patent_dfs in groupby(patents_df_list, lambda d: d.loc[0, "Title"]):
         single_patent_dfs_list = list(single_patent_dfs)
@@ -1242,7 +1241,7 @@ def _gen_sorted_dataframe_from_list(patents_df_list: list) -> pd.DataFrame:
                 df.at[0, "Title"] = None
         single_patent_dfs_list.append(blanc_line_df)
         patents_df_list_sorted_by_date += single_patent_dfs_list
-    return pd.concat(patents_df_list_sorted_by_date)
+    return pd.concat(patents_df_list_sorted_by_date).fillna("")
 
 
 def query_espacenet(reference_query: ReferenceQuery) -> None:
@@ -1352,13 +1351,39 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
                     patents_df_list.append(df)
 
     # Sort list of patents by title & publication date, concatenate to a single dataframe
-    df_all = _gen_sorted_dataframe_from_list(patents_df_list)
+    patents_df = _gen_sorted_dataframe_from_list(patents_df_list)
+
+    # Add dataframe column with lists of local inventors
+    local_inventors = patents_df["Inventors"].apply(
+        lambda inventors: (
+            [
+                lastname
+                for [lastname, firstname] in reference_query.au_names
+                if any(
+                    (
+                        _to_lower_no_accents_no_hyphens(lastname)
+                        in _to_lower_no_accents_no_hyphens(inventor)
+                    )
+                    and (
+                        _to_lower_no_accents_no_hyphens(firstname)
+                        in _to_lower_no_accents_no_hyphens(inventor)
+                    )
+                    for inventor in inventors
+                )
+            ] if len(inventors) > 1 else None
+        )
+    )
+    patents_df.insert(
+        loc=patents_df.columns.get_loc("Inventors"),
+        column="Local inventors",
+        value=local_inventors,
+    )
 
     # Write dataframe to output Excel file
     with pd.ExcelWriter(
         f"espacenet_results_{reference_query.pub_year_first}_{reference_query.pub_year_last}.xlsx"
     ) as writer:
-        df_all.to_excel(
+        patents_df.to_excel(
             writer,
             index=False,
             header=True,
