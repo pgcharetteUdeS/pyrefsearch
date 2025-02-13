@@ -36,7 +36,6 @@ from rich import print
 import sys
 import toml
 import unidecode
-from yankee.xml.schema.fields import Boolean
 
 from version import __version__
 import warnings
@@ -1334,6 +1333,17 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
             4) Traverse family to keep only earliest granted patent (type "B" or "C")
                publication date.
             4) Keep only #3 and #4 that match the search range criteria
+
+            OR: Only search for patent applications, keep only the earliest application
+            in the family?
+
+            For granted patents, the simplest is to search by granted "patent number"
+            ("US/USA/USB", "CA/CAA/CAC", "WO") and by author, without specifying a range of years,
+            then retain only the patents first granted in the family that match the search
+            range criteria.
+
+            Question: for patent applications, should we use the application date or the
+                      publication date? Compare with USPTO search results.
 
     """
 
