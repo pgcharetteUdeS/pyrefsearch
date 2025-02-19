@@ -1295,55 +1295,14 @@ def _add_local_inventors_column_to_df(
     )
 
 
-def query_espacenet(reference_query: ReferenceQuery) -> None:
+def _fetch_unique_inpadoc_patent_family_ids_for_author(name: list) -> pd.DataFrame:
     """
+    Fetch unique INPADOC patent family IDs for author
 
-    Query the INPADOC worldwide patent library via espacenet. INPADOC (International
-    Patent Documentation) is a free database of patent information. The European
-    Patent Office (EPO) produces and maintains the database.
+    Args:
+        name (list): Author last, first names
 
-    To connect to the INPADOC worldwide patent search services, API keys are
-    required and must then be defined locally as environmental variables, see:
-      - https://patent-client.readthedocs.io/en/stable/getting_started.html
-      - https://www.epo.org/en/searching-for-patents/data/web-services/ops
-
-    Espacenet/Inpadoc search, see:
-        https://link.epo.org/web/technical/espacenet/espacenet-pocket-guide-en.pdf
-        New interface: https://worldwide.espacenet.com/patent/search
-        Old interface: https://worldwide.espacenet.com/?locale=en_EP
-        NB: Old interface does not accept hyphens, which seems to be the case for
-            this library!
-
-        Example search string:
-          '(in=("charette" prox/distance<1 "paul") OR in=("hunter" prox/distance<1 "ian")) AND pd within "1990,2020"'
-
-          Search for granted (type "B") US patents:  'AND pn any "USB"'
-          Search for granted (type "B") European patents: 'AND pn any "EPB"'
-
-          NB: EspaceNet can only be searched by patent publication date,
-              NOT by date of application NOR granting: 'AND pd within "2021,2024"'
-
-    ** IMPORTANT **
-            1) Because granted patents don't come up in espacenet search, must search
-               for applications back several years and then look for the
-               granted patents in the patent family. Go back 5 years or more?
-            2) Keep running list of families, don't process families already traversed
-            3) Traverse family to keep only earliest patent application (type "A")
-               publication date, which is either CA or WO, keep WO if both are present.
-            4) Traverse family to keep only earliest granted patent (type "B" or "C")
-               publication date.
-            4) Keep only #3 and #4 that match the search range criteria
-
-            OR: Only search for patent applications, keep only the earliest application
-            in the family?
-
-            For granted patents, the simplest is to search by granted "patent number"
-            ("US/USA/USB", "CA/CAA/CAC", "WO") and by author, without specifying a range of years,
-            then retain only the patents first granted in the family that match the search
-            range criteria.
-
-            Question: for patent applications, should we use the application date or the
-                      publication date? Compare with USPTO search results.
+    Returns: DataFrame with unique INPADOC patent family & patent IDs
 
     """
 
@@ -1379,60 +1338,185 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
             query_str = f'in=("{last_name}" prox/distance<3 "{first_name}")'
         return query_str
 
-    def inventor_and_date_query_string(author_name: str) -> str:
-        return (
-            f"{inventor_query_str(last_name=author_name[1], first_name=author_name[0])}"
-            " AND pd within "
-            f'"{reference_query.pub_year_first},{reference_query.pub_year_last}"'
+    patents = Inpadoc.objects.filter(
+        cql_query=inventor_query_str(last_name=name[1], first_name=name[0])
+    ).to_pandas()
+    patents_name_list: list[dict] = []
+    for _, row in patents.iterrows():
+        patent_id_info: dict = dict(row.values)
+        patent_id_info["patent_id"] = (
+            f"{patent_id_info['country']}{patent_id_info['doc_number']}{patent_id_info['kind']}"
         )
+        patent_id_info.pop("country")
+        patent_id_info.pop("doc_number")
+        patent_id_info.pop("kind")
+        patent_id_info.pop("id_type")
+        patents_name_list.append(patent_id_info)
+    patents_name_df = pd.DataFrame(patents_name_list)
 
-    # Loop to fetch entries in INPADOC database by author name
-    patent_ids: list = []
-    patents_df_list = []
+    return patents_name_df.drop_duplicates(subset=["family_id"])
+
+
+def query_espacenet(reference_query: ReferenceQuery) -> None:
+    """
+
+    Query the INPADOC worldwide patent library via espacenet. INPADOC (International
+    Patent Documentation) is a free database of patent information. The European
+    Patent Office (EPO) produces and maintains the database.
+
+    To connect to the INPADOC worldwide patent search services, API keys are
+    required and must then be defined locally as environmental variables, see:
+      - https://patent-client.readthedocs.io/en/stable/getting_started.html
+      - https://www.epo.org/en/searching-for-patents/data/web-services/ops
+
+    Espacenet/Inpadoc search, see:
+        https://link.epo.org/web/technical/espacenet/espacenet-pocket-guide-en.pdf
+        New interface: https://worldwide.espacenet.com/patent/search
+        Old interface: https://worldwide.espacenet.com/?locale=en_EP
+        NB: Old interface does not accept hyphens, which seems to be the case for
+            this library!
+
+        Example search string:
+          '(in=("charette" prox/distance<1 "paul") OR in=("hunter" prox/distance<1 "ian")) AND pd within "1990,2020"'
+
+          Search for granted (type "B") US patents:  'AND pn any "USB"'
+          Search for granted (type "B") European patents: 'AND pn any "EPB"'
+
+          NB: EspaceNet can only be searched by patent publication date,
+              NOT by date of application NOR granting: 'AND pd within "2021,2024"'
+
+    ** IMPORTANT **
+            1) Because granted patents don't come up in espacenet search by year, search
+               for patents by author name and then filter by year in software.
+            2) Keep running list of families, don't process families already traversed
+            3) Traverse family to keep only earliest patent application (type "A")
+               publication date, which if either CA or WO, keep WO if both are present.
+            4) Traverse family to keep only earliest granted patent (type "B" or "C")
+               publication date.
+            4) Keep only #3 and #4 that match the search range criteria
+
+            OR: Only search for patent applications, keep only the earliest application
+            in the family?
+
+            For granted patents, the simplest is to search by granted "patent number"
+            ("US/USA/USB", "CA/CAA/CAC", "WO") and by author, without specifying a range of years,
+            then retain only the patents first granted in the family that match the search
+            range criteria.
+
+            Question: for patent applications, should we use the application date or the
+                      publication date? Compare with USPTO search results.
+
+    """
+
+    # Fetch unique patent families by author name
+    patent_families: pd.DataFrame = pd.DataFrame([])
     for name in reference_query.au_names:
-        # Fetch INPADOC entries this author
-        patents = Inpadoc.objects.filter(
-            cql_query=inventor_and_date_query_string(name)
-        ).to_pandas()
+        patent_families = pd.concat(
+            [patent_families, _fetch_unique_inpadoc_patent_family_ids_for_author(name)],
+            ignore_index=True,
+        )
+        patent_families = patent_families.drop_duplicates(subset=["family_id"])
 
-        # Loop through INPADOC entries for this author
-        for _, row in patents.iterrows():
-            # Patent info
-            patent_id_info: dict = dict(row.values)
-            patent_id: str = (
-                f"{patent_id_info['country']}{patent_id_info['doc_number']}{patent_id_info['kind']}"
+    # Fetch detailed patent family info
+    patent_family_member_info: list[Inpadoc] = [
+        Inpadoc.objects.get(row["patent_id"]) for _, row in patent_families.iterrows()
+    ]
+
+    # Add patent titles, inventors, applicants, etc. to the patent families dataframe,
+    # if there is at least one Canadian author and there is a valid title
+    titles: list = []
+    inventors: list = []
+    applicants: list = []
+    for member_info in patent_family_member_info:
+        if any("[CA]" in s for s in member_info.inventors_epodoc) and member_info.title:
+            titles.append(member_info.title)
+            inventors.append(member_info.inventors_original)
+            applicants.append(member_info.applicants_original)
+    patent_families["Title"] = titles
+    patent_families["Inventors"] = inventors
+    patent_families["Applicants"] = applicants
+    patent_families.pop("family_id")
+    patent_families.pop("patent_id")
+
+    # Add member patent info (ID, publication date) to the patent families dataframe
+    patent_ids: list[list] = []
+    publication_dates: list[list] = []
+    for member_info in patent_family_member_info:
+        # Start the list for this family with the parent patent info
+        family_member_patent_ids: list = [member_info.application_number]
+        family_member_publication_dates: list = [
+            str(member_info.publication_reference_epodoc.date)
+        ]
+
+        # Add family member patent info to the list
+        for member in member_info.family:
+            family_member_patent_ids.append(member.publication_number)
+            family_member_publication_dates.append(
+                str(member.publication_reference[0]["date"])
             )
 
-            # Add parent patent to the list if it meets the requirements
-            # (not already in the list, from a relevant country, type "A", "B", or "C")
-            (patent, df) = _get_inpadoc_patent_df(
-                reference_query, patent_id, patent_ids
-            )
-            if patent is None:
-                continue
-            patents_df_list.append(df)
-
-            # Loop through family member patents and add them if they meet requirements
-            for member in patent.family:
-                (member_patent, df) = _get_inpadoc_patent_df(
-                    reference_query, member.publication_number, patent_ids
+        # Prune the lists to keep only patents from relevant countries (US, CA, WO)
+        family_member_patent_ids_filtered: list = []
+        family_member_publication_dates_filtered: list = []
+        for i, pid in enumerate(family_member_patent_ids):
+            if pid[:2] in ["US", "CA", "WO"]:
+                family_member_patent_ids_filtered.append(pid)
+                family_member_publication_dates_filtered.append(
+                    family_member_publication_dates[i]
                 )
-                if member_patent is not None:
-                    patents_df_list.append(df)
 
-    # Sort list of patents by title & publication date, concatenate to a single dataframe
-    patents_df = _gen_sorted_dataframe_from_list(patents_df_list)
+        # Update patent info lists
+        patent_ids.append(family_member_patent_ids_filtered)
+        publication_dates.append(family_member_publication_dates_filtered)
+    patent_families["Patent numbers"] = patent_ids
+    patent_families["Publication dates"] = publication_dates
 
-    # Add local inventors column to dataframe
-    _add_local_inventors_column_to_df(
-        reference_query=reference_query, patents_df=patents_df, column="Inventors"
-    )
+    # Add earliest patent application and granted patent to the patent families dataframe
+    earliest_application_dates: list = []
+    earliest_application_numbers: list = []
+    earliest_granting_dates: list = []
+    earliest_granting_numbers: list = []
+    for _, row in patent_families.iterrows():
+        # Earliest patent application
+        earliest_application_date: str = min(
+            date
+            for date, pid in zip(row["Publication dates"], row["Patent numbers"])
+            if "A" in pid[-2:]
+        )
+        earliest_application_number = row["Patent numbers"][
+            row["Publication dates"].index(earliest_application_date)
+        ]
+        earliest_application_dates.append(earliest_application_date)
+        earliest_application_numbers.append(earliest_application_number)
+
+        # Earliest granted patent
+        if any("B" in pid[-2:] or "C" in pid[-2:] for pid in row["Patent numbers"]):
+            earliest_granting_date: str = min(
+                date
+                for date, pid in zip(row["Publication dates"], row["Patent numbers"])
+                if "B" in pid[-2:] or "C" in pid[-2:]
+            )
+            earliest_granting_number = row["Patent numbers"][
+                row["Publication dates"].index(earliest_granting_date)
+            ]
+        else:
+            earliest_granting_date = ""
+            earliest_granting_number = ""
+        earliest_granting_dates.append(earliest_granting_date)
+        earliest_granting_numbers.append(earliest_granting_number)
+    patent_families["Earliest patent application"] = earliest_application_numbers
+    patent_families["Date published"] = earliest_application_dates
+    patent_families["Earliest patent granted"] = earliest_granting_numbers
+    patent_families["Date granted"] = earliest_granting_dates
+
+    # Sort family dataframe by title
+    patent_families = patent_families.sort_values(by=["Title"])
 
     # Write dataframe to output Excel file
     with pd.ExcelWriter(
         f"espacenet_results_{reference_query.pub_year_first}_{reference_query.pub_year_last}.xlsx"
     ) as writer:
-        patents_df.to_excel(
+        patent_families.to_excel(
             writer,
             index=False,
             header=True,
