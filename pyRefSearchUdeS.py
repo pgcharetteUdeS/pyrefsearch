@@ -1296,7 +1296,89 @@ def _add_local_inventors_column_to_df(
     )
 
 
-def _fetch_unique_inpadoc_patent_family_ids_for_author(name: list) -> pd.DataFrame:
+def _fetch_inpadoc_patent_family_members(member_info) -> tuple[list, list]:
+    # Start the list of member patent info for this family with the parent
+    family_member_patent_ids: list = [member_info.application_number]
+    family_member_publication_dates: list = [
+        str(member_info.publication_reference_epodoc.date)
+    ]
+
+    # Add remaining family member patent info to the list
+    for member in member_info.family:
+        family_member_patent_ids.append(member.publication_number)
+        family_member_publication_dates.append(
+            str(member.publication_reference[0]["date"])
+        )
+
+    # Prune the lists to keep only patents from relevant countries (US, CA, WO)
+    family_member_patent_ids_filtered: list = []
+    family_member_publication_dates_filtered: list = []
+    for i, pid in enumerate(family_member_patent_ids):
+        if pid[:2] in ["US", "CA", "WO"]:
+            family_member_patent_ids_filtered.append(pid)
+            family_member_publication_dates_filtered.append(
+                family_member_publication_dates[i]
+            )
+
+    return family_member_patent_ids_filtered, family_member_publication_dates_filtered
+
+
+def _add_earliest_inpadoc_patent_family_members_to_df(patent_families: pd.DataFrame):
+    # Add earliest patent application and granted patent to the patent families dataframe
+    earliest_application_dates: list = []
+    earliest_application_numbers: list = []
+    earliest_granting_dates: list = []
+    earliest_granting_numbers: list = []
+    print("Recherche des premiers membres de la famille de brevets INPADOC...")
+    for i, row in patent_families.iterrows():
+        print(f"{row['Family']}", end=", ")
+        if not hash(i) % 10 and hash(i) > 0:
+            print("")
+
+        if row["Family"] == "71099882":
+            print("Whoa!")
+
+        # Earliest patent application
+        if any(
+            "B" not in pid[-2:] and "C" not in pid[-2:] for pid in row["Patent numbers"]
+        ):
+            earliest_application_date: str = min(
+                date
+                for date, pid in zip(row["Publication dates"], row["Patent numbers"])
+                if "B" not in pid[-2:] and "C" not in pid[-2:]
+            )
+            earliest_application_number = row["Patent numbers"][
+                row["Publication dates"].index(earliest_application_date)
+            ]
+        else:
+            earliest_application_date = ""
+            earliest_application_number = ""
+        earliest_application_dates.append(earliest_application_date)
+        earliest_application_numbers.append(earliest_application_number)
+
+        # Earliest granted patent
+        if any("B" in pid[-2:] or "C" in pid[-2:] for pid in row["Patent numbers"]):
+            earliest_granting_date: str = min(
+                date
+                for date, pid in zip(row["Publication dates"], row["Patent numbers"])
+                if "B" in pid[-2:] or "C" in pid[-2:]
+            )
+            earliest_granting_number = row["Patent numbers"][
+                row["Publication dates"].index(earliest_granting_date)
+            ]
+        else:
+            earliest_granting_date = ""
+            earliest_granting_number = ""
+        earliest_granting_dates.append(earliest_granting_date)
+        earliest_granting_numbers.append(earliest_granting_number)
+    print("")
+    patent_families["Earliest patent application"] = earliest_application_numbers
+    patent_families["Date published"] = earliest_application_dates
+    patent_families["Earliest patent granted"] = earliest_granting_numbers
+    patent_families["Date granted"] = earliest_granting_dates
+
+
+def _fetch_inpadoc_patent_family_ids_for_author(name: list) -> pd.DataFrame:
     """
     Fetch unique INPADOC patent family IDs for author
 
@@ -1318,25 +1400,25 @@ def _fetch_unique_inpadoc_patent_family_ids_for_author(name: list) -> pd.DataFra
             first_name0, first_name1 = first_name.split("-")
             query_str = (
                 f'(in=("{last_name0}" prox/distance<1 "{last_name1}")'
-                f' AND in=("{last_name0}" prox/distance<3 "{first_name0}")'
-                f' AND in=("{last_name0}" prox/distance<3 "{first_name1}"))'
+                f' AND in=("{last_name0}" prox/distance<2 "{first_name0}")'
+                f' AND in=("{last_name0}" prox/distance<2 "{first_name1}"))'
             )
         elif "-" in last_name:
             last_name0, last_name1 = last_name.split("-")
             query_str = (
                 f'(in=("{last_name0}" prox/distance<1 "{last_name1}")'
-                f' AND in=("{last_name0}" prox/distance<3 "{first_name}")'
-                f' AND in=("{last_name0}" prox/distance<3 "{first_name}"))'
+                f' AND in=("{last_name0}" prox/distance<2 "{first_name}")'
+                f' AND in=("{last_name0}" prox/distance<2 "{first_name}"))'
             )
         elif "-" in first_name:
             first_name0, first_name1 = first_name.split("-")
             query_str = (
-                f'(in=("{last_name}" prox/distance<3 "{first_name0}")'
-                f' AND in=("{last_name}" prox/distance<3 "{first_name1}")'
+                f'(in=("{last_name}" prox/distance<2 "{first_name0}")'
+                f' AND in=("{last_name}" prox/distance<2 "{first_name1}")'
                 f' AND in=("{first_name0}" prox/distance<1 "{first_name1}"))'
             )
         else:
-            query_str = f'in=("{last_name}" prox/distance<3 "{first_name}")'
+            query_str = f'in=("{last_name}" prox/distance<1 "{first_name}")'
         return query_str
 
     patents = Inpadoc.objects.filter(
@@ -1409,110 +1491,62 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
 
     """
 
-    # Fetch unique patent families by author name
+    # Fetch unique patent families by author name, add delay so that search is not blocked
     patent_families_raw: pd.DataFrame = pd.DataFrame([])
+    print(f"Recherche dans espacenet des {len(reference_query.au_names)} inventeurs...")
     for name in reference_query.au_names:
         patent_families_raw = pd.concat(
             [
                 patent_families_raw,
-                _fetch_unique_inpadoc_patent_family_ids_for_author(name),
+                _fetch_inpadoc_patent_family_ids_for_author(name),
             ],
             ignore_index=True,
         )
-        print(name)
+        time.sleep(0.25)
     patent_families_raw = patent_families_raw.drop_duplicates(subset=["family_id"])
+    patent_families_raw = patent_families_raw.reset_index(drop=True)
 
     # Fetch detailed patent family info
-    patent_family_member_info: list[Inpadoc] = [
-        Inpadoc.objects.get(row["patent_id"])
-        for _, row in patent_families_raw.iterrows()
-    ]
-    print("Got all patent family member info")
-
-    # Add patent titles, inventors, applicants, etc. to the patent families dataframe,
-    # if there is at least one Canadian author and there is a valid title
+    families: list = []
     titles: list = []
     inventors: list = []
     applicants: list = []
-    for member_info in patent_family_member_info:
+    patent_ids: list[list] = []
+    publication_dates: list[list] = []
+    print(
+        f"Analyze dans espacenet des {len(patent_families_raw.index)} familles de brevets..."
+    )
+    for i, row in patent_families_raw.iterrows():
+        print(f"{row['family_id']} ({i}/{len(patent_families_raw.index)})", end=", ")
+        if not hash(i) % 10 and hash(i) > 0:
+            print("")
+        member_info = Inpadoc.objects.get(row["patent_id"])
         if any("[CA]" in s for s in member_info.inventors_epodoc) and member_info.title:
+            # Store tile, inventors, and applicants for this family
+            families.append(member_info.family_id)
             titles.append(member_info.title)
             inventors.append(member_info.inventors_original)
             applicants.append(member_info.applicants_original)
-    patent_families = pd.DataFrame(titles, columns=["Title"])
+
+            # Store patent member info for this family
+            (
+                family_member_patent_ids_filtered,
+                family_member_publication_dates_filtered,
+            ) = _fetch_inpadoc_patent_family_members(member_info)
+            patent_ids.append(family_member_patent_ids_filtered)
+            publication_dates.append(family_member_publication_dates_filtered)
+    print("")
+
+    # Create dataframe with patent family info
+    patent_families = pd.DataFrame(families, columns=["Family"])
+    patent_families["Title"] = titles
     patent_families["Inventors"] = inventors
     patent_families["Applicants"] = applicants
-
-    # Add member patent info (ID, publication date) to the patent families dataframe
-    patent_ids: list[list] = []
-    publication_dates: list[list] = []
-    for member_info in patent_family_member_info:
-        # Start the list for this family with the parent patent info
-        family_member_patent_ids: list = [member_info.application_number]
-        family_member_publication_dates: list = [
-            str(member_info.publication_reference_epodoc.date)
-        ]
-
-        # Add family member patent info to the list
-        for member in member_info.family:
-            family_member_patent_ids.append(member.publication_number)
-            family_member_publication_dates.append(
-                str(member.publication_reference[0]["date"])
-            )
-
-        # Prune the lists to keep only patents from relevant countries (US, CA, WO)
-        family_member_patent_ids_filtered: list = []
-        family_member_publication_dates_filtered: list = []
-        for i, pid in enumerate(family_member_patent_ids):
-            if pid[:2] in ["US", "CA", "WO"]:
-                family_member_patent_ids_filtered.append(pid)
-                family_member_publication_dates_filtered.append(
-                    family_member_publication_dates[i]
-                )
-
-        # Update patent info lists
-        patent_ids.append(family_member_patent_ids_filtered)
-        publication_dates.append(family_member_publication_dates_filtered)
     patent_families["Patent numbers"] = patent_ids
     patent_families["Publication dates"] = publication_dates
 
     # Add earliest patent application and granted patent to the patent families dataframe
-    earliest_application_dates: list = []
-    earliest_application_numbers: list = []
-    earliest_granting_dates: list = []
-    earliest_granting_numbers: list = []
-    for _, row in patent_families.iterrows():
-        # Earliest patent application
-        earliest_application_date: str = min(
-            date
-            for date, pid in zip(row["Publication dates"], row["Patent numbers"])
-            if "A" in pid[-2:]
-        )
-        earliest_application_number = row["Patent numbers"][
-            row["Publication dates"].index(earliest_application_date)
-        ]
-        earliest_application_dates.append(earliest_application_date)
-        earliest_application_numbers.append(earliest_application_number)
-
-        # Earliest granted patent
-        if any("B" in pid[-2:] or "C" in pid[-2:] for pid in row["Patent numbers"]):
-            earliest_granting_date: str = min(
-                date
-                for date, pid in zip(row["Publication dates"], row["Patent numbers"])
-                if "B" in pid[-2:] or "C" in pid[-2:]
-            )
-            earliest_granting_number = row["Patent numbers"][
-                row["Publication dates"].index(earliest_granting_date)
-            ]
-        else:
-            earliest_granting_date = ""
-            earliest_granting_number = ""
-        earliest_granting_dates.append(earliest_granting_date)
-        earliest_granting_numbers.append(earliest_granting_number)
-    patent_families["Earliest patent application"] = earliest_application_numbers
-    patent_families["Date published"] = earliest_application_dates
-    patent_families["Earliest patent granted"] = earliest_granting_numbers
-    patent_families["Date granted"] = earliest_granting_dates
+    _add_earliest_inpadoc_patent_family_members_to_df(patent_families)
 
     # Sort family dataframe by title
     patent_families = patent_families.sort_values(by=["Title"])
