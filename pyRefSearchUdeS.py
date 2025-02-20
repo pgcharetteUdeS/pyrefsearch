@@ -1329,15 +1329,7 @@ def _add_earliest_inpadoc_patent_family_members_to_df(patent_families: pd.DataFr
     earliest_application_numbers: list = []
     earliest_granting_dates: list = []
     earliest_granting_numbers: list = []
-    print("Recherche des premiers membres de la famille de brevets INPADOC...")
     for i, row in patent_families.iterrows():
-        print(f"{row['Family']}", end=", ")
-        if not hash(i) % 10 and hash(i) > 0:
-            print("")
-
-        if row["Family"] == "71099882":
-            print("Whoa!")
-
         # Earliest patent application
         if any(
             "B" not in pid[-2:] and "C" not in pid[-2:] for pid in row["Patent numbers"]
@@ -1371,7 +1363,6 @@ def _add_earliest_inpadoc_patent_family_members_to_df(patent_families: pd.DataFr
             earliest_granting_number = ""
         earliest_granting_dates.append(earliest_granting_date)
         earliest_granting_numbers.append(earliest_granting_number)
-    print("")
     patent_families["Earliest patent application"] = earliest_application_numbers
     patent_families["Date published"] = earliest_application_dates
     patent_families["Earliest patent granted"] = earliest_granting_numbers
@@ -1502,7 +1493,7 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
             ],
             ignore_index=True,
         )
-        time.sleep(0.25)
+        time.sleep(0.125)
     patent_families_raw = patent_families_raw.drop_duplicates(subset=["family_id"])
     patent_families_raw = patent_families_raw.reset_index(drop=True)
 
@@ -1551,6 +1542,19 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
     # Sort family dataframe by title
     patent_families = patent_families.sort_values(by=["Title"])
 
+    # Extract patent application and granted patent by date
+    applications_published_in_year_range = patent_families[
+        (patent_families["Date published"] >= f"{reference_query.pub_year_first}-01-01")
+        & (
+            patent_families["Date published"]
+            <= f"{reference_query.pub_year_last}-12-31"
+        )
+    ]
+    patents_granted_in_year_range = patent_families[
+        (patent_families["Date granted"] >= f"{reference_query.pub_year_first}-01-01")
+        & (patent_families["Date granted"] <= f"{reference_query.pub_year_last}-12-31")
+    ]
+
     # Write dataframe to output Excel file
     with pd.ExcelWriter(
         f"espacenet_results_{reference_query.pub_year_first}_{reference_query.pub_year_last}.xlsx"
@@ -1559,7 +1563,21 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
             writer,
             index=False,
             header=True,
-            sheet_name="Brevets",
+            sheet_name="Brevets (tous)",
+            freeze_panes=(1, 1),
+        )
+        applications_published_in_year_range.to_excel(
+            writer,
+            index=False,
+            header=True,
+            sheet_name="Brevets en instance",
+            freeze_panes=(1, 1),
+        )
+        patents_granted_in_year_range.to_excel(
+            writer,
+            index=False,
+            header=True,
+            sheet_name="Brevets émits",
             freeze_panes=(1, 1),
         )
 
