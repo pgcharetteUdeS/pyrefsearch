@@ -20,7 +20,7 @@
 
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import lru_cache
 from itertools import groupby
 import numpy as np
@@ -34,6 +34,7 @@ from pybliometrics.scopus.exception import ScopusException
 import re
 from rich import print
 import sys
+import time
 import toml
 import unidecode
 
@@ -1409,18 +1410,24 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
     """
 
     # Fetch unique patent families by author name
-    patent_families: pd.DataFrame = pd.DataFrame([])
+    patent_families_raw: pd.DataFrame = pd.DataFrame([])
     for name in reference_query.au_names:
-        patent_families = pd.concat(
-            [patent_families, _fetch_unique_inpadoc_patent_family_ids_for_author(name)],
+        patent_families_raw = pd.concat(
+            [
+                patent_families_raw,
+                _fetch_unique_inpadoc_patent_family_ids_for_author(name),
+            ],
             ignore_index=True,
         )
-        patent_families = patent_families.drop_duplicates(subset=["family_id"])
+        print(name)
+    patent_families_raw = patent_families_raw.drop_duplicates(subset=["family_id"])
 
     # Fetch detailed patent family info
     patent_family_member_info: list[Inpadoc] = [
-        Inpadoc.objects.get(row["patent_id"]) for _, row in patent_families.iterrows()
+        Inpadoc.objects.get(row["patent_id"])
+        for _, row in patent_families_raw.iterrows()
     ]
+    print("Got all patent family member info")
 
     # Add patent titles, inventors, applicants, etc. to the patent families dataframe,
     # if there is at least one Canadian author and there is a valid title
@@ -1432,11 +1439,9 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
             titles.append(member_info.title)
             inventors.append(member_info.inventors_original)
             applicants.append(member_info.applicants_original)
-    patent_families["Title"] = titles
+    patent_families = pd.DataFrame(titles, columns=["Title"])
     patent_families["Inventors"] = inventors
     patent_families["Applicants"] = applicants
-    patent_families.pop("family_id")
-    patent_families.pop("patent_id")
 
     # Add member patent info (ID, publication date) to the patent families dataframe
     patent_ids: list[list] = []
@@ -1725,5 +1730,6 @@ def main():
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     main()
-    print("pyScopus terminé!")
+    print(f"Temps d'exécution: {str(timedelta(seconds=int(time.time() - start_time)))}")
