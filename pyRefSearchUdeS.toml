@@ -11,11 +11,11 @@ search_type = "Publications"
 #
 #in_excel_file = "pyRefSearchUdeS.xlsx"
 #in_excel_file = "pyRefSearchUdeS - TEST.xlsx"
-in_excel_file = "Liste chercheurs-membres_VF.xlsx"
+in_excel_file = "Liste chercheurs-membres_VF - Test.xlsx"
 in_excel_file_author_sheet = "Membres"
 
 # Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)
-pub_year_first = 2020
+pub_year_first = 2024
 pub_year_last = 2024
 
 # Noms d'institutions et d'affiliations considérées commme "locales", pour valider
@@ -44,6 +44,6 @@ publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Absracts", "ab"], ["
 scopus_database_refresh_days = 7
 
 # BREVETS : Activer/désactiver (true/false) la recherche de brevets US et européens (EPO)
-uspto_patent_search = false
+uspto_patent_search = true
 epo_patent_search = true
-epo_patent_search_results_file = "epo_patents.csv"
+epo_patent_search_results_file = "espacenet_INPADOC_results.xlsx"
