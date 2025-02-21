@@ -103,6 +103,7 @@ class ReferenceQuery:
         scopus_database_refresh_days: bool | int,
         uspto_patent_search: bool,
         epo_patent_search: bool,
+        epo_patent_search_results_file: str,
     ):
         self.in_excel_file: Path = in_excel_file
         self.out_excel_file: Path = out_excel_file
@@ -116,6 +117,7 @@ class ReferenceQuery:
         self.scopus_database_refresh_days: bool | int = scopus_database_refresh_days
         self.uspto_patent_search: bool = uspto_patent_search
         self.epo_patent_search: bool = epo_patent_search
+        self.epo_patent_search_file: str = epo_patent_search_results_file
         print(f"Période de recherche: [{self.pub_year_first} - {self.pub_year_last}]")
 
         # Check input/output Excel file access, script fails if files already open
@@ -747,8 +749,10 @@ def _create_results_summary_df(
 def write_reference_query_results_to_excel(
     reference_query: ReferenceQuery,
     publications_dfs_list_by_pub_type: list[pd.DataFrame],
-    patents: pd.DataFrame,
-    patent_applications: pd.DataFrame,
+    uspto_patents: pd.DataFrame,
+    uspto_patent_applications: pd.DataFrame,
+    inpadoc_patents: pd.DataFrame,
+    inpadoc_patent_applications: pd.DataFrame,
     author_profiles_by_ids: pd.DataFrame,
     author_profiles_by_name: pd.DataFrame,
 ) -> None:
@@ -758,8 +762,10 @@ def write_reference_query_results_to_excel(
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
         publications_dfs_list_by_pub_type (list): list of DataFrames with search results by type
-        patents (pd.DataFrame): patent application search results by filing date
-        patent_applications (pd.DataFrame): patent search results by publication date
+        uspto_patents (pd.DataFrame): USPTO patent application search results
+        uspto_patent_applications (pd.DataFrame): USPTO patent search results
+        inpadoc_patents (pd.DataFrame): INPADOC patent search result
+        inpadoc_patent_applications (pd.DataFrame): INPADOC patent search results
         author_profiles_by_ids (pd.DataFrame): author search results by ids
         author_profiles_by_name (pd.DataFrame): author search results by names
 
@@ -771,8 +777,8 @@ def write_reference_query_results_to_excel(
     results: pd.DataFrame = _create_results_summary_df(
         reference_query=reference_query,
         publications_dfs_list_by_pub_type=publications_dfs_list_by_pub_type,
-        patent_applications=patent_applications,
-        patents=patents,
+        patent_applications=uspto_patent_applications,
+        patents=uspto_patents,
     )
 
     # Write dataframes in separate sheets to the output Excel file
@@ -792,18 +798,34 @@ def write_reference_query_results_to_excel(
                 )
 
         # USPTO search result sheets
-        if not patent_applications.empty:
-            patent_applications.to_excel(
+        if not uspto_patent_applications.empty:
+            uspto_patent_applications.to_excel(
                 writer,
                 index=False,
                 sheet_name="Brevets US (en instance)",
                 freeze_panes=(1, 1),
             )
-        if not patents.empty:
-            patents.to_excel(
+        if not uspto_patents.empty:
+            uspto_patents.to_excel(
                 writer,
                 index=False,
                 sheet_name="Brevets US (délivrés)",
+                freeze_panes=(1, 1),
+            )
+
+        # INPADOC search result sheets
+        if not inpadoc_patent_applications.empty:
+            inpadoc_patent_applications.to_excel(
+                writer,
+                index=False,
+                sheet_name="Brevets INPADOC (en instance)",
+                freeze_panes=(1, 1),
+            )
+        if not inpadoc_patents.empty:
+            inpadoc_patents.to_excel(
+                writer,
+                index=False,
+                sheet_name="Brevets INPADOC (délivrés)",
                 freeze_panes=(1, 1),
             )
 
@@ -1078,9 +1100,9 @@ def query_us_patents(
 
     # Execute USPTO query (patent applications or delivered patents)
     if applications:
-        print("En attente de la recherche de brevets en instance USPTO...", end="")
+        print("En attente de la recherche USPTO de brevets en instance...", end="")
     else:
-        print("En attente de la recherche de brevets USPTO...", end="")
+        print("En attente de la recherche USPTO de brevets délivrés...", end="")
     patents: pd.DataFrame = _query_uspto(
         reference_query=reference_query, applications=applications
     )
@@ -1431,7 +1453,9 @@ def _fetch_inpadoc_patent_family_ids_for_author(name: list) -> pd.DataFrame:
     return patents_name_df.drop_duplicates(subset=["family_id"])
 
 
-def query_espacenet(reference_query: ReferenceQuery) -> None:
+def query_espacenet(
+    reference_query: ReferenceQuery,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
 
     Query the INPADOC worldwide patent library via espacenet. INPADOC (International
@@ -1555,31 +1579,18 @@ def query_espacenet(reference_query: ReferenceQuery) -> None:
         & (patent_families["Date granted"] <= f"{reference_query.pub_year_last}-12-31")
     ]
 
-    # Write dataframe to output Excel file
-    with pd.ExcelWriter(
-        f"espacenet_results_{reference_query.pub_year_first}_{reference_query.pub_year_last}.xlsx"
-    ) as writer:
+    # Write dataframe of all patent results to output Excel file
+    with pd.ExcelWriter("espacenet_INPADOC_results.xlsx") as writer:
         patent_families.to_excel(
             writer,
             index=False,
             header=True,
-            sheet_name="Brevets (tous)",
+            sheet_name="Recherche par inventeurs",
             freeze_panes=(1, 1),
         )
-        applications_published_in_year_range.to_excel(
-            writer,
-            index=False,
-            header=True,
-            sheet_name="Brevets en instance",
-            freeze_panes=(1, 1),
-        )
-        patents_granted_in_year_range.to_excel(
-            writer,
-            index=False,
-            header=True,
-            sheet_name="Brevets émits",
-            freeze_panes=(1, 1),
-        )
+
+    # Return dataframe for INPADOC patent applications and granted patents
+    return applications_published_in_year_range, patents_granted_in_year_range
 
 
 def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
@@ -1654,6 +1665,12 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         )
         author_profiles_by_ids["Brevets US (délivrés)"] = patent_counts_by_author
 
+    # Fetch INPADOC applications and published uspto_patents into separate dataframes, if required
+    inpadoc_patent_applications = pd.DataFrame()
+    inpadoc_patents = pd.DataFrame()
+    if reference_query.epo_patent_search:
+        inpadoc_patent_applications, inpadoc_patents = query_espacenet(reference_query)
+
     # Fetch Scopus author profiles corresponding to user-supplied names, check for
     # author names with multiple Scopus IDs ("homonyms"), load into dataframe
     author_profiles_by_name: pd.DataFrame = query_scopus_author_profiles_by_name(
@@ -1665,8 +1682,10 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     write_reference_query_results_to_excel(
         reference_query=reference_query,
         publications_dfs_list_by_pub_type=publications_dfs_list_by_pub_type,
-        patents=patents,
-        patent_applications=patent_applications,
+        uspto_patents=patents,
+        uspto_patent_applications=patent_applications,
+        inpadoc_patents=inpadoc_patents,
+        inpadoc_patent_applications=inpadoc_patent_applications,
         author_profiles_by_ids=author_profiles_by_ids,
         author_profiles_by_name=author_profiles_by_name,
     )
@@ -1768,11 +1787,8 @@ def main():
         scopus_database_refresh_days=toml_dict.get("scopus_database_refresh_days", 0),
         uspto_patent_search=toml_dict.get("uspto_patent_search", True),
         epo_patent_search=toml_dict.get("epo_patent_search", True),
+        epo_patent_search_results_file=toml_dict.get("epo_patent_search_results_file", ""),
     )
-
-    # DEBUG
-    if reference_query.epo_patent_search:
-        query_espacenet(reference_query)
 
     # Run the bibliographic search!
     run_reference_search(
