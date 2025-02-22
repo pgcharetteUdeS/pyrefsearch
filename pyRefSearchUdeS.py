@@ -35,7 +35,7 @@ from rich import print
 import sys
 import time
 import toml
-import unidecode
+from unidecode import unidecode
 
 from version import __version__
 import warnings
@@ -211,7 +211,7 @@ def _to_lower_no_accents_no_hyphens(s: str | pd.Series) -> str:
 
     """
 
-    return unidecode.unidecode(s.replace("-", " ").lower().strip())
+    return unidecode(s.replace("-", " ").lower().strip())
 
 
 def _reindex_author_profiles_df(df: pd.DataFrame) -> pd.DataFrame:
