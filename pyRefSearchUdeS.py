@@ -1406,7 +1406,7 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
             ],
             ignore_index=True,
         )
-        time.sleep(0.125)
+        #time.sleep(0.125)
         if any(c in lastname or c in firstname for c in accented_chars):
             patent_families_raw = pd.concat(
                 [
@@ -1417,7 +1417,7 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
                 ],
                 ignore_index=True,
             )
-            time.sleep(0.125)
+            #time.sleep(0.125)
 
     patent_families_raw = patent_families_raw.drop_duplicates(subset=["family_id"])
     patent_families_raw = patent_families_raw.reset_index(drop=True)
