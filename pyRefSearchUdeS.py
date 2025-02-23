@@ -1393,7 +1393,6 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
 
     # Fetch unique patent families by author name, add delay so that search is not blocked
     patent_families_raw: pd.DataFrame = pd.DataFrame([])
-    accented_chars: list[str] = ["é", "è", "ê", "ë", "É", "È", "Ê", "ç"]
     print(f"Recherche dans espacenet des {len(reference_query.au_names)} inventeurs...")
     for name in reference_query.au_names:
         lastname, firstname = name
@@ -1406,7 +1405,9 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
             ],
             ignore_index=True,
         )
-        #time.sleep(0.125)
+        """
+        # Expand search deosn't seem to care about accents...
+        accented_chars: list[str] = ["é", "è", "ê", "ë", "É", "È", "Ê", "ç"]
         if any(c in lastname or c in firstname for c in accented_chars):
             patent_families_raw = pd.concat(
                 [
@@ -1417,8 +1418,7 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
                 ],
                 ignore_index=True,
             )
-            #time.sleep(0.125)
-
+        """
     patent_families_raw = patent_families_raw.drop_duplicates(subset=["family_id"])
     patent_families_raw = patent_families_raw.reset_index(drop=True)
 
@@ -1468,7 +1468,9 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
     patent_families = patent_families.sort_values(by=["Title"])
 
     # Write dataframe of all patent results to output Excel file
-    with pd.ExcelWriter("espacenet_INPADOC_results.xlsx") as writer:
+    with pd.ExcelWriter(
+        f"espacenet_INPADOC_results_{time.strftime('%Y%m%d')}.xlsx"
+    ) as writer:
         patent_families.to_excel(
             writer,
             index=False,
