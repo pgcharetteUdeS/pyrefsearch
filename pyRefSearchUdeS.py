@@ -181,13 +181,10 @@ class ReferenceQuery:
             ) from None
         self.au_names = authors[["Nom", "Prénom"]].values.tolist()
 
-        # Show warning is any space characters are present in the names
+        # Trim any leading/trailing spaces in author names
         for name in self.au_names:
-            if " " in name[0] or " " in name[1]:
-                print(
-                    f"[yellow]ATTENTION: Le nom d'auteur.e '{name[1]}' '{name[0]}' contient des espaces, "
-                    "ce qui peut causer des erreurs de recherche![/yellow]"
-                )
+            name[0] = name[0].strip()
+            name[1] = name[1].strip()
 
         # Extract Scopus IDs, replace non-integer values with 0
         self.au_ids = []
@@ -549,7 +546,14 @@ def _query_uspto(
     """
 
     def inventor_query_str(inventor: list[str]) -> str:
-        return f"({inventor[1]} NEAR2 {inventor[0]})"
+        accented_chars: list[str] = ["é", "è", "ê", "ë", "É", "È", "Ê", "ç"]
+        if any(c in inventor[0] or c in inventor[1] for c in accented_chars):
+            return (
+                f"({inventor[1]} NEAR2 {inventor[0]}) "
+                f"OR ({unidecode(inventor[1])} NEAR2 {unidecode(inventor[0])})"
+            )
+        else:
+            return f"({inventor[1]} NEAR2 {inventor[0]})"
 
     def build_uspto_patent_query_string(field_code: str) -> str:
         s: str = (
@@ -682,8 +686,10 @@ def _reformat_uspto_search_results(
 def _create_results_summary_df(
     reference_query: ReferenceQuery,
     publications_dfs_list_by_pub_type: list,
-    patent_applications: pd.DataFrame,
-    patents: pd.DataFrame,
+    uspto_patent_applications: pd.DataFrame,
+    uspto_patents: pd.DataFrame,
+    inpadoc_patent_applications: pd.DataFrame,
+    inpadoc_patents: pd.DataFrame,
 ) -> pd.DataFrame:
     """
     Create results summary dataframe
@@ -691,8 +697,10 @@ def _create_results_summary_df(
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
         publications_dfs_list_by_pub_type (list): list of DataFrames with search results by type
-        patent_applications (pd.DataFrame): patent application search results
-        patents (pd.DataFrame): patent search results
+        uspto_patent_applications (pd.DataFrame): uspto patent application search results
+        uspto_patents (pd.DataFrame): uspto patent search results
+        inpadoc_patent_applications (pd.DataFrame): inpadoc patent search results
+        inpadoc_patents (pd.DataFrame): inpadoc patent search results
 
     Returns: DataFrame with results summary
 
@@ -706,7 +714,8 @@ def _create_results_summary_df(
         "Année de fin",
     ]
     results += reference_query.publication_types
-    results += ["Brevets US (en instance)", "Brevets US (délivrés)"]
+    results += ["Brevets USPTO (en instance)", "Brevets USPTO (délivrés)"]
+    results += ["Brevets INPADOC (en instance)", "Brevets INPADOC (délivrés)"]
     values: list = [
         None,
         len(reference_query.au_ids),
@@ -720,8 +729,12 @@ def _create_results_summary_df(
     else:
         values += [None] * len(reference_query.publication_types)
     values += [
-        len(patent_applications),
-        len(patents),
+        len(uspto_patent_applications),
+        len(uspto_patents),
+    ]
+    values += [
+        len(inpadoc_patent_applications),
+        len(inpadoc_patents),
     ]
     co_authors: list = ["Conjointes", None, None, None]
     if publications_dfs_list_by_pub_type:
@@ -732,17 +745,17 @@ def _create_results_summary_df(
     else:
         co_authors += [None] * len(reference_query.publication_types)
 
-    joint_patent_applications_count: int = sum(
+    uspto_joint_patent_applications_count: int = sum(
         row["Nb co-inventeurs locaux"] is not None
         and row["Nb co-inventeurs locaux"] > 1
-        for _, row in patent_applications.iterrows()
+        for _, row in uspto_patent_applications.iterrows()
     )
-    joint_patents_count: int = sum(
+    uspto_joint_patents_count: int = sum(
         row["Nb co-inventeurs locaux"] is not None
         and row["Nb co-inventeurs locaux"] > 1
-        for _, row in patents.iterrows()
+        for _, row in uspto_patents.iterrows()
     )
-    co_authors += [joint_patent_applications_count, joint_patents_count]
+    co_authors += [uspto_joint_patent_applications_count, uspto_joint_patents_count, 0, 0]
 
     return pd.DataFrame([results, values, co_authors]).T
 
@@ -778,8 +791,10 @@ def write_reference_query_results_to_excel(
     results: pd.DataFrame = _create_results_summary_df(
         reference_query=reference_query,
         publications_dfs_list_by_pub_type=publications_dfs_list_by_pub_type,
-        patent_applications=uspto_patent_applications,
-        patents=uspto_patents,
+        uspto_patent_applications=uspto_patent_applications,
+        uspto_patents=uspto_patents,
+        inpadoc_patent_applications=inpadoc_patent_applications,
+        inpadoc_patents=inpadoc_patents,
     )
 
     # Write dataframes in separate sheets to the output Excel file
