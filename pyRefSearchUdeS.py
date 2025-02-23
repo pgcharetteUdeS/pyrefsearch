@@ -1312,18 +1312,19 @@ def _extract_earliest_patent_family_members(patent_families: pd.DataFrame):
     patent_families["Date granted"] = earliest_granting_dates
 
 
-def _fetch_inpadoc_patent_families_by_author_name(name: list) -> pd.DataFrame:
+def _fetch_inpadoc_patent_families_by_author_name(last_name: str, first_name: str) -> pd.DataFrame:
     """
     Fetch INPADOC patent family IDs for author
 
     Args:
-        name (list): Author last, first names
+        last_name (str): Last name of author
+        first_name (str): First name of author
 
     Returns: DataFrame with unique INPADOC patent family & patent IDs
 
     """
 
-    def inventor_query_str(last_name: str, first_name: str) -> str:
+    def inventor_query_str() -> str:
         """
         Build inventor query string that convers all combinations
         of first and last names that may contain hyphens
@@ -1356,7 +1357,7 @@ def _fetch_inpadoc_patent_families_by_author_name(name: list) -> pd.DataFrame:
         return query_str
 
     patents = Inpadoc.objects.filter(
-        cql_query=inventor_query_str(last_name=name[1], first_name=name[0])
+        cql_query=inventor_query_str()
     ).to_pandas()
     patents_name_list: list[dict] = []
     for _, row in patents.iterrows():
@@ -1389,10 +1390,11 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
     patent_families_raw: pd.DataFrame = pd.DataFrame([])
     print(f"Recherche dans espacenet des {len(reference_query.au_names)} inventeurs...")
     for name in reference_query.au_names:
+        lastname, firstname = name
         patent_families_raw = pd.concat(
             [
                 patent_families_raw,
-                _fetch_inpadoc_patent_families_by_author_name(name),
+                _fetch_inpadoc_patent_families_by_author_name(last_name=lastname, first_name=firstname),
             ],
             ignore_index=True,
         )

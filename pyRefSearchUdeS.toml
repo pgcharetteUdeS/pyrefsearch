@@ -44,6 +44,6 @@ publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Absracts", "ab"], ["
 scopus_database_refresh_days = 7
 
 # BREVETS : Activer/désactiver (true/false) la recherche de brevets US et européens (EPO)
-uspto_patent_search = true
+uspto_patent_search = false
 epo_patent_search = true
-epo_patent_search_results_file = "espacenet_INPADOC_results.xlsx"
+#epo_patent_search_results_file = "espacenet_INPADOC_results.xlsx"
