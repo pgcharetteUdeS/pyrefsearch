@@ -755,7 +755,12 @@ def _create_results_summary_df(
         and row["Nb co-inventeurs locaux"] > 1
         for _, row in uspto_patents.iterrows()
     )
-    co_authors += [uspto_joint_patent_applications_count, uspto_joint_patents_count, 0, 0]
+    co_authors += [
+        uspto_joint_patent_applications_count,
+        uspto_joint_patents_count,
+        0,
+        0,
+    ]
 
     return pd.DataFrame([results, values, co_authors]).T
 
@@ -1312,7 +1317,9 @@ def _extract_earliest_patent_family_members(patent_families: pd.DataFrame):
     patent_families["Date granted"] = earliest_granting_dates
 
 
-def _fetch_inpadoc_patent_families_by_author_name(last_name: str, first_name: str) -> pd.DataFrame:
+def _fetch_inpadoc_patent_families_by_author_name(
+    last_name: str, first_name: str
+) -> pd.DataFrame:
     """
     Fetch INPADOC patent family IDs for author
 
@@ -1356,9 +1363,7 @@ def _fetch_inpadoc_patent_families_by_author_name(last_name: str, first_name: st
             query_str = f'in=("{last_name}" prox/distance<1 "{first_name}")'
         return query_str
 
-    patents = Inpadoc.objects.filter(
-        cql_query=inventor_query_str()
-    ).to_pandas()
+    patents = Inpadoc.objects.filter(cql_query=inventor_query_str()).to_pandas()
     patents_name_list: list[dict] = []
     for _, row in patents.iterrows():
         patent_id_info: dict = dict(row.values)
@@ -1388,17 +1393,32 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
 
     # Fetch unique patent families by author name, add delay so that search is not blocked
     patent_families_raw: pd.DataFrame = pd.DataFrame([])
+    accented_chars: list[str] = ["é", "è", "ê", "ë", "É", "È", "Ê", "ç"]
     print(f"Recherche dans espacenet des {len(reference_query.au_names)} inventeurs...")
     for name in reference_query.au_names:
         lastname, firstname = name
         patent_families_raw = pd.concat(
             [
                 patent_families_raw,
-                _fetch_inpadoc_patent_families_by_author_name(last_name=lastname, first_name=firstname),
+                _fetch_inpadoc_patent_families_by_author_name(
+                    last_name=lastname, first_name=firstname
+                ),
             ],
             ignore_index=True,
         )
         time.sleep(0.125)
+        if any(c in lastname or c in firstname for c in accented_chars):
+            patent_families_raw = pd.concat(
+                [
+                    patent_families_raw,
+                    _fetch_inpadoc_patent_families_by_author_name(
+                        last_name=unidecode(lastname), first_name=unidecode(firstname)
+                    ),
+                ],
+                ignore_index=True,
+            )
+            time.sleep(0.125)
+
     patent_families_raw = patent_families_raw.drop_duplicates(subset=["family_id"])
     patent_families_raw = patent_families_raw.reset_index(drop=True)
 
