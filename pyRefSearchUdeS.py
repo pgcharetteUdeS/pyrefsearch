@@ -101,8 +101,8 @@ class ReferenceQuery:
         local_affiliations: list[str],
         scopus_database_refresh_days: bool | int,
         uspto_patent_search: bool,
-        epo_patent_search: bool,
-        epo_patent_search_results_file: str,
+        espacenet_patent_search: bool,
+        espacenet_patent_search_results_file: str,
     ):
         self.in_excel_file: Path = in_excel_file
         self.out_excel_file: Path = out_excel_file
@@ -115,8 +115,10 @@ class ReferenceQuery:
         ]
         self.scopus_database_refresh_days: bool | int = scopus_database_refresh_days
         self.uspto_patent_search: bool = uspto_patent_search
-        self.epo_patent_search: bool = epo_patent_search
-        self.epo_patent_search_results_file: str = epo_patent_search_results_file
+        self.espacenet_patent_search: bool = espacenet_patent_search
+        self.espacenet_patent_search_results_file: str = (
+            espacenet_patent_search_results_file
+        )
         print(f"Période de recherche: [{self.pub_year_first} - {self.pub_year_last}]")
 
         # Check input/output Excel file access, script fails if files already open
@@ -648,7 +650,6 @@ def _reformat_uspto_search_results(
             "Cessionnaires",
             "Applications liées",
         ]
-        patents = patents.sort_values(by=["Titre"])
     else:
         patents.rename(
             columns={
@@ -677,7 +678,7 @@ def _reformat_uspto_search_results(
             "Cessionnaires",
             "Applications liées",
         ]
-        patents = patents.sort_values(by=["Titre"])
+    patents = patents.sort_values(by=["Titre"])
 
     return patents[new_columns]
 
@@ -692,6 +693,9 @@ def _create_results_summary_df(
 ) -> pd.DataFrame:
     """
     Create results summary dataframe
+    - "results" (first column): search information labels and bibliographic item names
+    - "values" (second column): search information and result counts
+    - "co_authors" (third column): number of local co-authors for each publication type
 
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
@@ -705,53 +709,42 @@ def _create_results_summary_df(
 
     """
 
-    # First column with search information and bibliographic item names
+    # Initialize 3 columns contents
     results: list = [
         None,
         "Nb d'auteur.e.s",
         "Année de début",
         "Année de fin",
     ]
-    results += reference_query.publication_types
-    if not uspto_patents.empty or not uspto_patent_applications.empty:
-        results += ["Brevets USPTO (en instance)", "Brevets USPTO (délivrés)"]
-    if not inpadoc_patents.empty or not inpadoc_patent_applications.empty:
-        results += ["Brevets INPADOC (en instance)", "Brevets INPADOC (délivrés)"]
-
-    # Second column with item values and bibliographic item counts
     values: list = [
         None,
         len(reference_query.au_ids),
         reference_query.pub_year_first,
         reference_query.pub_year_last,
     ]
+    co_authors: list = ["Conjointes", None, None, None]
+
+    # Publications search results
+    results += reference_query.publication_types
     if publications_dfs_list_by_pub_type:
         values += [
             0 if df.empty else len(df) for df in publications_dfs_list_by_pub_type
         ]
-    else:
-        values += [None] * len(reference_query.publication_types)
-    if not uspto_patents.empty or not uspto_patent_applications.empty:
-        values += [
-            len(uspto_patent_applications),
-            len(uspto_patents),
-        ]
-    if not inpadoc_patents.empty or not inpadoc_patent_applications.empty:
-        values += [
-            len(inpadoc_patent_applications),
-            len(inpadoc_patents),
-        ]
-
-    # Third column with bibliographic item co-authors counts
-    co_authors: list = ["Conjointes", None, None, None]
-    if publications_dfs_list_by_pub_type:
         co_authors += [
             None if df.empty else len(df[df["Nb co-auteurs locaux"] > 1])
             for df in publications_dfs_list_by_pub_type
         ]
     else:
+        values += [None] * len(reference_query.publication_types)
         co_authors += [None] * len(reference_query.publication_types)
+
+    # USPTO search results
     if not uspto_patents.empty or not uspto_patent_applications.empty:
+        results += ["Brevets USPTO (en instance)", "Brevets USPTO (délivrés)"]
+        values += [
+            len(uspto_patent_applications),
+            len(uspto_patents),
+        ]
         uspto_joint_patent_applications_count: int = sum(
             row["Nb co-inventeurs locaux"] is not None
             and row["Nb co-inventeurs locaux"] > 1
@@ -763,13 +756,22 @@ def _create_results_summary_df(
             for _, row in uspto_patents.iterrows()
         )
         co_authors += [uspto_joint_patent_applications_count, uspto_joint_patents_count]
+
+    # INPADOC search results
     if not inpadoc_patents.empty or not inpadoc_patent_applications.empty:
+        results += ["Brevets INPADOC (en instance)", "Brevets INPADOC (délivrés)"]
+        values += [
+            len(inpadoc_patent_applications),
+            len(inpadoc_patents),
+        ]
         inpadoc_patent_applications_count: int = sum(
-            row["Nb co-inventors"] is not None and row["Nb co-inventors"] > 1
+            row["Nb co-inventeurs locaux"] is not None
+            and row["Nb co-inventeurs locaux"] > 1
             for _, row in inpadoc_patent_applications.iterrows()
         )
         inpadoc_patents_count: int = sum(
-            row["Nb co-inventors"] is not None and row["Nb co-inventors"] > 1
+            row["Nb co-inventeurs locaux"] is not None
+            and row["Nb co-inventeurs locaux"] > 1
             for _, row in inpadoc_patents.iterrows()
         )
         co_authors += [inpadoc_patent_applications_count, inpadoc_patents_count]
@@ -1285,7 +1287,7 @@ def _fetch_inpadoc_patent_family_members(member_info) -> tuple[list, list]:
     return family_member_patent_ids_filtered, family_member_publication_dates_filtered
 
 
-def _extract_earliest_patent_family_members(patent_families: pd.DataFrame):
+def _extract_earliest_inpadoc_patent_family_members(patent_families: pd.DataFrame):
     """
     Extract earliest patent application and granted patent from patent families
 
@@ -1305,7 +1307,7 @@ def _extract_earliest_patent_family_members(patent_families: pd.DataFrame):
         earliest_application_number: str = ""
         earliest_granting_date: str = ""
         earliest_granting_number: str = ""
-        for date, pid in zip(row["Publication dates"], row["Patent numbers"]):
+        for date, pid in zip(row["Dates de publication"], row["Numéros de brevet"]):
             if "B" in pid[-2:] or "C" in pid[-2:]:
                 if not earliest_granting_date or date < earliest_granting_date:
                     earliest_granting_date = date
@@ -1323,10 +1325,10 @@ def _extract_earliest_patent_family_members(patent_families: pd.DataFrame):
         earliest_application_numbers.append(earliest_application_number)
 
     # Load earliest application and granted patents into patent families dataframe
-    patent_families["Earliest patent application"] = earliest_application_numbers
-    patent_families["Date published"] = earliest_application_dates
-    patent_families["Earliest patent granted"] = earliest_granting_numbers
-    patent_families["Date granted"] = earliest_granting_dates
+    patent_families["Prémier dépôt"] = earliest_application_numbers
+    patent_families["Date de dépôt"] = earliest_application_dates
+    patent_families["Premier brevet délivré"] = earliest_granting_numbers
+    patent_families["Date de délivrance"] = earliest_granting_dates
 
 
 def _fetch_inpadoc_patent_families_by_author_name(
@@ -1452,18 +1454,18 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
     print("")
 
     # Create dataframe with patent family info
-    patent_families: pd.DataFrame = pd.DataFrame(families, columns=["Family"])
-    patent_families["Title"] = titles
-    patent_families["Inventors"] = inventors
-    patent_families["Applicants"] = applicants
-    patent_families["Patent numbers"] = patent_ids
-    patent_families["Publication dates"] = publication_dates
+    patent_families: pd.DataFrame = pd.DataFrame(families, columns=["Famille"])
+    patent_families["Titre"] = titles
+    patent_families["Inventeurs"] = inventors
+    patent_families["Cessionnaires"] = applicants
+    patent_families["Numéros de brevet"] = patent_ids
+    patent_families["Dates de publication"] = publication_dates
 
     # Add earliest patent application and granted patent to the patent families dataframe
-    _extract_earliest_patent_family_members(patent_families)
+    _extract_earliest_inpadoc_patent_family_members(patent_families)
 
     # Sort family dataframe by title
-    patent_families = patent_families.sort_values(by=["Title"])
+    patent_families = patent_families.sort_values(by=["Titre"])
 
     # Write dataframe of all patent results to output Excel file
     with pd.ExcelWriter(
@@ -1535,17 +1537,17 @@ def query_espacenet_patents_and_applications(
     """
 
     # Search espacenet or get previous research results from file
-    if reference_query.epo_patent_search_results_file:
+    if reference_query.espacenet_patent_search_results_file:
         patent_families: pd.DataFrame = pd.read_excel(
-            reference_query.epo_patent_search_results_file
+            reference_query.espacenet_patent_search_results_file
         )
         # Reformat inventors and applicants columns into proper lists
-        patent_families["Inventors"] = patent_families["Inventors"].apply(
+        patent_families["Inventeurs"] = patent_families["Inventeurs"].apply(
             lambda inventors: [
                 item for item in inventors.split("'") if item not in [", ", "[", "]"]
             ]
         )
-        patent_families["Applicants"] = patent_families["Applicants"].apply(
+        patent_families["Cessionnaires"] = patent_families["Cessionnaires"].apply(
             lambda applicants: [
                 item for item in applicants.split("'") if item not in [", ", "[", "]"]
             ]
@@ -1556,7 +1558,7 @@ def query_espacenet_patents_and_applications(
         )
 
     # Add columns with local inventors and number of co-inventors to the dataframe
-    local_inventors = patent_families["Inventors"].apply(
+    local_inventors = patent_families["Inventeurs"].apply(
         lambda inventors: [
             lastname
             for [lastname, firstname] in reference_query.au_names
@@ -1573,26 +1575,31 @@ def query_espacenet_patents_and_applications(
             )
         ]
     )
-    patent_families.insert(loc=2, column="Local inventors", value=local_inventors)
-    local_inventors_cnt = patent_families["Local inventors"].apply(
+    patent_families.insert(loc=2, column="Inventeurs locaux", value=local_inventors)
+    local_inventors_cnt = patent_families["Inventeurs locaux"].apply(
         lambda inventors: len(inventors) if len(inventors) > 1 else None
     )
-    patent_families.insert(loc=3, column="Nb co-inventors", value=local_inventors_cnt)
+    patent_families.insert(
+        loc=3, column="Nb co-inventeurs locaux", value=local_inventors_cnt
+    )
     patent_families = patent_families.drop(
-        patent_families[patent_families["Local inventors"].map(len) == 0].index
+        patent_families[patent_families["Inventeurs locaux"].map(len) == 0].index
     )
 
     # Extract patent application and granted patent by date, add columns to dataframe
     applications_published_in_year_range: pd.DataFrame = patent_families[
-        (patent_families["Date published"] >= f"{reference_query.pub_year_first}-01-01")
-        & (
-            patent_families["Date published"]
-            <= f"{reference_query.pub_year_last}-12-31"
-        )
+        (patent_families["Date de dépôt"] >= f"{reference_query.pub_year_first}-01-01")
+        & (patent_families["Date de dépôt"] <= f"{reference_query.pub_year_last}-12-31")
     ]
     patents_granted_in_year_range: pd.DataFrame = patent_families[
-        (patent_families["Date granted"] >= f"{reference_query.pub_year_first}-01-01")
-        & (patent_families["Date granted"] <= f"{reference_query.pub_year_last}-12-31")
+        (
+            patent_families["Date de délivrance"]
+            >= f"{reference_query.pub_year_first}-01-01"
+        )
+        & (
+            patent_families["Date de délivrance"]
+            <= f"{reference_query.pub_year_last}-12-31"
+        )
     ]
 
     # Return dataframe for INPADOC patent applications and granted patents
@@ -1678,7 +1685,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     # Fetch INPADOC applications and published uspto_patents into separate dataframes, if required
     inpadoc_patent_applications = pd.DataFrame()
     inpadoc_patents = pd.DataFrame()
-    if reference_query.epo_patent_search:
+    if reference_query.espacenet_patent_search:
         inpadoc_patent_applications, inpadoc_patents = (
             query_espacenet_patents_and_applications(reference_query)
         )
@@ -1798,9 +1805,9 @@ def main():
         local_affiliations=toml_dict["local_affiliations"],
         scopus_database_refresh_days=toml_dict.get("scopus_database_refresh_days", 0),
         uspto_patent_search=toml_dict.get("uspto_patent_search", True),
-        epo_patent_search=toml_dict.get("epo_patent_search", True),
-        epo_patent_search_results_file=toml_dict.get(
-            "epo_patent_search_results_file", ""
+        espacenet_patent_search=toml_dict.get("espacenet_patent_search", True),
+        espacenet_patent_search_results_file=toml_dict.get(
+            "espacenet_patent_search_results_file", ""
         ),
     )
 

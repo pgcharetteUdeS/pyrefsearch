@@ -45,5 +45,5 @@ scopus_database_refresh_days = 7
 
 # BREVETS : Activer/désactiver (true/false) la recherche de brevets USPTO et ESPACENET (INPADOC)
 uspto_patent_search = false
-epo_patent_search = true
-epo_patent_search_results_file = "espacenet_INPADOC_results_20250223.xlsx"
+espacenet_patent_search = true
+espacenet_patent_search_results_file = "espacenet_INPADOC_results_20250224.xlsx"
