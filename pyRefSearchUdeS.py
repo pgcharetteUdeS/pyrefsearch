@@ -713,8 +713,10 @@ def _create_results_summary_df(
         "Année de fin",
     ]
     results += reference_query.publication_types
-    results += ["Brevets USPTO (en instance)", "Brevets USPTO (délivrés)"]
-    results += ["Brevets INPADOC (en instance)", "Brevets INPADOC (délivrés)"]
+    if not uspto_patents.empty or not uspto_patent_applications.empty:
+        results += ["Brevets USPTO (en instance)", "Brevets USPTO (délivrés)"]
+    if not inpadoc_patents.empty or not inpadoc_patent_applications.empty:
+        results += ["Brevets INPADOC (en instance)", "Brevets INPADOC (délivrés)"]
 
     # Second column with item values and bibliographic item counts
     values: list = [
@@ -729,14 +731,16 @@ def _create_results_summary_df(
         ]
     else:
         values += [None] * len(reference_query.publication_types)
-    values += [
-        len(uspto_patent_applications),
-        len(uspto_patents),
-    ]
-    values += [
-        len(inpadoc_patent_applications),
-        len(inpadoc_patents),
-    ]
+    if not uspto_patents.empty or not uspto_patent_applications.empty:
+        values += [
+            len(uspto_patent_applications),
+            len(uspto_patents),
+        ]
+    if not inpadoc_patents.empty or not inpadoc_patent_applications.empty:
+        values += [
+            len(inpadoc_patent_applications),
+            len(inpadoc_patents),
+        ]
 
     # Third column with bibliographic item co-authors counts
     co_authors: list = ["Conjointes", None, None, None]
@@ -747,32 +751,28 @@ def _create_results_summary_df(
         ]
     else:
         co_authors += [None] * len(reference_query.publication_types)
-    uspto_joint_patent_applications_count: int = sum(
-        row["Nb co-inventeurs locaux"] is not None
-        and row["Nb co-inventeurs locaux"] > 1
-        for _, row in uspto_patent_applications.iterrows()
-    )
-    uspto_joint_patents_count: int = sum(
-        row["Nb co-inventeurs locaux"] is not None
-        and row["Nb co-inventeurs locaux"] > 1
-        for _, row in uspto_patents.iterrows()
-    )
-    inpadoc_patent_applications_count: int = sum(
-        row["Nb co-inventors"] is not None
-        and row["Nb co-inventors"] > 1
-        for _, row in inpadoc_patent_applications.iterrows()
-    )
-    inpadoc_patents_count: int = sum(
-        row["Nb co-inventors"] is not None
-        and row["Nb co-inventors"] > 1
-        for _, row in inpadoc_patents.iterrows()
-    )
-    co_authors += [
-        uspto_joint_patent_applications_count,
-        uspto_joint_patents_count,
-        inpadoc_patent_applications_count,
-        inpadoc_patents_count,
-    ]
+    if not uspto_patents.empty or not uspto_patent_applications.empty:
+        uspto_joint_patent_applications_count: int = sum(
+            row["Nb co-inventeurs locaux"] is not None
+            and row["Nb co-inventeurs locaux"] > 1
+            for _, row in uspto_patent_applications.iterrows()
+        )
+        uspto_joint_patents_count: int = sum(
+            row["Nb co-inventeurs locaux"] is not None
+            and row["Nb co-inventeurs locaux"] > 1
+            for _, row in uspto_patents.iterrows()
+        )
+        co_authors += [uspto_joint_patent_applications_count, uspto_joint_patents_count]
+    if not inpadoc_patents.empty or not inpadoc_patent_applications.empty:
+        inpadoc_patent_applications_count: int = sum(
+            row["Nb co-inventors"] is not None and row["Nb co-inventors"] > 1
+            for _, row in inpadoc_patent_applications.iterrows()
+        )
+        inpadoc_patents_count: int = sum(
+            row["Nb co-inventors"] is not None and row["Nb co-inventors"] > 1
+            for _, row in inpadoc_patents.iterrows()
+        )
+        co_authors += [inpadoc_patent_applications_count, inpadoc_patents_count]
 
     return pd.DataFrame([results, values, co_authors]).T
 
