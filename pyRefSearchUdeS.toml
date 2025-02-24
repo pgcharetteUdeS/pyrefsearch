@@ -15,7 +15,7 @@ in_excel_file = "Liste chercheurs-membres_VF.xlsx"
 in_excel_file_author_sheet = "Membres"
 
 # Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)
-pub_year_first = 2024
+pub_year_first = 2019
 pub_year_last = 2024
 
 # Noms d'institutions et d'affiliations considérées commme "locales", pour valider
@@ -44,6 +44,10 @@ publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Absracts", "ab"], ["
 scopus_database_refresh_days = 7
 
 # BREVETS : Activer/désactiver (true/false) la recherche de brevets USPTO et ESPACENET (INPADOC)
+# NB: Si un nom de fichier est fourni par le paramêtre "espacenet_patent_search_results_file",
+# la recherche de brevets INPADOC est faite dans le fichier, sinon une nouvelle recherche
+# en ligne sur espacenet est effectuée et les résultats sont sauvegardés dans le fichier
+# "espacenet_INPADOC_results_YYYMMDD.xlsx", "YYYMMDD" étant la date de la recherche.
 uspto_patent_search = false
 espacenet_patent_search = true
 espacenet_patent_search_results_file = "espacenet_INPADOC_results_20250224.xlsx"
