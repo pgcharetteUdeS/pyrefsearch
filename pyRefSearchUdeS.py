@@ -1094,7 +1094,7 @@ def query_scopus_publications(
     return publications, pub_type_counts_by_author
 
 
-def query_us_patents(
+def query_uspto_patents_and_applications(
     reference_query: ReferenceQuery,
     applications: bool = True,
     application_ids_to_remove=None,
@@ -1405,20 +1405,6 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
             ],
             ignore_index=True,
         )
-        """
-        # Expand search deosn't seem to care about accents...
-        accented_chars: list[str] = ["é", "è", "ê", "ë", "É", "È", "Ê", "ç"]
-        if any(c in lastname or c in firstname for c in accented_chars):
-            patent_families_raw = pd.concat(
-                [
-                    patent_families_raw,
-                    _fetch_inpadoc_patent_families_by_author_name(
-                        last_name=unidecode(lastname), first_name=unidecode(firstname)
-                    ),
-                ],
-                ignore_index=True,
-            )
-        """
     patent_families_raw = patent_families_raw.drop_duplicates(subset=["family_id"])
     patent_families_raw = patent_families_raw.reset_index(drop=True)
 
@@ -1483,7 +1469,7 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
     return patent_families
 
 
-def query_espacenet(
+def query_espacenet_patents_and_applications(
     reference_query: ReferenceQuery,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -1537,21 +1523,62 @@ def query_espacenet(
     """
 
     # Search espacenet or get previous research results from file
-    patent_families: pd.DataFrame = (
-        pd.read_excel(reference_query.epo_patent_search_results_file)
-        if reference_query.epo_patent_search_results_file
-        else _search_espacenet_by_author_name(reference_query)
+    if reference_query.epo_patent_search_results_file:
+        patent_families: pd.DataFrame = pd.read_excel(
+            reference_query.epo_patent_search_results_file
+        )
+        # Reformat inventors and applicants columns into proper lists
+        patent_families["Inventors"] = patent_families["Inventors"].apply(
+            lambda inventors: [
+                item for item in inventors.split("'") if item not in [", ", "[", "]"]
+            ]
+        )
+        patent_families["Applicants"] = patent_families["Applicants"].apply(
+            lambda applicants: [
+                item for item in applicants.split("'") if item not in [", ", "[", "]"]
+            ]
+        )
+    else:
+        patent_families: pd.DataFrame = _search_espacenet_by_author_name(
+            reference_query
+        )
+
+    # Add columns with local inventors and number of co-inventors to the dataframe
+    local_inventors = patent_families["Inventors"].apply(
+        lambda inventors: [
+            lastname
+            for [lastname, firstname] in reference_query.au_names
+            if any(
+                (
+                    _to_lower_no_accents_no_hyphens(lastname)
+                    in _to_lower_no_accents_no_hyphens(inventor)
+                )
+                and (
+                    _to_lower_no_accents_no_hyphens(firstname)
+                    in _to_lower_no_accents_no_hyphens(inventor)
+                )
+                for inventor in inventors
+            )
+        ]
+    )
+    patent_families.insert(loc=2, column="Local inventors", value=local_inventors)
+    local_inventors_cnt = patent_families["Local inventors"].apply(
+        lambda inventors: len(inventors) if len(inventors) > 1 else None
+    )
+    patent_families.insert(loc=3, column="Nb co-inventors", value=local_inventors_cnt)
+    patent_families = patent_families.drop(
+        patent_families[patent_families["Local inventors"].map(len) == 0].index
     )
 
-    # Extract patent application and granted patent by date
-    applications_published_in_year_range = patent_families[
+    # Extract patent application and granted patent by date, add columns to dataframe
+    applications_published_in_year_range: pd.DataFrame = patent_families[
         (patent_families["Date published"] >= f"{reference_query.pub_year_first}-01-01")
         & (
             patent_families["Date published"]
             <= f"{reference_query.pub_year_last}-12-31"
         )
     ]
-    patents_granted_in_year_range = patent_families[
+    patents_granted_in_year_range: pd.DataFrame = patent_families[
         (patent_families["Date granted"] >= f"{reference_query.pub_year_first}-01-01")
         & (patent_families["Date granted"] <= f"{reference_query.pub_year_last}-12-31")
     ]
@@ -1609,34 +1636,40 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
                 author_profiles_by_ids[pub_type] = pub_counts
 
     # Fetch US applications and published patents into separate dataframes, if required
-    patents: pd.DataFrame = pd.DataFrame()
-    patent_applications: pd.DataFrame = pd.DataFrame()
+    uspto_patents: pd.DataFrame = pd.DataFrame()
+    uspto_patent_applications: pd.DataFrame = pd.DataFrame()
     if reference_query.uspto_patent_search:
-        patent_application_ids: list
-        patent_counts_by_author: list
-        patents, patent_application_ids, patent_counts_by_author = query_us_patents(
-            reference_query=reference_query, applications=False
+        uspto_patent_application_ids: list
+        uspto_patent_counts_by_author: list
+        uspto_patents, uspto_patent_application_ids, uspto_patent_counts_by_author = (
+            query_uspto_patents_and_applications(
+                reference_query=reference_query, applications=False
+            )
         )
-        print("Brevets US (délivrés): ", len(patents))
-        patent_application_counts_by_author: list
-        patent_applications, _, patent_application_counts_by_author = query_us_patents(
-            reference_query=reference_query,
-            applications=True,
-            application_ids_to_remove=patent_application_ids,
+        print("Brevets US (délivrés): ", len(uspto_patents))
+        uspto_patent_application_counts_by_author: list
+        uspto_patent_applications, _, uspto_patent_application_counts_by_author = (
+            query_uspto_patents_and_applications(
+                reference_query=reference_query,
+                applications=True,
+                application_ids_to_remove=uspto_patent_application_ids,
+            )
         )
-        print("Brevets US (en instance): ", len(patent_applications))
+        print("Brevets US (en instance): ", len(uspto_patent_applications))
 
         # Add patent application and published patent counts to the author profiles
         author_profiles_by_ids["Brevets US (en instance)"] = (
-            patent_application_counts_by_author
+            uspto_patent_application_counts_by_author
         )
-        author_profiles_by_ids["Brevets US (délivrés)"] = patent_counts_by_author
+        author_profiles_by_ids["Brevets US (délivrés)"] = uspto_patent_counts_by_author
 
     # Fetch INPADOC applications and published uspto_patents into separate dataframes, if required
     inpadoc_patent_applications = pd.DataFrame()
     inpadoc_patents = pd.DataFrame()
     if reference_query.epo_patent_search:
-        inpadoc_patent_applications, inpadoc_patents = query_espacenet(reference_query)
+        inpadoc_patent_applications, inpadoc_patents = (
+            query_espacenet_patents_and_applications(reference_query)
+        )
 
     # Fetch Scopus author profiles corresponding to user-supplied names, check for
     # author names with multiple Scopus IDs ("homonyms"), load into dataframe
@@ -1649,8 +1682,8 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     write_reference_query_results_to_excel(
         reference_query=reference_query,
         publications_dfs_list_by_pub_type=publications_dfs_list_by_pub_type,
-        uspto_patents=patents,
-        uspto_patent_applications=patent_applications,
+        uspto_patents=uspto_patents,
+        uspto_patent_applications=uspto_patent_applications,
         inpadoc_patents=inpadoc_patents,
         inpadoc_patent_applications=inpadoc_patent_applications,
         author_profiles_by_ids=author_profiles_by_ids,
