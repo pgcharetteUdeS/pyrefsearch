@@ -755,11 +755,23 @@ def _create_results_summary_df(
         and row["Nb co-inventeurs locaux"] > 1
         for _, row in uspto_patents.iterrows()
     )
+
+    inpadoc_patent_applications_count: int = sum(
+        row["Nb co-inventors"] is not None
+        and row["Nb co-inventors"] > 1
+        for _, row in inpadoc_patent_applications.iterrows()
+    )
+    inpadoc_patents_count: int = sum(
+        row["Nb co-inventors"] is not None
+        and row["Nb co-inventors"] > 1
+        for _, row in inpadoc_patents.iterrows()
+    )
+
     co_authors += [
         uspto_joint_patent_applications_count,
         uspto_joint_patents_count,
-        0,
-        0,
+        inpadoc_patent_applications_count,
+        inpadoc_patents_count,
     ]
 
     return pd.DataFrame([results, values, co_authors]).T
