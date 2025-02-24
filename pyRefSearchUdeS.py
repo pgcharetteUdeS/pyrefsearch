@@ -1485,7 +1485,7 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
 
 def query_espacenet_patents_and_applications(
     reference_query: ReferenceQuery,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, list, pd.DataFrame, list]:
     """
 
     Query the INPADOC worldwide patent library via espacenet. INPADOC (International
@@ -1602,8 +1602,21 @@ def query_espacenet_patents_and_applications(
         )
     ]
 
+    # Tabulate number of patents and patent applications per author
+    patent_application_counts_by_author: list = _tabulate_patents_per_author(
+        reference_query=reference_query, patents=applications_published_in_year_range
+    )
+    patent_granted_counts_by_author: list = _tabulate_patents_per_author(
+        reference_query=reference_query, patents=patents_granted_in_year_range
+    )
+
     # Return dataframe for INPADOC patent applications and granted patents
-    return applications_published_in_year_range, patents_granted_in_year_range
+    return (
+        applications_published_in_year_range,
+        patent_application_counts_by_author,
+        patents_granted_in_year_range,
+        patent_granted_counts_by_author,
+    )
 
 
 def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
@@ -1686,9 +1699,20 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     inpadoc_patent_applications = pd.DataFrame()
     inpadoc_patents = pd.DataFrame()
     if reference_query.espacenet_patent_search:
-        inpadoc_patent_applications, inpadoc_patents = (
-            query_espacenet_patents_and_applications(reference_query)
+        (
+            inpadoc_patent_applications,
+            inpadoc_patent_application_counts_per_author,
+            inpadoc_patents,
+            inpadoc_patent_counts_per_author,
+        ) = query_espacenet_patents_and_applications(reference_query)
+        author_profiles_by_ids["Brevets INPADOC (en instance)"] = (
+            inpadoc_patent_application_counts_per_author
         )
+        author_profiles_by_ids["Brevets INPADOC (délivrés)"] = (
+            inpadoc_patent_counts_per_author
+        )
+        print("Brevets INPADOC en instance: ", len(inpadoc_patent_applications))
+        print("Brevets INPADOC délivrés: ", len(inpadoc_patents))
 
     # Fetch Scopus author profiles corresponding to user-supplied names, check for
     # author names with multiple Scopus IDs ("homonyms"), load into dataframe
