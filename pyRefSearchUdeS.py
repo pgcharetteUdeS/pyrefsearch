@@ -613,8 +613,7 @@ def _reformat_uspto_search_results(
     patents: pd.DataFrame, applications: bool
 ) -> pd.DataFrame:
     """
-    Reorder USPTO search results by filing date for applications or publication date for
-    patents, change column names to French, and remove unnecessary columns
+    Reorder USPTO search results by title, change column names to French, remove unnecessary columns
 
     Args:
         applications (bool): Search filed applications if True, else search published patents if False
@@ -649,7 +648,7 @@ def _reformat_uspto_search_results(
             "Cessionnaires",
             "Applications liées",
         ]
-        patents = patents.sort_values(by=["Date de dépôt"])
+        patents = patents.sort_values(by=["Titre"])
     else:
         patents.rename(
             columns={
@@ -678,7 +677,7 @@ def _reformat_uspto_search_results(
             "Cessionnaires",
             "Applications liées",
         ]
-        patents = patents.sort_values(by=["Date de délivrance"])
+        patents = patents.sort_values(by=["Titre"])
 
     return patents[new_columns]
 
@@ -1204,7 +1203,7 @@ def query_uspto_patents_and_applications(
                 inplace=True,
             )
 
-        # Reorder columns, change names to French, sort by date
+        # Reorder columns, change names to French, sort by title
         patents = _reformat_uspto_search_results(
             patents=patents, applications=applications
         )
