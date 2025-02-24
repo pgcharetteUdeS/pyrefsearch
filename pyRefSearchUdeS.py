@@ -705,8 +705,8 @@ def _create_results_summary_df(
     Returns: DataFrame with results summary
 
     """
-    # Create results summary dataframe
 
+    # First column with search information and bibliographic item names
     results: list = [
         None,
         "Nb d'auteur.e.s",
@@ -716,6 +716,8 @@ def _create_results_summary_df(
     results += reference_query.publication_types
     results += ["Brevets USPTO (en instance)", "Brevets USPTO (délivrés)"]
     results += ["Brevets INPADOC (en instance)", "Brevets INPADOC (délivrés)"]
+
+    # Second column with item values and bibliographic item counts
     values: list = [
         None,
         len(reference_query.au_ids),
@@ -736,6 +738,8 @@ def _create_results_summary_df(
         len(inpadoc_patent_applications),
         len(inpadoc_patents),
     ]
+
+    # Third column with bibliographic item co-authors counts
     co_authors: list = ["Conjointes", None, None, None]
     if publications_dfs_list_by_pub_type:
         co_authors += [
@@ -744,7 +748,6 @@ def _create_results_summary_df(
         ]
     else:
         co_authors += [None] * len(reference_query.publication_types)
-
     uspto_joint_patent_applications_count: int = sum(
         row["Nb co-inventeurs locaux"] is not None
         and row["Nb co-inventeurs locaux"] > 1
@@ -755,7 +758,6 @@ def _create_results_summary_df(
         and row["Nb co-inventeurs locaux"] > 1
         for _, row in uspto_patents.iterrows()
     )
-
     inpadoc_patent_applications_count: int = sum(
         row["Nb co-inventors"] is not None
         and row["Nb co-inventors"] > 1
@@ -766,7 +768,6 @@ def _create_results_summary_df(
         and row["Nb co-inventors"] > 1
         for _, row in inpadoc_patents.iterrows()
     )
-
     co_authors += [
         uspto_joint_patent_applications_count,
         uspto_joint_patents_count,
