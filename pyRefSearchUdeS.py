@@ -64,7 +64,7 @@ class ReferenceQuery:
         n_eng_members_regular_profs_only: int = len(
             authors[
                 (authors["Faculté / Service"] == "FGEN")
-                & (authors["Statut professoral"] == "Régulier")
+                & (authors["Lien d'empoi UdeS"] == "Régulier")
             ]
         )
         n_members_with_office = len(authors[authors["Résidence"] != "Aucun bureau"])
@@ -72,7 +72,7 @@ class ReferenceQuery:
             authors[
                 (authors["Faculté / Service"] == "FGEN")
                 & (authors["Résidence"] != "Aucun bureau")
-                & (authors["Statut professoral"] == "Régulier")
+                & (authors["Lien d'empoi UdeS"] == "Régulier")
             ]
         )
         print(
@@ -150,7 +150,7 @@ class ReferenceQuery:
                     "Prénom",
                     "ID Scopus",
                     "Faculté / Service",
-                    "Statut professoral",
+                    "Lien d'empoi UdeS",
                     "Résidence",
                     "Sexe",
                 ]
