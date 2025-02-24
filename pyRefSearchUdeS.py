@@ -1647,7 +1647,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
 
     # Console banner
     print(
-        "Recherche de publications et brevets US pour la période "
+        "Recherche de publications et brevets pour la période "
         f"{reference_query.pub_year_first}-{reference_query.pub_year_last}"
     )
 
