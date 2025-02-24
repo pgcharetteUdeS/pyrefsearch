@@ -1,5 +1,5 @@
 # Type de recherche
-#   - "Publications" : recherche de publications par identifiant Scopus
+#   - "Publications" : recherche de publications & brevets par identifiant Scopus
 #   - "Profils"      : recherche de profils d'auteurs par noms, pour une éventuelle
 #                      recherche de publications par identifiants Scopus
 #search_type = "Profils"
@@ -7,7 +7,6 @@ search_type = "Publications"
 
 # Fichier Excel d'entrée et nom du feuillet contenant les information des auteur.e.s
 # (colonnes "Nom", "Prénom", ainsi que "Scopus ID" pour les recherches de publications)
-# Le fichier maître est sur le SharePoint du 3IT: "\USherbrooke\3IT - Gestion Centrale - General\Membres\Liste chercheurs-membres_VF.xlsx"
 in_excel_file = "Liste chercheurs-membres_VF.xlsx"
 in_excel_file_author_sheet = "Membres"
 
