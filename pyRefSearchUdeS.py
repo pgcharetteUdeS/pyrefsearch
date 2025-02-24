@@ -20,6 +20,7 @@
 
 """
 
+import datetime
 from datetime import timedelta
 from functools import lru_cache
 import numpy as np
@@ -1538,9 +1539,21 @@ def query_espacenet_patents_and_applications(
 
     # Search espacenet or get previous research results from file
     if reference_query.espacenet_patent_search_results_file:
+        # Load previous search results from file
         patent_families: pd.DataFrame = pd.read_excel(
             reference_query.espacenet_patent_search_results_file
         )
+
+        # Show warning on console if file is older than 30 days
+        if datetime.date.today() - datetime.datetime.strptime(
+            reference_query.espacenet_patent_search_results_file[-13:-5], "%Y%m%d"
+        ).date() >= timedelta(days=30):
+            print(
+                "[yellow]WARNING: Les données dans le fichier "
+                f"'{reference_query.espacenet_patent_search_results_file}' "
+                "ont plus de 30 jours![/yellow]"
+            )
+
         # Reformat inventors and applicants columns into proper lists
         patent_families["Inventeurs"] = patent_families["Inventeurs"].apply(
             lambda inventors: [
@@ -1553,6 +1566,7 @@ def query_espacenet_patents_and_applications(
             ]
         )
     else:
+        # Else, search espacenet for patent families by author name, save to file
         patent_families: pd.DataFrame = _search_espacenet_by_author_name(
             reference_query
         )
