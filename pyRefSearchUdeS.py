@@ -9,14 +9,15 @@
 
     The script uses the "pybliometrics" for Scopus searches,
     see https://pybliometrics.readthedocs.io/en/stable/
-    NB: A "key" is required to query the Scopus API,
+    NB: An API key is required to query the Scopus API,
         see https://dev.elsevier.com/index.jsp. The first execution of the script
         will prompt the user to enter the key.
 
     The script uses the "patent_client" package for searches in the USPTO
-    and INPADOC ("International Patent Documentation" database of patent information
-    maintained by the European Patent Office, accessible via espacent) databases.
-    see https://patent-client.readthedocs.io/en/latest/index.html
+    and INPADOC databases, see https://patent-client.readthedocs.io/en/latest/index.html.
+    NB: An API key is required to access INPADOC ("International Patent Documentation"
+        database of patent information maintained by the European Patent Office,
+        accessible via espacent), see pyRefSearchUdeS.toml.
 
     Project on gitHub: https://github.com/pgcharetteUdeS/pyRefSearchUdeS
 
