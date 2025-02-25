@@ -1,8 +1,9 @@
 """pyRefSearchUdeS.py
 
-    For a list of author names and range of years supplied in an input Excel file,
-    query references (publications in Scopus, patents in the USPTO database) OR
-    author profiles (Scopus database), and write the results to an output Excel file.
+    For a list of author names and range of years supplied in an input Excel file, query:
+    - references (publications in Scopus, patents in the INPADOC and USPTO databases)
+      OR
+    - author profiles (Scopus database), and write the results to an output Excel file.
 
     All execution parameters specified in the file "pyRefSearchUdeS.toml"
 
@@ -12,9 +13,10 @@
         see https://dev.elsevier.com/index.jsp. The first execution of the script
         will prompt the user to enter the key.
 
-    The script uses the "patent_client" package for searches in the USPTO database,
-    see https://patent-client.readthedocs.io/en/latest/user_guide/fulltext.html
-    NB: support for European Patent Office (EPO) searches is pending
+    The script uses the "patent_client" package for searches in the USPTO
+    and INPADOC ("International Patent Documentation" database of patent information
+    maintained by the European Patent Office, accessible via espacent) databases.
+    see https://patent-client.readthedocs.io/en/latest/index.html
 
     Project on gitHub: https://github.com/pgcharetteUdeS/pyRefSearchUdeS
 
@@ -1531,32 +1533,8 @@ def query_espacenet_patents_and_applications(
         Example search string:
           '(in=("charette" prox/distance<1 "paul") OR in=("hunter" prox/distance<1 "ian")) AND pd within "1990,2020"'
 
-          Search for granted (type "B") US patents:  'AND pn any "USB"'
-          Search for granted (type "B") European patents: 'AND pn any "EPB"'
-
-          NB: EspaceNet can only be searched by patent publication date,
-              NOT by date of application NOR granting: 'AND pd within "2021,2024"'
-
-    ** IMPORTANT **
-            1) Because granted patents don't come up in espacenet search by year, search
-               for patents by author name and then filter by year in software.
-            2) Keep running list of families, don't process families already traversed
-            3) Traverse family to keep only earliest patent application (type "A")
-               publication date, which if either CA or WO, keep WO if both are present.
-            4) Traverse family to keep only earliest granted patent (type "B" or "C")
-               publication date.
-            4) Keep only #3 and #4 that match the search range criteria
-
-            OR: Only search for patent applications, keep only the earliest application
-            in the family?
-
-            For granted patents, the simplest is to search by granted "patent number"
-            ("US/USA/USB", "CA/CAA/CAC", "WO") and by author, without specifying a range of years,
-            then retain only the patents first granted in the family that match the search
-            range criteria.
-
-            Question: for patent applications, should we use the application date or the
-                      publication date? Compare with USPTO search results.
+        Because granted patents don't come up in espacenet search by year, must search
+        for patents by author name and then filter by year in post.
 
     """
 
