@@ -528,8 +528,8 @@ def _add_coauthor_columns_and_clean_up_publications_df(
         for co_authors in publications["Auteurs locaux"]
     ]
 
-    # Check that at least one local author in the list of author Scopus IDs.
-    # If not: the only local author probably has more than one Scopus ID, show warning
+    # Check that there is at least one local author in the list of author Scopus IDs.
+    # If not, the only local author probably has more than one Scopus ID, show warning.
     for _, row in publications.iterrows():
         if not row["Auteurs locaux"]:
             print(
@@ -539,9 +539,9 @@ def _add_coauthor_columns_and_clean_up_publications_df(
                 end=" ",
             )
             problem_author: str = ""
-            for name in reference_query.au_names:
-                if name[0] in row["author_names"]:
-                    problem_author = name[0]
+            for author in reference_query.au_names:
+                if author[0] in row["author_names"]:
+                    problem_author = author[0]
                     break
             if problem_author:
                 print(
