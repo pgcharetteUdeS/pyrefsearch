@@ -25,7 +25,8 @@ local_affiliations = [
 ]
 
 # SCOPUS : Paires de descriptifs (au choix de l'usager) et codes à deux lettres Scopus
-# correspondants pour la recherche par publications. Codes Scopus disponibles :
+# correspondants pour la recherche par publications.
+# Codes Scopus disponibles :
 #   Article-ar / Abstract Report-ab / Book-bk / Book Chapter-ch / Conference Paper-cp /
 #   Conference Review-cr / Data Paper-dp / Editorial-ed / Erratum-er / Letter-le /
 #   Multimedia-mm / Note-no / Report-rp / Retracted-tb / Review-re / Short Survey-sh
@@ -40,10 +41,12 @@ publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Absracts", "ab"], ["
 scopus_database_refresh_days = 7
 
 # BREVETS : Activer/désactiver (true/false) la recherche de brevets USPTO et ESPACENET (INPADOC)
-# 1) La recherche dans espacenet est beaucoup plus complète que dans USPTO parce qu'elle
-#    est groupée par familles de brevets, ce qui permet de repérer notemment les premières
-#    publications d'une invention et d'éviter les redonadances (multiples numéros de brevets
-#    pour une même invention).
+# 1) La recherche de brevets dans INPADOC est préférable à l'USPTO parce que les brevets
+#    sont groupés par familles, ce qui permet notamment de retenir uniquement les
+#    premiers dépots et octrois de brevets pour une invention et éviter les redondances
+#    (brevets dans plusieurs pays. multiples numéros de brevets pour une même invention
+#    reliés à des variations mineures comme des changements aux revendications,
+#    des modifications cléricales, etc.)
 # 2) Si un nom de fichier est spécifié par "espacenet_patent_search_results_file", la recherche
 #    dans espacenet est faite à partir de ce fichier, sinon une nouvelle recherche est faite
 #    en ligne et les résultats sont sauvegardés dans le fichier "espacenet_INPADOC_results_YYYYMMDD.xlsx"

@@ -4,9 +4,17 @@
 [![Python 3.10](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
 ## Fonctions:
-1) Recherche de publications (base de données Scopus) et de brevets US et Européens
-   (bases de données USPTO et EPO) pour une liste d'auteur.e.s sur une gamme d'années donnée
+1) Recherche de publications (base de données Scopus) et de brevets US et canadiens
+   (bases de données INPADOC et/ou USPTO, au choix) pour une liste d'auteur.e.s sur une
+   gamme d'années donnée.
 2) Recherche de profils Scopus pour une liste d'auteur.e.s
+
+NB: La recherche de brevets dans INPADOC (*International Patent Documentation*) est
+préférable à l'USPTO parce que les brevets sont groupés par familles, ce qui permet
+notamment de retenir uniquement les premiers dépots et octrois de brevets pour une
+invention et éviter les redondances (brevets dans plusieurs pays, multiples numéros
+de brevets pour une même invention reliés à des variations mineures comme des changements
+aux revendications, des modifications cléricales, etc.).
 
 ## Pré-requis:
 - Une clé API est requise pour effectuer des recherches sur Scopus, laquelle peut être obtenue
@@ -14,8 +22,9 @@
   puis *Create API Key*. La première exécution du script demande de saisir la clé,
   celle-ci est ensuite sauvegardée sur le poste de travail. Le script doit être exécuté
   à partir d'un poste sur le réseau universitaire pour que l'accès à Scopus soit autorisé.
-- Une clé API est requise pour faire des recherches de brevets via l'EPO (*European
-  patent office*). Il faut d'abord ouvrir un compte en ligne pour accéder aux
+- Une clé API est requise pour faire des recherches de brevets dans la base de données
+  INPADOC (*International Patent Documentation*) gérée par l'EPO (*European
+  patent office*) et accessible via *espacenet*. Il faut d'abord ouvrir un compte en ligne pour accéder aux
   [*Open Patent Services (OPS)*](https://developers.epo.org/user/register) de l'EPO. Une fois
   le compte activé, il faut définir les variables environnementales
   *PATENT_CLIENT_EPO_API_KEY* et *PATENT_CLIENT_EPO_SECRET* sur le poste de travail tel qu'expliqué dans
