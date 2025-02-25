@@ -564,7 +564,7 @@ def _query_uspto(
     reference_query: ReferenceQuery, applications: bool = True
 ) -> pd.DataFrame:
     """
-    Query the USPTO database for patent applications or published patents
+    Query the USPTO database for patent applications or granted patents
 
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
@@ -1637,7 +1637,7 @@ def query_espacenet_patents_and_applications(
 
 def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     """
-    Search for publications in Scopus and patents in the USPTO database
+    Search for publications in Scopus and patents in the USPTO & INPADOC databases
     for a list of authors over a range of years
 
     Args:
@@ -1683,7 +1683,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             if len(df) > 0:
                 author_profiles_by_ids[pub_type] = pub_counts
 
-    # Fetch US applications and published patents into separate dataframes, if required
+    # Fetch USPTO applications and granted patents into separate dataframes, if required
     uspto_patents: pd.DataFrame = pd.DataFrame()
     uspto_patent_applications: pd.DataFrame = pd.DataFrame()
     if reference_query.uspto_patent_search:
@@ -1711,7 +1711,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         )
         author_profiles_by_ids["Brevets US (délivrés)"] = uspto_patent_counts_by_author
 
-    # Fetch INPADOC applications and published uspto_patents into separate dataframes, if required
+    # Fetch INPADOC applications and granted patents into separate dataframes, if required
     inpadoc_patent_applications = pd.DataFrame()
     inpadoc_patents = pd.DataFrame()
     if reference_query.espacenet_patent_search:
