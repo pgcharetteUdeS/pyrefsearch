@@ -528,6 +528,28 @@ def _add_coauthor_columns_and_clean_up_publications_df(
         for co_authors in publications["Auteurs locaux"]
     ]
 
+    # Check that at least one local author, else flag publication
+    for _, row in publications.iterrows():
+        if not row["Auteurs locaux"]:
+            print(
+                f"[yellow]WARNING: Le document '{row['title']}' "
+                f"({row['subtypeDescription']}) n'a pas "
+                "d'ID scopus local dans les auteurs.[/yellow]",
+                end=" ",
+            )
+            problem_author: str = ""
+            for name in reference_query.au_names:
+                if name[0] in row["author_names"]:
+                    problem_author = name[0]
+                    break
+            if problem_author:
+                print(
+                    f"[yellow]Cause probable : l'auteur '{problem_author}' "
+                    "a plus d'un ID Scopus.[/yellow]"
+                )
+            else:
+                print("")
+
     # Sort by publication date
     publications = publications.sort_values(by=["coverDate"])
 
