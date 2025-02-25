@@ -67,7 +67,7 @@ class ReferenceQuery:
         n_eng_members_regular_profs_only: int = len(
             authors[
                 (authors["Faculté / Service"] == "FGEN")
-                & (authors["Lien d'empoi UdeS"] == "Régulier")
+                & (authors["Lien d'emploi UdeS"] == "Régulier")
             ]
         )
         n_members_with_office = len(authors[authors["Résidence"] != "Aucun bureau"])
@@ -75,7 +75,7 @@ class ReferenceQuery:
             authors[
                 (authors["Faculté / Service"] == "FGEN")
                 & (authors["Résidence"] != "Aucun bureau")
-                & (authors["Lien d'empoi UdeS"] == "Régulier")
+                & (authors["Lien d'emploi UdeS"] == "Régulier")
             ]
         )
         print(
@@ -136,6 +136,10 @@ class ReferenceQuery:
         )
         input_data_full = input_data_full.dropna(subset=["Nom"])
 
+        # Strip any leading/trailing spaces in input data
+        for series_name, series in input_data_full.items():
+            input_data_full[series_name] = [str(s).strip() for s in series]
+
         # Extract author names from input Excel file, formatted either as a 3IT database
         # (author status tabulated by fiscal year) or as a simple list of names
         author_status_by_year_columns: list[str] = [
@@ -153,7 +157,7 @@ class ReferenceQuery:
                     "Prénom",
                     "ID Scopus",
                     "Faculté / Service",
-                    "Lien d'empoi UdeS",
+                    "Lien d'emploi UdeS",
                     "Résidence",
                     "Sexe",
                 ]
@@ -186,11 +190,6 @@ class ReferenceQuery:
                 f"the available data in '{in_excel_file}'!"
             ) from None
         self.au_names = authors[["Nom", "Prénom"]].values.tolist()
-
-        # Trim any leading/trailing spaces in author names
-        for name in self.au_names:
-            name[0] = name[0].strip()
-            name[1] = name[1].strip()
 
         # Extract Scopus IDs, replace non-integer values with 0
         self.au_ids = []
