@@ -202,7 +202,7 @@ class ReferenceQuery:
 
 
 @lru_cache(maxsize=1024)
-def _to_lower_no_accents_no_hyphens(s: str | pd.Series) -> str:
+def _to_lower_no_accents_no_hyphens(s: str) -> str:
     """
     Convert string to lower case and remove accents and hyphens
 
@@ -273,11 +273,7 @@ def _flag_matched_scopus_author_ids_and_affiliations(
                 s in _to_lower_no_accents_no_hyphens(row.affiliation)
                 for s in reference_query.local_affiliations
             )
-            au_id_index: int | None = (
-                reference_query.au_ids.index(int(row.eid))
-                if int(row.eid) in reference_query.au_ids
-                else None
-            )
+            au_id_index: int | None = reference_query.au_id_to_index.get(int(row.eid))
             au_id_match: bool = (
                 au_id_index is not None
                 and _to_lower_no_accents_no_hyphens(
@@ -294,6 +290,10 @@ def _flag_matched_scopus_author_ids_and_affiliations(
             else:
                 return None
 
+    # Precompute dictionary mapping Scopus IDs to their indices for constant-time lookups.
+    reference_query.au_id_to_index = {
+        au_id: index for index, au_id in enumerate(reference_query.au_ids)
+    }
     author_profiles["Affl/ID"] = author_profiles.apply(set_affiliation_and_id, axis=1)
 
     return author_profiles
@@ -1215,19 +1215,13 @@ def query_uspto_patents_and_applications(
         )
         patents.drop(patents[no_local_inventors].index, inplace=True)
 
-        # Compile list of patent/application ids. Remove applications for which patents
-        # have been delivered(patent applications having same IDs as delivered patents)
+        # Remove applications for which patents have been delivered, i.e.
+        # patent applications having same "appl_id" as delivered patents.
+        # Compile list of patent/application ids before removal (used later)
         application_ids: list = patents["appl_id"].to_list()
         if applications and application_ids_to_remove:
-            patents.drop(
-                patents[
-                    [
-                        application_id in application_ids_to_remove
-                        for application_id in application_ids
-                    ]
-                ].index,
-                inplace=True,
-            )
+            mask = patents["appl_id"].isin(application_ids_to_remove)
+            patents.drop(patents[mask].index, inplace=True)
 
         # Reorder columns, change names to French, sort by title
         patents = _reformat_uspto_search_results(
@@ -1507,6 +1501,60 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
     return patent_families
 
 
+def _load_inpadoc_search_results_from_excel_file(
+    reference_query: ReferenceQuery,
+) -> pd.DataFrame:
+    """
+    Load previous INPADOC search results from Excel file, where search date is in the
+    file name <filename>YYYYMMDD.xlsx
+
+    Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+
+    Returns: DataFrame with INPADOC search results
+
+    """
+
+    # Extract date from file name, show warning on console if file is older than 30 days
+    if not (
+        match := re.search(
+            r"(\d{8}).xlsx",
+            reference_query.espacenet_patent_search_results_file,
+        )
+    ):
+        raise ValueError(
+            "Impossible d'extraire la date du fichier de résultats de recherche"
+            f" '{reference_query.espacenet_patent_search_results_file}' "
+            "qui doit être en format '<filename>YYYYMMDD.xlsx'!"
+        )
+    file_date = datetime.datetime.strptime(match[1], "%Y%m%d").date()
+    if datetime.date.today() - file_date >= timedelta(days=30):
+        print(
+            "[yellow]WARNING: Les données dans le fichier "
+            f"'{reference_query.espacenet_patent_search_results_file}' "
+            "ont plus de 30 jours![/yellow]"
+        )
+
+    # Load data from Excel file
+    patent_families: pd.DataFrame = pd.read_excel(
+        reference_query.espacenet_patent_search_results_file
+    )
+
+    # Reformat inventors and applicants columns into proper lists
+    patent_families["Inventeurs"] = patent_families["Inventeurs"].apply(
+        lambda inventors: [
+            item for item in inventors.split("'") if item not in [", ", "[", "]"]
+        ]
+    )
+    patent_families["Cessionnaires"] = patent_families["Cessionnaires"].apply(
+        lambda applicants: [
+            item for item in applicants.split("'") if item not in [", ", "[", "]"]
+        ]
+    )
+
+    return patent_families
+
+
 def query_espacenet_patents_and_applications(
     reference_query: ReferenceQuery,
 ) -> tuple[pd.DataFrame, list, pd.DataFrame, list]:
@@ -1538,31 +1586,8 @@ def query_espacenet_patents_and_applications(
 
     # Search espacenet or get previous research results from file
     if reference_query.espacenet_patent_search_results_file:
-        # Load previous search results from file
-        patent_families: pd.DataFrame = pd.read_excel(
-            reference_query.espacenet_patent_search_results_file
-        )
-
-        # Show warning on console if file is older than 30 days
-        if datetime.date.today() - datetime.datetime.strptime(
-            reference_query.espacenet_patent_search_results_file[-13:-5], "%Y%m%d"
-        ).date() >= timedelta(days=30):
-            print(
-                "[yellow]WARNING: Les données dans le fichier "
-                f"'{reference_query.espacenet_patent_search_results_file}' "
-                "ont plus de 30 jours![/yellow]"
-            )
-
-        # Reformat inventors and applicants columns into proper lists
-        patent_families["Inventeurs"] = patent_families["Inventeurs"].apply(
-            lambda inventors: [
-                item for item in inventors.split("'") if item not in [", ", "[", "]"]
-            ]
-        )
-        patent_families["Cessionnaires"] = patent_families["Cessionnaires"].apply(
-            lambda applicants: [
-                item for item in applicants.split("'") if item not in [", ", "[", "]"]
-            ]
+        patent_families: pd.DataFrame = _load_inpadoc_search_results_from_excel_file(
+            reference_query
         )
     else:
         # Else, search espacenet for patent families by author name, save to file
