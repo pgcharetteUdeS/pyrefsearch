@@ -1040,13 +1040,12 @@ def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.Da
                 if i == 0
                 else ""
             )
-            print(
-                f"[red]Erreur dans la recherche Scopus à la ligne {i + 2} "
+            raise ScopusException(
+                f"Erreur dans la recherche Scopus à la ligne {i + 2} "
                 f"({name[0]}, {name[1]}) "
-                f"du fichier {reference_query.in_excel_file}  - '{e}'[/red] - "
+                f"du fichier {reference_query.in_excel_file}  - '{e}' - "
                 f"Causes possibles: identifiant Scopus inconnu{vpn_required_str}!"
-            )
-            exit()
+            ) from e
 
     # Create author profiles DataFrame, flag discrepancies between input and Scopus data
     author_profiles_by_ids: pd.DataFrame = pd.DataFrame()
@@ -1106,12 +1105,11 @@ def query_scopus_publications(
                     verbose=True,
                 )
             except ScopusException as e:
-                print(
-                    f"[red]Erreur dans la recherche Scopus pour l'identifiant {au_id}, "
+                raise ScopusException(
+                    f"Erreur dans la recherche Scopus pour l'identifiant {au_id}, "
                     f"causes possibles: identifiant inconnu ou tentative d'accès "
-                    f"hors du réseau universitaire UdeS (VPN requis) - '{e}'[/red]"
-                )
-                exit()
+                    f"hors du réseau universitaire UdeS (VPN requis) - '{e}'"
+                ) from e
 
             author_pubs = pd.DataFrame(query_results.results)
             pub_type_counts_by_author.append(
