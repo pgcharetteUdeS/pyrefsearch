@@ -23,6 +23,7 @@
 
 """
 
+import ast
 import datetime
 from datetime import timedelta
 from functools import lru_cache
@@ -1540,16 +1541,27 @@ def _load_inpadoc_search_results_from_excel_file(
         reference_query.espacenet_patent_search_results_file
     )
 
-    # Reformat inventors and applicants columns into proper lists
+    def parse_list_field(value):
+        """
+        Attempts to parse a string representation of a list.
+        First, it tries using ast.literal_eval. If that fails,
+        it falls back to regex-based extraction.
+        """
+        try:
+            parsed_value = ast.literal_eval(value)
+            if isinstance(parsed_value, list):
+                return parsed_value
+        except (ValueError, SyntaxError):
+            # Fall back to extracting items between apostrophes.
+            return re.findall(r"'([^']+)'", value)
+        return []
+
+    # Reformat inventors and applicants columns into proper lists using the robust parser
     patent_families["Inventeurs"] = patent_families["Inventeurs"].apply(
-        lambda inventors: [
-            item for item in inventors.split("'") if item not in [", ", "[", "]"]
-        ]
+        parse_list_field
     )
     patent_families["Cessionnaires"] = patent_families["Cessionnaires"].apply(
-        lambda applicants: [
-            item for item in applicants.split("'") if item not in [", ", "[", "]"]
-        ]
+        parse_list_field
     )
 
     return patent_families
