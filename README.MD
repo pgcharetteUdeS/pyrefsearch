@@ -1,4 +1,4 @@
-## pyRefSearchUdeS.py
+## pyrefsearch
 
 <!---Badges-->
 [![Python 3.10](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -31,13 +31,13 @@ aux revendications, des modifications cléricales, etc.).
   [*How to get an EPO OPS API key*](https://patent-client.readthedocs.io/en/stable/getting_started.html).
 
 ## Utilisation:
-- Appel du script: *python.exe pyRefSearchUdeS.py*
-- Les paramètres d'exécution sont lus dans le fichier *pyRefSearchUdeS.toml*
-- Les données d'auteur.e.s sont lues dans un fichier Excel d'entrée (voir *pyRefSearchUdeS.toml*)
-- Les résultats de la recherche sont écrits dans un fichier Excel de sortie (voir *pyRefSearchUdeS.toml*)
-- Tous les fichiers spécifiés sont lus/écrits dans le même répertoire que ce fichier .toml
+- Appel du script: *pyrefsearch\pyrefsearch.py data\pyrefsearch.toml*
+- Les paramètres d'exécution sont lus dans le fichier *pyrefsearch.toml*
+- Les données d'auteur.e.s sont lues dans un fichier Excel d'entrée (voir *pyrefsearch.toml*)
+- Les résultats de la recherche sont écrits dans un fichier Excel de sortie (voir *pyrefsearch.toml*)
+- Tous les fichiers spécifiés sont lus/écrits dans le même répertoire que le fichier .toml
 
-## Fichier des paramètres d'exécution *pyRefSearchUdeS.toml* (voir le fichier donné en exemple pour plus d'infos sur les paramètres) :
+## Fichier des paramètres d'exécution *pyrefsearch.toml* (voir le fichier donné en exemple pour plus d'infos sur les paramètres) :
 - *search_type* ("Publications" ou "Profils"): Type de recherche (publications & brevets ou profils d'auteur.e.s)
 - *in_excel_file* : Fichier Excel d'entrée
 - *in_excel_file_author_sheet* : Feuillet dans le fichier Excel d'entrée contenant
@@ -85,7 +85,7 @@ Il a 2 options pour le format du fichier:
   identifiants sont fournis dans le fichier Excel d’entrée pour la recherche de
   publications & brevets:
     - *Affl.* : l'affiliation est comprise dans la liste *local_affiliations*
-      spécifiée dans *pyRefSearchUdeS.toml*
+      spécifiée dans *pyrefsearch.toml*
     - *ID* : l'identifiant Scopus est identique à celui dans le fichier Excel d'entrée
 
 ## Problèmes / points à considérer :
@@ -103,5 +103,5 @@ Il a 2 options pour le format du fichier:
   dans Google Scholar.
 
 ## Installation:
-- Projet *pyRefSearchUdeS* disponible sur [github](https://github.com/pgcharetteUdeS/pyRefSearchUdeS)
+- Projet *pyrefsearch* disponible sur [github](https://github.com/pgcharetteUdeS/pyRefSearchUdeS)
 - *pip install -r requirements.txt*
