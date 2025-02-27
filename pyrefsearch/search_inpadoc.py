@@ -2,8 +2,9 @@
 
     Search the INPADOC worldwide patent library via espacenet
 
-    The script uses the "patent_client" package for searches in the USPTO
-    and INPADOC databases, see https://patent-client.readthedocs.io/en/latest/index.html.
+    The script uses the "patent_client" package for searches in the INPADOC database,
+    see https://patent-client.readthedocs.io/en/latest/index.html.
+
     NB: An API key is required to access INPADOC ("International Patent Documentation"
         database of patent information maintained by the European Patent Office,
         accessible via espacent), see pyrefsearch.toml.
