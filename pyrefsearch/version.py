@@ -4,4 +4,4 @@ Package version
 
 __all__ = ["__version__"]
 
-__version__: str = "1.1"
+__version__: str = "1.2"

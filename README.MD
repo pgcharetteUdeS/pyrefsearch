@@ -35,6 +35,7 @@ aux revendications, des modifications cléricales, etc.).
 - Les paramètres d'exécution sont lus dans le fichier *pyRefSearchUdeS.toml*
 - Les données d'auteur.e.s sont lues dans un fichier Excel d'entrée (voir *pyRefSearchUdeS.toml*)
 - Les résultats de la recherche sont écrits dans un fichier Excel de sortie (voir *pyRefSearchUdeS.toml*)
+- Tous les fichiers spécifiés sont lus/écrits dans le même répertoire que ce fichier .toml
 
 ## Fichier des paramètres d'exécution *pyRefSearchUdeS.toml* (voir le fichier donné en exemple pour plus d'infos sur les paramètres) :
 - *search_type* ("Publications" ou "Profils"): Type de recherche (publications & brevets ou profils d'auteur.e.s)

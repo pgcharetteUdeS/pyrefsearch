@@ -2,6 +2,8 @@
 #   - "Publications" : recherche de publications & brevets par identifiant Scopus
 #   - "Profils"      : recherche de profils d'auteurs par noms, pour une éventuelle
 #                      recherche de publications par identifiants Scopus
+# NB: Tous les fichiers spécifiés sont lus/écrits dans le même répertoire que ce fichier .toml
+#
 #search_type = "Profils"
 search_type = "Publications"
 
@@ -53,4 +55,4 @@ scopus_database_refresh_days = 7
 #    où YYYYMMDD est la date de la recherche.
 uspto_patent_search = false
 espacenet_patent_search = true
-espacenet_patent_search_results_file = "espacenet_INPADOC_results_20250225.xlsx"
+espacenet_patent_search_results_file = "espacenet_INPADOC_results_20250227.xlsx"

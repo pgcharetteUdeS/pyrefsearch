@@ -1,11 +1,11 @@
-"""pyRefSearchUdeS.py
+"""pyrefsearch.py
 
     For a list of author names and range of years supplied in an input Excel file, query:
     - references (publications in Scopus, patents in the INPADOC and USPTO databases)
       OR
     - author profiles (Scopus database), and write the results to an output Excel file.
 
-    All execution parameters specified in the file "pyRefSearchUdeS.toml"
+    All execution parameters specified in the file "pyrefsearch.toml"
 
     The script uses the "pybliometrics" for Scopus searches,
     see https://pybliometrics.readthedocs.io/en/stable/
@@ -17,12 +17,13 @@
     and INPADOC databases, see https://patent-client.readthedocs.io/en/latest/index.html.
     NB: An API key is required to access INPADOC ("International Patent Documentation"
         database of patent information maintained by the European Patent Office,
-        accessible via espacent), see pyRefSearchUdeS.toml.
+        accessible via espacent), see pyrefsearch.toml.
 
     Project on gitHub: https://github.com/pgcharetteUdeS/pyRefSearchUdeS
 
 """
 
+import argparse
 import ast
 import datetime
 from datetime import timedelta
@@ -97,6 +98,7 @@ class ReferenceQuery:
 
     def __init__(
         self,
+        data_dir: Path,
         in_excel_file: Path,
         in_excel_file_author_sheet: str,
         out_excel_file: Path,
@@ -109,6 +111,7 @@ class ReferenceQuery:
         espacenet_patent_search: bool,
         espacenet_patent_search_results_file: str,
     ):
+        self.data_dir: Path = data_dir
         self.in_excel_file: Path = in_excel_file
         self.out_excel_file: Path = out_excel_file
         self.pub_year_first: int = pub_year_first
@@ -1488,7 +1491,8 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
 
     # Write dataframe of all patent results to output Excel file
     with pd.ExcelWriter(
-        f"espacenet_INPADOC_results_{time.strftime('%Y%m%d')}.xlsx"
+        reference_query.data_dir
+        / Path(f"espacenet_INPADOC_results_{time.strftime('%Y%m%d')}.xlsx")
     ) as writer:
         patent_families.to_excel(
             writer,
@@ -1538,7 +1542,8 @@ def _load_inpadoc_search_results_from_excel_file(
 
     # Load data from Excel file
     patent_families: pd.DataFrame = pd.read_excel(
-        reference_query.espacenet_patent_search_results_file
+        reference_query.data_dir
+        / Path(reference_query.espacenet_patent_search_results_file)
     )
 
     def parse_list_field(value):
@@ -1602,7 +1607,7 @@ def query_espacenet_patents_and_applications(
             reference_query
         )
     else:
-        # Else, search espacenet for patent families by author name, save to file
+        # else, search espacenet for patent families by author name, save to file
         patent_families: pd.DataFrame = _search_espacenet_by_author_name(
             reference_query
         )
@@ -1853,23 +1858,32 @@ def main():
     )
     print(f"{Path(__file__).stem} {__version__} " f"(running python {python_version})")
 
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(
+        description="Recherche de références"
+    )
+    parser.add_argument("toml_filename")
+    args: argparse.Namespace = parser.parse_args()
+
     # Load search parameters from toml file
-    toml_dict: dict = toml.load("pyRefSearchUdeS.toml")
+    toml_filename: Path = Path(args.toml_filename)
+    data_dir: Path = toml_filename.parent
+    toml_dict: dict = toml.load(toml_filename)
 
     # Define input/output Excel file names
-    in_excel_file: Path = Path(toml_dict["in_excel_file"])
-    out_excel_file: Path = (
+    in_excel_file: Path = data_dir / Path(toml_dict["in_excel_file"])
+    out_excel_file: Path = data_dir / (
         Path(
             f"{in_excel_file.stem}_publications_"
             f"{toml_dict['pub_year_first']}-{toml_dict['pub_year_last']}"
             f"{in_excel_file.suffix}"
         )
         if toml_dict["search_type"] == "Publications"
-        else Path(f"{in_excel_file.stem}_profils" f"{in_excel_file.suffix}")
+        else data_dir / Path(f"{in_excel_file.stem}_profils" f"{in_excel_file.suffix}")
     )
 
     # Define ReferenceQuery Class object containing the query parameters
     reference_query: ReferenceQuery = ReferenceQuery(
+        data_dir=data_dir,
         in_excel_file=in_excel_file,
         in_excel_file_author_sheet=toml_dict["in_excel_file_author_sheet"],
         out_excel_file=out_excel_file,
