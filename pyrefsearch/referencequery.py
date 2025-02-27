@@ -3,6 +3,7 @@
 ReferenceQuery Class definition for storing reference query parameters
 
 """
+
 __all__ = ["ReferenceQuery"]
 
 import pandas as pd

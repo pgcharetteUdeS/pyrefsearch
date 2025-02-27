@@ -1,10 +1,18 @@
 """services/search_scopus.py
 
-Search Scopus database for author profiles and publications
+    Search Scopus database for author profiles and publications
+
+    The script uses the "pybliometrics" for Scopus searches,
+    see https://pybliometrics.readthedocs.io/en/stable/
+    NB: An API key is required to query the Scopus API,
+        see https://dev.elsevier.com/index.jsp. The first execution of the script
+        will prompt the user to enter the key.
 
 """
 
 __all__ = [
+    "scopus_init_api",
+    "query_scopus_author_profiles",
     "query_scopus_author_profiles_by_id",
     "query_scopus_author_profiles_by_name",
     "query_scopus_publications",
@@ -12,6 +20,7 @@ __all__ = [
 
 import numpy as np
 import pandas as pd
+import pybliometrics
 from pybliometrics.scopus.exception import ScopusException
 from pybliometrics.scopus import AuthorRetrieval, AuthorSearch, ScopusSearch
 
@@ -492,3 +501,46 @@ def query_scopus_publications(
         )
 
     return publications, pub_type_counts_by_author
+
+
+def query_scopus_author_profiles(reference_query: ReferenceQuery) -> None:
+    """
+    Query Scopus for a list of author profiles by name
+
+    Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+
+    Returns: None
+
+    """
+
+    print("Recherche de profils d'auteur.e.s par nom dans la base de données Scopus")
+    author_profiles_by_name: pd.DataFrame = query_scopus_author_profiles_by_name(
+        reference_query=reference_query,
+        homonyms_only=False,
+    )
+    author_profiles_by_name.rename(
+        columns={
+            "eid": "ID Scopus",
+        },
+        inplace=True,
+    )
+    with pd.ExcelWriter(reference_query.out_excel_file) as writer:
+        author_profiles_by_name.to_excel(writer, index=False, sheet_name="Profils")
+    print(
+        "Résultats de la recherche sauvegardés "
+        f"dans le fichier '{reference_query.out_excel_file}'"
+    )
+
+
+def scopus_init_api() -> None:
+    """
+    Initialize Scopus API
+
+    Args: None
+
+    Returns: None
+
+    """
+
+    pybliometrics.scopus.init()
