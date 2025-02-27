@@ -3,6 +3,7 @@
 Various utility functions
 
 """
+
 __all__ = ["to_lower_no_accents_no_hyphens"]
 
 from functools import lru_cache
@@ -22,5 +23,3 @@ def to_lower_no_accents_no_hyphens(s: str) -> str:
     """
 
     return unidecode(s.replace("-", " ").lower().strip())
-
-
