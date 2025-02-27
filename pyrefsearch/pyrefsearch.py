@@ -1858,6 +1858,7 @@ def main():
     )
     print(f"{Path(__file__).stem} {__version__} " f"(running python {python_version})")
 
+    # Load command line arguments
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Recherche de références"
     )
