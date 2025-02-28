@@ -23,6 +23,7 @@ import pandas as pd
 import pybliometrics
 from pybliometrics.scopus.exception import ScopusException
 from pybliometrics.scopus import AuthorRetrieval, AuthorSearch, ScopusSearch
+from rich import print
 
 from referencequery import ReferenceQuery
 from utils import to_lower_no_accents_no_hyphens

@@ -20,13 +20,14 @@ import pandas as pd
 from patent_client import Inpadoc
 from pathlib import Path
 import re
+from rich import print
 import time
 
 from referencequery import ReferenceQuery
 from utils import tabulate_patents_per_author, to_lower_no_accents_no_hyphens
 
 
-def _fetch_inpadoc_patent_family_members(member_info) -> tuple[list, list]:
+def _extract_patent_family_members(member_info) -> tuple[list, list]:
     # Start the list of member patent info for this family with the parent
     family_member_patent_ids: list = [member_info.application_number]
     family_member_publication_dates: list = [
@@ -212,11 +213,11 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
 
             # Store patent member info for this family
             (
-                family_member_patent_ids_filtered,
-                family_member_publication_dates_filtered,
-            ) = _fetch_inpadoc_patent_family_members(member_info)
-            patent_ids.append(family_member_patent_ids_filtered)
-            publication_dates.append(family_member_publication_dates_filtered)
+                family_member_patent_ids,
+                family_member_publication_dates,
+            ) = _extract_patent_family_members(member_info)
+            patent_ids.append(family_member_patent_ids)
+            publication_dates.append(family_member_publication_dates)
     print("")
 
     # Create dataframe with patent family info

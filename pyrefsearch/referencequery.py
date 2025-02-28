@@ -9,6 +9,7 @@ __all__ = ["ReferenceQuery"]
 import pandas as pd
 from pathlib import Path
 import re
+from rich import print
 import warnings
 
 from utils import to_lower_no_accents_no_hyphens
