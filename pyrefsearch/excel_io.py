@@ -9,7 +9,6 @@ __all__ = ["write_reference_query_results_to_excel"]
 from openpyxl import load_workbook
 import pandas as pd
 from referencequery import ReferenceQuery
-from rich import print
 
 
 def _export_publications_df_to_excel_sheet(

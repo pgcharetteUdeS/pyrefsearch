@@ -15,7 +15,6 @@ import argparse
 from datetime import timedelta
 import pandas as pd
 from pathlib import Path
-from rich import print
 import sys
 import time
 import toml

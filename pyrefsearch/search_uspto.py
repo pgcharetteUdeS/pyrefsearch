@@ -11,7 +11,6 @@ __all__ = ["query_uspto_patents_and_applications"]
 
 import pandas as pd
 from patent_client import Patent, PublishedApplication
-from rich import print
 from unidecode import unidecode
 
 from referencequery import ReferenceQuery

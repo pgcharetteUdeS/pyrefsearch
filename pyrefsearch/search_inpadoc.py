@@ -20,11 +20,10 @@ import pandas as pd
 from patent_client import Inpadoc
 from pathlib import Path
 import re
-from rich import print
 import time
 
 from referencequery import ReferenceQuery
-from utils import tabulate_patents_per_author, to_lower_no_accents_no_hyphens
+from utils import console, tabulate_patents_per_author, to_lower_no_accents_no_hyphens
 
 
 def _extract_patent_family_members(member_info) -> tuple[list, list]:
