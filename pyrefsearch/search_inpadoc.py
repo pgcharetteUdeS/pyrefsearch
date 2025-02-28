@@ -173,7 +173,9 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
 
     # Fetch unique patent families by author name, add delay so that search is not blocked
     patent_families_raw: pd.DataFrame = pd.DataFrame([])
-    print(f"Recherche dans espacenet des {len(reference_query.au_names)} inventeurs...")
+    console.print(
+        f"Recherche dans espacenet des {len(reference_query.au_names)} inventeurs..."
+    )
     for name in reference_query.au_names:
         lastname, firstname = name
         patent_families_raw = pd.concat(
@@ -195,13 +197,15 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
     applicants: list = []
     patent_ids: list[list] = []
     publication_dates: list[list] = []
-    print(
+    console.print(
         f"Analyze dans espacenet des {len(patent_families_raw.index)} familles de brevets..."
     )
     for i, row in patent_families_raw.iterrows():
-        print(f"{row['family_id']} ({i}/{len(patent_families_raw.index)})", end=", ")
+        console.print(
+            f"{row['family_id']} ({i}/{len(patent_families_raw.index)})", end=", "
+        )
         if not hash(i) % 10 and hash(i) > 0:
-            print("")
+            console.print("")
         member_info = Inpadoc.objects.get(row["patent_id"])
         if any("[CA]" in s for s in member_info.inventors_epodoc) and member_info.title:
             # Store tile, inventors, and applicants for this family
@@ -217,7 +221,7 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
             ) = _extract_patent_family_members(member_info)
             patent_ids.append(family_member_patent_ids)
             publication_dates.append(family_member_publication_dates)
-    print("")
+    console.print("")
 
     # Create dataframe with patent family info
     patent_families: pd.DataFrame = pd.DataFrame(families, columns=["Famille"])
@@ -271,17 +275,21 @@ def _load_inpadoc_search_results_from_excel_file(
             reference_query.espacenet_patent_search_results_file,
         )
     ):
-        raise ValueError(
-            "Impossible d'extraire la date du fichier de résultats de recherche"
+        console.print(
+            "[red]Impossible d'extraire la date du fichier de résultats de recherche"
             f" '{reference_query.espacenet_patent_search_results_file}' "
-            "qui doit être en format '<filename>YYYYMMDD.xlsx'!"
+            "qui doit être en format '<filename>YYYYMMDD.xlsx'![/red]",
+            soft_wrap=True,
         )
+        raise ValueError
+
     file_date = datetime.datetime.strptime(match[1], "%Y%m%d").date()
     if datetime.date.today() - file_date >= timedelta(days=30):
-        print(
+        console.print(
             "[yellow]WARNING: Les données dans le fichier "
             f"'{reference_query.espacenet_patent_search_results_file}' "
-            "ont plus de 30 jours![/yellow]"
+            "ont plus de 30 jours![/yellow]",
+            soft_wrap=True,
         )
 
     # Load data from Excel file

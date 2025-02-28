@@ -30,6 +30,7 @@ from search_scopus import (
     query_scopus_publications,
 )
 from search_uspto import query_uspto_patents_and_applications
+from utils import console
 from version import __version__
 
 
@@ -46,9 +47,10 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     """
 
     # Console banner
-    print(
+    console.print(
         "Recherche de publications et brevets pour la période "
-        f"{reference_query.pub_year_first}-{reference_query.pub_year_last}"
+        f"{reference_query.pub_year_first}-{reference_query.pub_year_last}",
+        soft_wrap=True,
     )
 
     # Fetch author profiles corresponding to user-supplied Scopus IDs, check they match
@@ -75,7 +77,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             # Extract "pub_type" publications into a dataframe, add dataframe to list
             df: pd.DataFrame = publications_all[publications_all["subtype"] == pub_code]
             publications_dfs_list_by_pub_type.append(df)
-            print(f"{pub_type}: {len(df)}")
+            console.print(f"{pub_type}: {len(df)}")
 
             # Add "pub_type" publication counts to the author profiles
             if len(df) > 0:
@@ -92,7 +94,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
                 reference_query=reference_query, applications=False
             )
         )
-        print("Brevets US (délivrés): ", len(uspto_patents))
+        console.print("Brevets US (délivrés): ", len(uspto_patents))
         uspto_patent_application_counts_by_author: list
         uspto_patent_applications, _, uspto_patent_application_counts_by_author = (
             query_uspto_patents_and_applications(
@@ -101,7 +103,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
                 application_ids_to_remove=uspto_patent_application_ids,
             )
         )
-        print("Brevets US (en instance): ", len(uspto_patent_applications))
+        console.print("Brevets US (en instance): ", len(uspto_patent_applications))
 
         # Add patent application and published patent counts to the author profiles
         author_profiles_by_ids["Brevets US (en instance)"] = (
@@ -125,8 +127,8 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         author_profiles_by_ids["Brevets INPADOC (délivrés)"] = (
             inpadoc_patent_counts_per_author
         )
-        print("Brevets INPADOC en instance: ", len(inpadoc_patent_applications))
-        print("Brevets INPADOC délivrés: ", len(inpadoc_patents))
+        console.print("Brevets INPADOC en instance: ", len(inpadoc_patent_applications))
+        console.print("Brevets INPADOC délivrés: ", len(inpadoc_patents))
 
     # Fetch Scopus author profiles corresponding to user-supplied names, check for
     # author names with multiple Scopus IDs ("homonyms"), load into dataframe
@@ -155,19 +157,20 @@ def main():
         f".{str(sys.version_info.minor)}"
         f".{str(sys.version_info.micro)}"
     )
-    print(f"{Path(__file__).stem} {__version__} " f"(running python {python_version})")
+    console.print(
+        f"{Path(__file__).stem} {__version__} " f"(running python {python_version})"
+    )
 
     # Load command line arguments
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Recherche de références"
     )
     parser.add_argument("toml_filename")
-    parser.add_argument('--debug', action='store_true')
+    parser.add_argument("--debug", action="store_true")
     args: argparse.Namespace = parser.parse_args()
 
     # Load command line parameters
     toml_filename: Path = Path(args.toml_filename)
-    bob = args.debug
 
     # Load search parameters from toml file
     data_dir: Path = toml_filename.parent
@@ -212,13 +215,16 @@ def main():
     elif toml_dict["search_type"] == "Profils":
         query_scopus_author_profiles(reference_query=reference_query)
     else:
-        print(
+        console.print(
             f"[red]ERREUR: {toml_dict['search_type']} est un type de recherche invalide, "
-            "doit être 'Author name' ou 'Scopus ID'[/red]"
+            "doit être 'Author name' ou 'Scopus ID'[/red]",
+            soft_wrap=True,
         )
 
 
 if __name__ == "__main__":
     start_time = time.time()
     main()
-    print(f"Temps d'exécution: {str(timedelta(seconds=int(time.time() - start_time)))}")
+    console.print(
+        f"Temps d'exécution: {str(timedelta(seconds=int(time.time() - start_time)))}"
+    )

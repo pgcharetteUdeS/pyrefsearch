@@ -14,7 +14,7 @@ from patent_client import Patent, PublishedApplication
 from unidecode import unidecode
 
 from referencequery import ReferenceQuery
-from utils import tabulate_patents_per_author, to_lower_no_accents_no_hyphens
+from utils import console, tabulate_patents_per_author, to_lower_no_accents_no_hyphens
 
 
 def _query_uspto(
@@ -194,13 +194,15 @@ def query_uspto_patents_and_applications(
 
     # Execute USPTO query (patent applications or delivered patents)
     if applications:
-        print("En attente de la recherche USPTO de brevets en instance...", end="")
+        console.print(
+            "En attente de la recherche USPTO de brevets en instance...", end=""
+        )
     else:
-        print("En attente de la recherche USPTO de brevets délivrés...", end="")
+        console.print("En attente de la recherche USPTO de brevets délivrés...", end="")
     patents: pd.DataFrame = _query_uspto(
         reference_query=reference_query, applications=applications
     )
-    print("terminé!")
+    console.print("terminé!")
 
     # Clean up USPTO search result dataframes
     application_ids: list[int] = []

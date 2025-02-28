@@ -8,7 +8,9 @@ __all__ = ["write_reference_query_results_to_excel"]
 
 from openpyxl import load_workbook
 import pandas as pd
+
 from referencequery import ReferenceQuery
+from utils import console
 
 
 def _export_publications_df_to_excel_sheet(
@@ -245,7 +247,7 @@ def write_reference_query_results_to_excel(
         author_profiles_by_name.to_excel(
             writer, index=False, sheet_name="Auteurs - Homonymes", freeze_panes=(1, 1)
         )
-    print(
+    console.print(
         "Résultats de la recherche sauvegardés "
         f"dans le fichier '{reference_query.out_excel_file}'"
     )

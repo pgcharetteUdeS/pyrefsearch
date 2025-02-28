@@ -11,7 +11,7 @@ from pathlib import Path
 import re
 import warnings
 
-from utils import to_lower_no_accents_no_hyphens
+from utils import console, to_lower_no_accents_no_hyphens
 
 
 class ReferenceQuery:
@@ -47,19 +47,19 @@ class ReferenceQuery:
                 & (authors["Lien d'emploi UdeS"] == "Régulier")
             ]
         )
-        print(
+        console.print(
             f"Membres réguliers du 3IT: {len(authors)} ({n_members_women / len(authors) * 100:.0f}% de femmes)"
         )
-        print(
+        console.print(
             "Membres réguliers qui ont un bureau au 3IT: "
             f"{n_members_with_office}/{len(authors)}"
         )
-        print(
+        console.print(
             f"Membres réguliers du 3IT en génie: {n_eng_members} "
             f"(Profs Réguliers: {n_eng_members_regular_profs_only}, "
             f"Profs Associés: {n_eng_members - n_eng_members_regular_profs_only})"
         )
-        print(
+        console.print(
             f"Profs réguliers en génie qui ont un bureau au 3IT: {n_eng_members_regular_profs_with_office}"
         )
 
@@ -94,7 +94,9 @@ class ReferenceQuery:
         self.espacenet_patent_search_results_file: str = (
             espacenet_patent_search_results_file
         )
-        print(f"Période de recherche: [{self.pub_year_first} - {self.pub_year_last}]")
+        console.print(
+            f"Période de recherche: [{self.pub_year_first} - {self.pub_year_last}]"
+        )
 
         # Check input/output Excel file access, script fails if files already open
         self.check_excel_file_access(self.in_excel_file)
@@ -151,7 +153,7 @@ class ReferenceQuery:
             authors: pd.DataFrame = input_data_full.copy()[
                 ["Nom", "Prénom", "ID Scopus"]
             ]
-            print(
+            console.print(
                 f"Nombre d'auteur.e.s dans le fichier '{self.in_excel_file}': {len(authors)}"
             )
 
