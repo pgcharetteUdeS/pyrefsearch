@@ -163,10 +163,14 @@ def main():
         description="Recherche de références"
     )
     parser.add_argument("toml_filename")
+    parser.add_argument('--debug', action='store_true')
     args: argparse.Namespace = parser.parse_args()
 
-    # Load search parameters from toml file
+    # Load command line parameters
     toml_filename: Path = Path(args.toml_filename)
+    bob = args.debug
+
+    # Load search parameters from toml file
     data_dir: Path = toml_filename.parent
     toml_dict: dict = toml.load(toml_filename)
 

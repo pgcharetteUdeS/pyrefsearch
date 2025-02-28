@@ -4,11 +4,16 @@ Various utility functions
 
 """
 
-__all__ = ["tabulate_patents_per_author", "to_lower_no_accents_no_hyphens"]
+__all__ = ["tabulate_patents_per_author", "to_lower_no_accents_no_hyphens", "console"]
 
 from functools import lru_cache
 import pandas as pd
+from rich.console import Console
 from unidecode import unidecode
+
+
+# Init rich console
+console = Console()
 
 
 @lru_cache(maxsize=1024)

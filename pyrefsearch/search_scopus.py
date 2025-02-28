@@ -23,10 +23,9 @@ import pandas as pd
 import pybliometrics
 from pybliometrics.scopus.exception import ScopusException
 from pybliometrics.scopus import AuthorRetrieval, AuthorSearch, ScopusSearch
-from rich import print
 
 from referencequery import ReferenceQuery
-from utils import to_lower_no_accents_no_hyphens
+from utils import console, to_lower_no_accents_no_hyphens
 
 
 def _check_author_name_correspondance(
@@ -70,21 +69,23 @@ def _check_author_name_correspondance(
             authors.loc[i, "Nom de famille"] = input_last_name
             authors.loc[i, "Prénom"] = input_first_name
             query_error = "Aucun identifiant Scopus"
-            print(
+            console.print(
                 f"[yellow]WARNING: L'auteur.e '{input_last_name}, {input_first_name}' "
-                "n'a pas d'identifiant Scopus[/yellow]"
+                "n'a pas d'identifiant Scopus[/yellow]",
+                soft_wrap=True,
             )
         else:
             # Check for name discrepancies between input and Scopus database
             scopus_last_name: str = to_lower_no_accents_no_hyphens(scopus_last_name)
             if scopus_last_name != to_lower_no_accents_no_hyphens(input_last_name):
                 query_error = "Disparité de noms de famille"
-                print(
+                console.print(
                     f"[red]ERREUR pour l'identifiant {au_id}: "
                     f"le nom de famille de l'auteur.e '{input_last_name}, "
                     f"{input_first_name}' dans {reference_query.in_excel_file} diffère"
                     f" de '{scopus_last_name}, {scopus_first_name}'"
-                    " dans la base de données Scopus![/red]"
+                    " dans la base de données Scopus![/red]",
+                    soft_wrap=True,
                 )
 
             # Check for affiliation discrepancies between input and Scopus database
@@ -107,11 +108,12 @@ def _check_author_name_correspondance(
                     if query_error is None
                     else "Disparité de noms de famille / Affiliation non locale"
                 )
-                print(
+                console.print(
                     f"[red]ERREUR pour l'identifiant {au_id} "
                     f"({input_last_name}, {input_first_name}): "
                     f"l'affiliation '{affiliation}, {parent_affiliation}' "
-                    "est non locale![/red]"
+                    "est non locale![/red]",
+                    soft_wrap=True,
                 )
 
         # Append current error to author error list
@@ -185,11 +187,12 @@ def _add_coauthor_columns_and_clean_up_publications_df(
     # If not, the only local author probably has more than one Scopus ID, show warning.
     for _, row in publications.iterrows():
         if not row["Auteurs locaux"]:
-            print(
+            console.print(
                 f"[yellow]WARNING: Le document '{row['title']}' "
                 f"({row['subtypeDescription']}) n'a pas "
                 "d'ID scopus local dans les auteurs.[/yellow]",
                 end=" ",
+                soft_wrap=True,
             )
             problem_author: str = ""
             for author in reference_query.au_names:
@@ -197,12 +200,13 @@ def _add_coauthor_columns_and_clean_up_publications_df(
                     problem_author = author[0]
                     break
             if problem_author:
-                print(
+                console.print(
                     f"[yellow]Cause probable : l'auteur '{problem_author}' "
-                    "a plus d'un ID Scopus.[/yellow]"
+                    "a plus d'un ID Scopus.[/yellow]",
+                    soft_wrap=True,
                 )
             else:
-                print("")
+                console.print("", soft_wrap=True)
 
     # Sort by publication date
     publications = publications.sort_values(by=["coverDate"])
@@ -346,12 +350,14 @@ def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.Da
                 if i == 0
                 else ""
             )
-            raise ScopusException(
-                f"Erreur dans la recherche Scopus à la ligne {i + 2} "
+            console.print(
+                f"[red]Erreur dans la recherche Scopus à la ligne {i + 2} "
                 f"({name[0]}, {name[1]}) "
                 f"du fichier {reference_query.in_excel_file}  - '{e}' - "
-                f"Causes possibles: identifiant Scopus inconnu{vpn_required_str}!"
-            ) from e
+                f"Causes possibles: identifiant Scopus inconnu{vpn_required_str}![/red]",
+                soft_wrap=True,
+            )
+            raise e
 
     # Create author profiles DataFrame, flag discrepancies between input and Scopus data
     author_profiles_by_ids: pd.DataFrame = pd.DataFrame()
@@ -423,8 +429,9 @@ def query_scopus_author_profiles_by_name(
                     author_profiles_all.columns
                 )
         elif not homonyms_only:
-            print(
-                f"[red]ERREUR: aucun résultat pour l'auteur.e '{lastname}, {firstname}' [/red]"
+            console.print(
+                f"[red]ERREUR: aucun résultat pour l'auteur.e '{lastname}, {firstname}' [/red]",
+                soft_wrap=True,
             )
 
     if not author_profiles_all.empty:
@@ -477,11 +484,13 @@ def query_scopus_publications(
                     verbose=True,
                 )
             except ScopusException as e:
-                raise ScopusException(
-                    f"Erreur dans la recherche Scopus pour l'identifiant {au_id}, "
+                console.print(
+                    f"[red]Erreur dans la recherche Scopus pour l'identifiant {au_id}, "
                     f"causes possibles: identifiant inconnu ou tentative d'accès "
-                    f"hors du réseau universitaire UdeS (VPN requis) - '{e}'"
-                ) from e
+                    f"hors du réseau universitaire UdeS (VPN requis) - '{e}'![/red]",
+                    soft_wrap=True,
+                )
+                raise e
 
             author_pubs = pd.DataFrame(query_results.results)
             pub_type_counts_by_author.append(
@@ -515,7 +524,10 @@ def query_scopus_author_profiles(reference_query: ReferenceQuery) -> None:
 
     """
 
-    print("Recherche de profils d'auteur.e.s par nom dans la base de données Scopus")
+    console.print(
+        "Recherche de profils d'auteur.e.s par nom dans la base de données Scopus",
+        soft_wrap=True,
+    )
     author_profiles_by_name: pd.DataFrame = query_scopus_author_profiles_by_name(
         reference_query=reference_query,
         homonyms_only=False,
@@ -528,9 +540,10 @@ def query_scopus_author_profiles(reference_query: ReferenceQuery) -> None:
     )
     with pd.ExcelWriter(reference_query.out_excel_file) as writer:
         author_profiles_by_name.to_excel(writer, index=False, sheet_name="Profils")
-    print(
+    console.print(
         "Résultats de la recherche sauvegardés "
-        f"dans le fichier '{reference_query.out_excel_file}'"
+        f"dans le fichier '{reference_query.out_excel_file}'",
+        soft_wrap=True,
     )
 
 
