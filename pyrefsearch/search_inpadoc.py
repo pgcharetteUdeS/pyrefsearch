@@ -20,6 +20,7 @@ import pandas as pd
 from patent_client import Inpadoc
 from pathlib import Path
 import re
+import sys
 import time
 
 from referencequery import ReferenceQuery
@@ -281,7 +282,7 @@ def _load_inpadoc_search_results_from_excel_file(
             "qui doit être en format '<filename>YYYYMMDD.xlsx'![/red]",
             soft_wrap=True,
         )
-        raise ValueError
+        sys.exit()
 
     file_date = datetime.datetime.strptime(match[1], "%Y%m%d").date()
     if datetime.date.today() - file_date >= timedelta(days=30):

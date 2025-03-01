@@ -9,6 +9,7 @@ __all__ = ["ReferenceQuery"]
 import pandas as pd
 from pathlib import Path
 import re
+import sys
 import warnings
 
 from utils import console, to_lower_no_accents_no_hyphens
@@ -25,9 +26,12 @@ class ReferenceQuery:
             with open(filename, "a"):
                 pass
         except IOError:
-            raise IOError(
-                f"Could not open '{filename}', close it " "if it's already open!"
-            ) from None
+            console.print(
+                f"[red]Impossible d'ouvrir le fichier '{filename}', [/red]"
+                "[red]le fermer s'il est ouvert dans Excel![/red]",
+                soft_wrap=True,
+            )
+            sys.exit()
 
     @staticmethod
     def show_3it_members_stats_on_console(authors: pd.DataFrame):
@@ -98,6 +102,15 @@ class ReferenceQuery:
             f"Période de recherche: [{self.pub_year_first} - {self.pub_year_last}]"
         )
 
+        # Check year range
+        if self.pub_year_first > self.pub_year_last:
+            console.print(
+                f"[red]ERREUR: L'année de début de recherche ({self.pub_year_first}) "
+                f"doit être antérieure à l'année de fin de recherche ({self.pub_year_last})![/red]",
+                soft_wrap=True,
+            )
+            sys.exit()
+
         # Check input/output Excel file access, script fails if files already open
         self.check_excel_file_access(self.in_excel_file)
         self.check_excel_file_access(self.out_excel_file)
@@ -158,10 +171,12 @@ class ReferenceQuery:
             )
 
         else:
-            raise IOError(
-                f"Range of years [{self.pub_year_first}-{self.pub_year_last}] exceeds "
-                f"the available data in '{in_excel_file}'!"
-            ) from None
+            console.print(
+                f"[red]L'intervalle de recherche [{self.pub_year_first}-{self.pub_year_last}] [/red]"
+                f"[red]dépasse l'étendue des données dans le fichier '{in_excel_file}'![/red]",
+                soft_wrap=True,
+            )
+            sys.exit()
         self.au_names = authors[["Nom", "Prénom"]].values.tolist()
 
         # Extract Scopus IDs, replace non-integer values with 0

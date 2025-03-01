@@ -23,6 +23,7 @@ import pandas as pd
 import pybliometrics
 from pybliometrics.scopus.exception import ScopusException
 from pybliometrics.scopus import AuthorRetrieval, AuthorSearch, ScopusSearch
+import sys
 
 from referencequery import ReferenceQuery
 from utils import console, to_lower_no_accents_no_hyphens
@@ -357,7 +358,7 @@ def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.Da
                 f"Causes possibles: identifiant Scopus inconnu{vpn_required_str}![/red]",
                 soft_wrap=True,
             )
-            raise e
+            sys.exit()
 
     # Create author profiles DataFrame, flag discrepancies between input and Scopus data
     author_profiles_by_ids: pd.DataFrame = pd.DataFrame()
@@ -490,7 +491,7 @@ def query_scopus_publications(
                     f"hors du réseau universitaire UdeS (VPN requis) - '{e}'![/red]",
                     soft_wrap=True,
                 )
-                raise e
+                sys.exit()
 
             author_pubs = pd.DataFrame(query_results.results)
             pub_type_counts_by_author.append(
