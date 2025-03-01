@@ -87,6 +87,71 @@ class ReferenceQuery:
             f"Profs réguliers en génie qui ont un bureau au 3IT: {n_eng_members_regular_profs_with_office}"
         )
 
+    def _extract_authors_from_excel(
+        self, input_data_full: pd.DataFrame
+    ) -> pd.DataFrame:
+        author_status_by_year_columns: list[str] = [
+            f"{year}-{year + 1}"
+            for year in range(self.pub_year_first, self.pub_year_last + 1)
+        ]
+        if all(col in input_data_full.columns for col in author_status_by_year_columns):
+            # Author information is tabulated by fiscal year (XXXX-YYYY) and status (full
+            # member or collaborator). Validate that the range of years specified
+            # in the input data covers the range of years specified in the query,
+            # filter by member status/year to remove collaborators.
+            authors: pd.DataFrame = input_data_full.copy()[
+                [
+                    "Nom",
+                    "Prénom",
+                    "ID Scopus",
+                    "Faculté / Service",
+                    "Lien d'emploi UdeS",
+                    "Résidence",
+                    "Sexe",
+                ]
+                + author_status_by_year_columns
+            ]
+            authors["status"] = [
+                "Régulier" if "Régulier" in yearly_status else "Collaborateur"
+                for yearly_status in authors[
+                    author_status_by_year_columns
+                ].values.tolist()
+            ]
+            authors.drop(authors[authors.status == "Collaborateur"].index, inplace=True)
+            if authors.empty:
+                console.print(
+                    f"[red]Aucun membre régulier du 3IT n'a été trouvé dans le fichier '{self.in_excel_file}'[/red]"
+                    f"[red] pour la période de recherche [{self.pub_year_first}-{self.pub_year_last}][/red]",
+                    soft_wrap=True,
+                )
+                sys.exit()
+            self.show_3it_members_stats_on_console(authors)
+
+        elif not any(
+            # Author information is supplied as a simple list of names, no filtering
+            re.search(r"\d{4}-\d{4}", column)
+            for column in input_data_full.columns.tolist()
+        ):
+            if len(input_data_full) == 0:
+                console.print(
+                    f"[red]Le fichier '{self.in_excel_file}' est vide![/red]",
+                    soft_wrap=True,
+                )
+                sys.exit()
+            authors: pd.DataFrame = input_data_full.copy()[
+                ["Nom", "Prénom", "ID Scopus"]
+            ]
+
+        else:
+            console.print(
+                f"[red]L'intervalle de recherche [{self.pub_year_first}-{self.pub_year_last}] [/red]"
+                f"[red]dépasse l'étendue des données dans le fichier '{self.in_excel_file}'![/red]",
+                soft_wrap=True,
+            )
+            sys.exit()
+
+        return authors
+
     def __init__(
         self,
         data_dir: Path,
@@ -147,56 +212,11 @@ class ReferenceQuery:
 
         # Extract author names from input Excel file, formatted either as a 3IT database
         # (author status tabulated by fiscal year) or as a simple list of names
-        author_status_by_year_columns: list[str] = [
-            f"{year}-{year + 1}"
-            for year in range(self.pub_year_first, self.pub_year_last + 1)
-        ]
-        if all(col in input_data_full.columns for col in author_status_by_year_columns):
-            # Author information is tabulated by fiscal year (XXXX-YYYY) and status (full
-            # member or collaborator). Validate that the range of years specified
-            # in the input data covers the range of years specified in the query,
-            # filter by member status/year to remove collaborators.
-            authors: pd.DataFrame = input_data_full.copy()[
-                [
-                    "Nom",
-                    "Prénom",
-                    "ID Scopus",
-                    "Faculté / Service",
-                    "Lien d'emploi UdeS",
-                    "Résidence",
-                    "Sexe",
-                ]
-                + author_status_by_year_columns
-            ]
-            authors["status"] = [
-                "Régulier" if "Régulier" in yearly_status else "Collaborateur"
-                for yearly_status in authors[
-                    author_status_by_year_columns
-                ].values.tolist()
-            ]
-            authors.drop(authors[authors.status == "Collaborateur"].index, inplace=True)
-            self.show_3it_members_stats_on_console(authors)
-
-        elif not any(
-            # Author information is supplied as a simple list of names, no filtering
-            re.search(r"\d{4}-\d{4}", column)
-            for column in input_data_full.columns.tolist()
-        ):
-            authors: pd.DataFrame = input_data_full.copy()[
-                ["Nom", "Prénom", "ID Scopus"]
-            ]
-            console.print(
-                f"Nombre d'auteur.e.s dans le fichier '{self.in_excel_file}': {len(authors)}"
-            )
-
-        else:
-            console.print(
-                f"[red]L'intervalle de recherche [{self.pub_year_first}-{self.pub_year_last}] [/red]"
-                f"[red]dépasse l'étendue des données dans le fichier '{in_excel_file}'![/red]",
-                soft_wrap=True,
-            )
-            sys.exit()
+        authors = self._extract_authors_from_excel(input_data_full)
         self.au_names = authors[["Nom", "Prénom"]].values.tolist()
+        console.print(
+            f"Nombre d'auteur.e.s dans le fichier '{self.in_excel_file}': {len(authors)}"
+        )
 
         # Extract Scopus IDs, replace non-integer values with 0
         self.au_ids = []
