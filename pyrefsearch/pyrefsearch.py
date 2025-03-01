@@ -5,7 +5,7 @@
       OR
     - author profiles (Scopus database), and write the results to an output Excel file.
 
-    All execution parameters specified in the file "pyrefsearch.toml"
+    All execution parameters specified in the file "data/pyrefsearch.toml"
 
     Project on gitHub: https://github.com/pgcharetteUdeS/pyRefSearchUdeS
 
@@ -150,7 +150,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     )
 
 
-def main():
+def pyrefsearch():
     # Console info starting messages
     python_version: str = (
         f"{str(sys.version_info.major)}"
@@ -224,7 +224,7 @@ def main():
 
 if __name__ == "__main__":
     start_time = time.time()
-    main()
+    pyrefsearch()
     console.print(
         f"Temps d'exécution: {str(timedelta(seconds=int(time.time() - start_time)))}"
     )
