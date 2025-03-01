@@ -249,7 +249,8 @@ def write_reference_query_results_to_excel(
         )
     console.print(
         "Résultats de la recherche sauvegardés "
-        f"dans le fichier '{reference_query.out_excel_file}'"
+        f"dans le fichier '{reference_query.out_excel_file}'",
+        soft_wrap=True,
     )
 
     # Attempt to adjust column widths in the output Excel file to reasonable values.
