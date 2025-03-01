@@ -20,18 +20,38 @@ class ReferenceQuery:
     Class to store reference query parameters
     """
 
-    @staticmethod
-    def check_excel_file_access(filename: Path):
-        try:
-            with open(filename, "a"):
-                pass
-        except IOError:
+    def check_excel_file_access(self):
+        # Check that input Excel file exists and can be read from
+        if not self.in_excel_file.is_file():
             console.print(
-                f"[red]Impossible d'ouvrir le fichier '{filename}', [/red]"
-                "[red]le fermer s'il est ouvert dans Excel![/red]",
+                f"[red]Le fichier '{self.in_excel_file}' n'existe pas![/red]",
                 soft_wrap=True,
             )
             sys.exit()
+        else:
+            try:
+                with open(self.in_excel_file, "r"):
+                    pass
+            except IOError:
+                console.print(
+                    f"[red]Impossible d'ouvrir le fichier '{self.in_excel_file}', [/red]"
+                    "[red]le fermer s'il est ouvert dans Excel![/red]",
+                    soft_wrap=True,
+                )
+                sys.exit()
+
+        # Check that output Excel file either doesn't exist or can be written to
+        if self.out_excel_file.is_file():
+            try:
+                with open(self.out_excel_file, "a"):
+                    pass
+            except IOError:
+                console.print(
+                    f"[red]Impossible d'ouvrir le fichier '{self.out_excel_file}', [/red]"
+                    "[red]le fermer s'il est ouvert dans Excel![/red]",
+                    soft_wrap=True,
+                )
+                sys.exit()
 
     @staticmethod
     def show_3it_members_stats_on_console(authors: pd.DataFrame):
@@ -98,11 +118,8 @@ class ReferenceQuery:
         self.espacenet_patent_search_results_file: str = (
             espacenet_patent_search_results_file
         )
-        console.print(
-            f"Période de recherche: [{self.pub_year_first} - {self.pub_year_last}]"
-        )
 
-        # Check year range
+        # Check search year range
         if self.pub_year_first > self.pub_year_last:
             console.print(
                 f"[red]ERREUR: L'année de début de recherche ({self.pub_year_first}) "
@@ -110,10 +127,12 @@ class ReferenceQuery:
                 soft_wrap=True,
             )
             sys.exit()
+        console.print(
+            f"Période de recherche: [{self.pub_year_first} - {self.pub_year_last}]"
+        )
 
-        # Check input/output Excel file access, script fails if files already open
-        self.check_excel_file_access(self.in_excel_file)
-        self.check_excel_file_access(self.out_excel_file)
+        # Check input/output Excel files for access
+        self.check_excel_file_access()
 
         # Load input Excel file into a dataframe, remove rows without author names
         warnings.simplefilter(action="ignore", category=UserWarning)

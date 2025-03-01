@@ -13,8 +13,8 @@ in_excel_file = "Liste chercheurs-membres_VF.xlsx"
 in_excel_file_author_sheet = "Membres"
 
 # Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)
-pub_year_first = 2023
-pub_year_last = 2023
+pub_year_first = 2024
+pub_year_last = 2024
 
 # Noms d'institutions et d'affiliations considérées commme "locales", pour valider
 # les profils d'auteurs dans les recherches
