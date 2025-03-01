@@ -1,6 +1,6 @@
 """pyrefsearch.py
 
-    For a list of author names and range of years supplied in an input Excel file, query:
+    For a list of author names and range of years supplied in an Excel file, query:
     - references (publications in Scopus, patents in the INPADOC and USPTO databases)
       OR
     - author profiles (Scopus database), and write the results to an output Excel file.
