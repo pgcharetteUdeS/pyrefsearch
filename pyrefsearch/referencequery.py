@@ -92,7 +92,7 @@ class ReferenceQuery:
                 f"Profs réguliers en génie qui ont un bureau au 3IT: {n_eng_members_regular_profs_with_office}\n"
             )
 
-    def _extract_authors_from_excel(
+    def extract_authors_from_df(
         self, input_data_full: pd.DataFrame
     ) -> pd.DataFrame:
         author_status_by_year_columns: list[str] = [
@@ -189,17 +189,6 @@ class ReferenceQuery:
             espacenet_patent_search_results_file
         )
 
-        # Build output Excel file name
-        self.out_excel_file: Path = data_dir / (
-            Path(
-                f"{in_excel_file.stem}"
-                f"_{self.pub_year_first}-{self.pub_year_last}"
-                f"_publications{in_excel_file.suffix}"
-            )
-            if self.search_type == "Publications"
-            else Path(f"{in_excel_file.stem}_profils" f"{in_excel_file.suffix}")
-        )
-
         # Check search year range
         if self.pub_year_first > self.pub_year_last:
             console.print(
@@ -209,7 +198,16 @@ class ReferenceQuery:
             )
             sys.exit()
 
-        # Check input/output Excel files for access
+        # Build output Excel file name, check input/output Excel files for access
+        self.out_excel_file: Path = data_dir / (
+            Path(
+                f"{in_excel_file.stem}"
+                f"_{self.pub_year_first}-{self.pub_year_last}"
+                f"_publications{in_excel_file.suffix}"
+            )
+            if self.search_type == "Publications"
+            else Path(f"{in_excel_file.stem}_profils" f"{in_excel_file.suffix}")
+        )
         self.check_excel_file_access()
 
         # Load input Excel file into a dataframe, remove rows without author names
@@ -225,13 +223,13 @@ class ReferenceQuery:
 
         # Extract author names from input Excel file, formatted either as a 3IT database
         # (author status tabulated by fiscal year) or as a simple list of names
-        authors = self._extract_authors_from_excel(input_data_full)
+        authors = self.extract_authors_from_df(input_data_full)
         self.au_names = authors[["Nom", "Prénom"]].values.tolist()
         console.print(
             f"Nombre d'auteur.e.s dans le fichier '{self.in_excel_file}': {len(authors)}"
         )
 
-        # Extract Scopus IDs, replace non-integer values with 0
+        # Extract Scopus IDs from df, replace non-integer values with 0
         self.au_ids = []
         if "ID Scopus" in authors:
             for scopus_id in authors["ID Scopus"].values.tolist():
