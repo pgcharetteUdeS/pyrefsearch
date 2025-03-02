@@ -53,8 +53,7 @@ class ReferenceQuery:
                 )
                 sys.exit()
 
-    @staticmethod
-    def show_3it_members_stats_on_console(authors: pd.DataFrame):
+    def write_3it_members_stats_to_file(self, authors: pd.DataFrame):
         n_members_women: int = len(authors[authors["Sexe"] == "F"])
         n_eng_members: int = len(authors[authors["Faculté / Service"] == "FGEN"])
         n_eng_members_regular_profs_only: int = len(
@@ -71,21 +70,27 @@ class ReferenceQuery:
                 & (authors["Lien d'emploi UdeS"] == "Régulier")
             ]
         )
-        console.print(
-            f"Membres réguliers du 3IT: {len(authors)} ({n_members_women / len(authors) * 100:.0f}% de femmes)"
+
+        stats_filename: Path = self.data_dir / Path(
+            f"{self.in_excel_file.stem}"
+            f"_{self.pub_year_first}-{self.pub_year_last}_stats.txt"
         )
-        console.print(
-            "Membres réguliers qui ont un bureau au 3IT: "
-            f"{n_members_with_office}/{len(authors)}"
-        )
-        console.print(
-            f"Membres réguliers du 3IT en génie: {n_eng_members} "
-            f"(Profs Réguliers: {n_eng_members_regular_profs_only}, "
-            f"Profs Associés: {n_eng_members - n_eng_members_regular_profs_only})"
-        )
-        console.print(
-            f"Profs réguliers en génie qui ont un bureau au 3IT: {n_eng_members_regular_profs_with_office}"
-        )
+        with open(stats_filename, "w") as f:
+            f.write(
+                f"Membres réguliers du 3IT: {len(authors)} ({n_members_women / len(authors) * 100:.0f}% de femmes)\n"
+            )
+            f.write(
+                "Membres réguliers qui ont un bureau au 3IT: "
+                f"{n_members_with_office}/{len(authors)}\n"
+            )
+            f.write(
+                f"Membres réguliers du 3IT en génie: {n_eng_members} "
+                f"(Profs Réguliers: {n_eng_members_regular_profs_only}, "
+                f"Profs Associés: {n_eng_members - n_eng_members_regular_profs_only})\n"
+            )
+            f.write(
+                f"Profs réguliers en génie qui ont un bureau au 3IT: {n_eng_members_regular_profs_with_office}\n"
+            )
 
     def _extract_authors_from_excel(
         self, input_data_full: pd.DataFrame
@@ -125,7 +130,7 @@ class ReferenceQuery:
                     soft_wrap=True,
                 )
                 sys.exit()
-            self.show_3it_members_stats_on_console(authors)
+            self.write_3it_members_stats_to_file(authors)
 
         elif not any(
             # Author information is supplied as a simple list of names, no filtering
@@ -154,10 +159,10 @@ class ReferenceQuery:
 
     def __init__(
         self,
+        search_type: str,
         data_dir: Path,
         in_excel_file: Path,
         in_excel_file_author_sheet: str,
-        out_excel_file: Path,
         pub_year_first: int,
         pub_year_last: int,
         publication_types: list[str],
@@ -167,9 +172,9 @@ class ReferenceQuery:
         espacenet_patent_search: bool,
         espacenet_patent_search_results_file: str,
     ):
+        self.search_type = search_type
         self.data_dir: Path = data_dir
         self.in_excel_file: Path = in_excel_file
-        self.out_excel_file: Path = out_excel_file
         self.pub_year_first: int = pub_year_first
         self.pub_year_last: int = pub_year_last
         self.publication_types: list[str] = [row[0] for row in publication_types]
@@ -184,6 +189,17 @@ class ReferenceQuery:
             espacenet_patent_search_results_file
         )
 
+        # Build output Excel file name
+        self.out_excel_file: Path = data_dir / (
+            Path(
+                f"{in_excel_file.stem}"
+                f"_{self.pub_year_first}-{self.pub_year_last}"
+                f"_publications{in_excel_file.suffix}"
+            )
+            if self.search_type == "Publications"
+            else Path(f"{in_excel_file.stem}_profils" f"{in_excel_file.suffix}")
+        )
+
         # Check search year range
         if self.pub_year_first > self.pub_year_last:
             console.print(
@@ -192,9 +208,6 @@ class ReferenceQuery:
                 soft_wrap=True,
             )
             sys.exit()
-        console.print(
-            f"Période de recherche: [{self.pub_year_first} - {self.pub_year_last}]"
-        )
 
         # Check input/output Excel files for access
         self.check_excel_file_access()

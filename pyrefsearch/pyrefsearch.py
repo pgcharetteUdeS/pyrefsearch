@@ -178,22 +178,13 @@ def pyrefsearch():
 
     # Define input/output Excel file names
     in_excel_file: Path = data_dir / Path(toml_dict["in_excel_file"])
-    out_excel_file: Path = data_dir / (
-        Path(
-            f"{in_excel_file.stem}_publications_"
-            f"{toml_dict['pub_year_first']}-{toml_dict['pub_year_last']}"
-            f"{in_excel_file.suffix}"
-        )
-        if toml_dict["search_type"] == "Publications"
-        else Path(f"{in_excel_file.stem}_profils" f"{in_excel_file.suffix}")
-    )
 
     # Define ReferenceQuery Class object containing the query parameters
     reference_query: ReferenceQuery = ReferenceQuery(
+        search_type=toml_dict["search_type"],
         data_dir=data_dir,
         in_excel_file=in_excel_file,
         in_excel_file_author_sheet=toml_dict["in_excel_file_author_sheet"],
-        out_excel_file=out_excel_file,
         pub_year_first=toml_dict["pub_year_first"],
         pub_year_last=toml_dict["pub_year_last"],
         publication_types=toml_dict["publication_types"],
