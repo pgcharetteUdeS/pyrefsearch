@@ -53,7 +53,7 @@ class ReferenceQuery:
                 )
                 sys.exit()
 
-    def write_3it_members_stats_to_file(self, authors: pd.DataFrame):
+    def write_3it_member_stats_to_file(self, authors: pd.DataFrame):
         n_members_women: int = len(authors[authors["Sexe"] == "F"])
         n_eng_members: int = len(authors[authors["Faculté / Service"] == "FGEN"])
         n_eng_members_regular_profs_only: int = len(
@@ -130,7 +130,7 @@ class ReferenceQuery:
                     soft_wrap=True,
                 )
                 sys.exit()
-            self.write_3it_members_stats_to_file(authors)
+            self.write_3it_member_stats_to_file(authors)
 
         elif not any(
             # Author information is supplied as a simple list of names, no filtering
