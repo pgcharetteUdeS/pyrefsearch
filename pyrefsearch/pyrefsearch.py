@@ -201,8 +201,8 @@ def pyrefsearch():
         query_scopus_author_profiles(reference_query=reference_query)
     else:
         console.print(
-            f"[red]ERREUR: {toml_dict['search_type']} est un type de recherche invalide, "
-            "doit être 'Author name' ou 'Scopus ID'[/red]",
+            f"[red]ERREUR: '{toml_dict['search_type']}' est un type de recherche invalide, "
+            "doit être 'Publications' ou 'Profils'[/red]",
             soft_wrap=True,
         )
 
