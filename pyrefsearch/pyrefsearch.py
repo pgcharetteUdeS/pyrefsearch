@@ -169,21 +169,16 @@ def pyrefsearch():
     parser.add_argument("--debug", action="store_true")
     args: argparse.Namespace = parser.parse_args()
 
-    # Load command line parameters
-    toml_filename: Path = Path(args.toml_filename)
-
     # Load search parameters from toml file
-    data_dir: Path = toml_filename.parent
+    toml_filename: Path = Path(args.toml_filename)
     toml_dict: dict = toml.load(toml_filename)
-
-    # Define input/output Excel file names
-    in_excel_file: Path = data_dir / Path(toml_dict["in_excel_file"])
+    data_dir: Path = toml_filename.parent
 
     # Define ReferenceQuery Class object containing the query parameters
     reference_query: ReferenceQuery = ReferenceQuery(
         search_type=toml_dict["search_type"],
         data_dir=data_dir,
-        in_excel_file=in_excel_file,
+        in_excel_file=data_dir / Path(toml_dict["in_excel_file"]),
         in_excel_file_author_sheet=toml_dict["in_excel_file_author_sheet"],
         pub_year_first=toml_dict["pub_year_first"],
         pub_year_last=toml_dict["pub_year_last"],
