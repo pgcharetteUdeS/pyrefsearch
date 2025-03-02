@@ -529,6 +529,10 @@ def query_scopus_author_profiles(reference_query: ReferenceQuery) -> None:
         "Recherche de profils d'auteur.e.s par nom dans la base de données Scopus",
         soft_wrap=True,
     )
+
+    # Init Scopus API
+    scopus_init_api()
+
     author_profiles_by_name: pd.DataFrame = query_scopus_author_profiles_by_name(
         reference_query=reference_query,
         homonyms_only=False,

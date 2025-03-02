@@ -53,6 +53,9 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         soft_wrap=True,
     )
 
+    # Init Scopus API
+    scopus_init_api()
+
     # Fetch author profiles corresponding to user-supplied Scopus IDs, check they match
     # the user-supplied names, flag any inconsistencies in the "Erreurs" column
     author_profiles_by_ids: pd.DataFrame = query_scopus_author_profiles_by_id(
@@ -169,16 +172,15 @@ def pyrefsearch():
     parser.add_argument("--debug", action="store_true")
     args: argparse.Namespace = parser.parse_args()
 
-    # Load search parameters from toml file
+    # Load the search parameters from the toml file
     toml_filename: Path = Path(args.toml_filename)
     toml_dict: dict = toml.load(toml_filename)
-    data_dir: Path = toml_filename.parent
 
     # Define ReferenceQuery Class object containing the query parameters
     reference_query: ReferenceQuery = ReferenceQuery(
         search_type=toml_dict["search_type"],
-        data_dir=data_dir,
-        in_excel_file=data_dir / Path(toml_dict["in_excel_file"]),
+        data_dir=str(toml_filename.parent),
+        in_excel_file=toml_dict["in_excel_file"],
         in_excel_file_author_sheet=toml_dict["in_excel_file_author_sheet"],
         pub_year_first=toml_dict["pub_year_first"],
         pub_year_last=toml_dict["pub_year_last"],
@@ -191,9 +193,6 @@ def pyrefsearch():
             "espacenet_patent_search_results_file", ""
         ),
     )
-
-    # Init Scopus API
-    scopus_init_api()
 
     # Run the query
     if toml_dict["search_type"] == "Publications":

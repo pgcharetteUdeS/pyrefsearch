@@ -92,9 +92,7 @@ class ReferenceQuery:
                 f"Profs réguliers en génie qui ont un bureau au 3IT: {n_eng_members_regular_profs_with_office}\n"
             )
 
-    def extract_authors_from_df(
-        self, input_data_full: pd.DataFrame
-    ) -> pd.DataFrame:
+    def extract_authors_from_df(self, input_data_full: pd.DataFrame) -> pd.DataFrame:
         author_status_by_year_columns: list[str] = [
             f"{year}-{year + 1}"
             for year in range(self.pub_year_first, self.pub_year_last + 1)
@@ -160,8 +158,8 @@ class ReferenceQuery:
     def __init__(
         self,
         search_type: str,
-        data_dir: Path,
-        in_excel_file: Path,
+        data_dir: str,
+        in_excel_file: str,
         in_excel_file_author_sheet: str,
         pub_year_first: int,
         pub_year_last: int,
@@ -173,8 +171,7 @@ class ReferenceQuery:
         espacenet_patent_search_results_file: str,
     ):
         self.search_type = search_type
-        self.data_dir: Path = data_dir
-        self.in_excel_file: Path = in_excel_file
+        self.data_dir: Path = Path(data_dir)
         self.pub_year_first: int = pub_year_first
         self.pub_year_last: int = pub_year_last
         self.publication_types: list[str] = [row[0] for row in publication_types]
@@ -189,7 +186,7 @@ class ReferenceQuery:
             espacenet_patent_search_results_file
         )
 
-        # Check search year range
+        # Check search range
         if self.pub_year_first > self.pub_year_last:
             console.print(
                 f"[red]ERREUR: L'année de début de recherche ({self.pub_year_first}) "
@@ -198,30 +195,33 @@ class ReferenceQuery:
             )
             sys.exit()
 
-        # Build output Excel file name, check input/output Excel files for access
+        # Build input/output Excel filename Path objects, check for access
+        self.in_excel_file = self.data_dir / Path(in_excel_file)
         self.out_excel_file: Path = data_dir / (
             Path(
-                f"{in_excel_file.stem}"
+                f"{self.in_excel_file.stem}"
                 f"_{self.pub_year_first}-{self.pub_year_last}"
-                f"_publications{in_excel_file.suffix}"
+                f"_publications{self.in_excel_file.suffix}"
             )
             if self.search_type == "Publications"
-            else Path(f"{in_excel_file.stem}_profils" f"{in_excel_file.suffix}")
+            else Path(
+                f"{self.in_excel_file.stem}_profils" f"{self.in_excel_file.suffix}"
+            )
         )
         self.check_excel_file_access()
 
-        # Load input Excel file into a dataframe, remove rows without author names
+        # Load input Excel file data , remove rows without author names
         warnings.simplefilter(action="ignore", category=UserWarning)
         input_data_full: pd.DataFrame = pd.read_excel(
             self.in_excel_file, sheet_name=in_excel_file_author_sheet
         )
         input_data_full = input_data_full.dropna(subset=["Nom"])
 
-        # Strip any leading/trailing spaces in input data
+        # Strip any leading/trailing spaces in the input data strings
         for series_name, series in input_data_full.items():
             input_data_full[series_name] = [str(s).strip() for s in series]
 
-        # Extract author names from input Excel file, formatted either as a 3IT database
+        # Extract author names from the input data, formatted either as a 3IT database
         # (author status tabulated by fiscal year) or as a simple list of names
         authors = self.extract_authors_from_df(input_data_full)
         self.au_names = authors[["Nom", "Prénom"]].values.tolist()
@@ -229,7 +229,7 @@ class ReferenceQuery:
             f"Nombre d'auteur.e.s dans le fichier '{self.in_excel_file}': {len(authors)}"
         )
 
-        # Extract Scopus IDs from df, replace non-integer values with 0
+        # Extract Scopus IDs from the input data, replace non-integer values with 0
         self.au_ids = []
         if "ID Scopus" in authors:
             for scopus_id in authors["ID Scopus"].values.tolist():
