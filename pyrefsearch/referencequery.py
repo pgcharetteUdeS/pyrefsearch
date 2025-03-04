@@ -91,6 +91,11 @@ class ReferenceQuery:
             f.write(
                 f"Profs réguliers en génie qui ont un bureau au 3IT: {n_eng_members_regular_profs_with_office}\n"
             )
+            console.print(
+                "Statistiques des membres réguliers du 3IT écrites dans le fichier "
+                f"'{stats_filename}'",
+                soft_wrap=True,
+            )
 
     def extract_authors_from_df(self, input_data_full: pd.DataFrame) -> pd.DataFrame:
         author_status_by_year_columns: list[str] = [
