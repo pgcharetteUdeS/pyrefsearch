@@ -153,7 +153,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     )
 
 
-def pyrefsearch():
+def pyrefsearch() -> None:
     # Console info starting messages
     python_version: str = (
         f"{str(sys.version_info.major)}"
