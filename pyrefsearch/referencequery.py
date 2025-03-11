@@ -62,12 +62,49 @@ class ReferenceQuery:
                 & (authors["Lien d'emploi UdeS"] == "Régulier")
             ]
         )
+        (
+            n_eng_members_regular_profs_only_ee,
+            n_eng_members_regular_profs_only_me,
+            n_eng_members_regular_profs_only_cb,
+            n_eng_members_regular_profs_only_cv,
+        ) = [
+            len(
+                authors[
+                    (authors["Faculté / Service"] == "FGEN")
+                    & (authors["Lien d'emploi UdeS"] == "Régulier")
+                    & (authors["Département"] == d)
+                ]
+            )
+            for d in ["DGEGI", "DGMEC", "Chimie et biotechnologie", "Génie Civil"]
+        ]
+        n_eng_members_regular_profs_only_all: int = (
+            n_eng_members_regular_profs_only_ee
+            + n_eng_members_regular_profs_only_me
+            + n_eng_members_regular_profs_only_cb
+            + n_eng_members_regular_profs_only_cv
+        )
+        if n_eng_members_regular_profs_only_all != n_eng_members_regular_profs_only:
+            console.print(
+                f"[red]WARNING: Le nombre de professeurs réguliers en génie membres du 3IT "
+                f"({n_eng_members_regular_profs_only}) ne correspond pas à la somme des "
+                f"professeurs réguliers par département ({n_eng_members_regular_profs_only_all})"
+                ", des informations d'affiliation sont incorrectes dans le fichier"
+                f" '{self.in_excel_file}'![/red]",
+                soft_wrap=True,
+            )
         n_members_with_office = len(authors[authors["Résidence"] != "Aucun bureau"])
         n_eng_members_regular_profs_with_office = len(
             authors[
                 (authors["Faculté / Service"] == "FGEN")
                 & (authors["Résidence"] != "Aucun bureau")
                 & (authors["Lien d'emploi UdeS"] == "Régulier")
+            ]
+        )
+        n_eng_members_asso_profs_with_office = len(
+            authors[
+                (authors["Faculté / Service"] == "FGEN")
+                & (authors["Résidence"] != "Aucun bureau")
+                & (authors["Lien d'emploi UdeS"] != "Régulier")
             ]
         )
 
@@ -77,19 +114,31 @@ class ReferenceQuery:
         )
         with open(stats_filename, "w") as f:
             f.write(
-                f"Membres réguliers du 3IT: {len(authors)} ({n_members_women / len(authors) * 100:.0f}% de femmes)\n"
+                f"* Membres réguliers du 3IT: {len(authors)} ({n_members_women / len(authors) * 100:.0f}% de femmes)\n"
             )
             f.write(
-                "Membres réguliers qui ont un bureau au 3IT: "
-                f"{n_members_with_office}/{len(authors)}\n"
+                f"* Membres réguliers du 3IT qui ont un bureau au 3IT: {n_members_with_office}\n"
             )
+            f.write(f"* Membres réguliers du 3IT en génie: {n_eng_members}\n")
             f.write(
-                f"Membres réguliers du 3IT en génie: {n_eng_members} "
-                f"(Profs Réguliers: {n_eng_members_regular_profs_only}, "
-                f"Profs Associés: {n_eng_members - n_eng_members_regular_profs_only})\n"
+                f"    o Profs réguliers: {n_eng_members_regular_profs_only}, "
+                f"dont {n_eng_members_regular_profs_with_office} avec bureau\n"
             )
+            f.write(f"      - GEGI: {n_eng_members_regular_profs_only_ee}\n")
+            f.write(f"      - GM: {n_eng_members_regular_profs_only_me}\n")
             f.write(
-                f"Profs réguliers en génie qui ont un bureau au 3IT: {n_eng_members_regular_profs_with_office}\n"
+                f"      - Chimie & biotech: {n_eng_members_regular_profs_only_cb}\n"
+            )
+            f.write(f"      - Civil: {n_eng_members_regular_profs_only_cv}\n")
+            if n_eng_members_regular_profs_only_all != n_eng_members_regular_profs_only:
+                f.write(
+                    "      - Autres: "
+                    f"{n_eng_members_regular_profs_only-n_eng_members_regular_profs_only_all}"
+                    " (devrait être zéro!)\n"
+                )
+            f.write(
+                f"    o Profs associés: {n_eng_members - n_eng_members_regular_profs_only},"
+                f" dont {n_eng_members_asso_profs_with_office} avec bureau\n"
             )
             console.print(
                 "Statistiques des membres réguliers du 3IT écrites dans le fichier "
@@ -102,18 +151,20 @@ class ReferenceQuery:
             f"{year}-{year + 1}"
             for year in range(self.pub_year_first, self.pub_year_last + 1)
         ]
+        authors: pd.DataFrame
         if all(col in input_data_full.columns for col in author_status_by_year_columns):
             # Author information is tabulated by fiscal year (XXXX-YYYY) and status (full
             # member or collaborator). Validate that the range of years specified
             # in the input data covers the range of years specified in the query,
             # filter by member status/year to remove collaborators.
-            authors: pd.DataFrame = input_data_full.copy()[
+            authors = input_data_full.copy()[
                 [
                     "Nom",
                     "Prénom",
                     "ID Scopus",
                     "Faculté / Service",
                     "Lien d'emploi UdeS",
+                    "Département",
                     "Résidence",
                     "Sexe",
                 ]
@@ -146,9 +197,7 @@ class ReferenceQuery:
                     soft_wrap=True,
                 )
                 sys.exit()
-            authors: pd.DataFrame = input_data_full.copy()[
-                ["Nom", "Prénom", "ID Scopus"]
-            ]
+            authors = input_data_full.copy()[["Nom", "Prénom", "ID Scopus"]]
 
         else:
             console.print(
