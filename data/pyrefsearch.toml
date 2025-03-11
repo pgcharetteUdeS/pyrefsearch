@@ -46,7 +46,7 @@ scopus_database_refresh_days = 7
 # 1) La recherche de brevets dans INPADOC est préférable à l'USPTO parce que les brevets
 #    sont groupés par familles, ce qui permet notamment de retenir uniquement les
 #    premiers dépots et octrois de brevets pour une invention et éviter les redondances
-#    (brevets dans plusieurs pays. multiples numéros de brevets pour une même invention
+#    (brevets dans plusieurs pays, multiples numéros de brevets pour une même invention
 #    reliés à des variations mineures comme des changements aux revendications,
 #    des modifications cléricales, etc.)
 # 2) Si un nom de fichier est spécifié par "espacenet_patent_search_results_file", la recherche

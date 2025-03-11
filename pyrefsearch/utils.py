@@ -32,8 +32,8 @@ def to_lower_no_accents_no_hyphens(s: str) -> str:
 
 
 def tabulate_patents_per_author(
-    au_names: pd.Series,
-    au_ids: pd.Series,
+    au_names: list,
+    au_ids: list,
     patents: pd.DataFrame,
 ) -> list:
     """
