@@ -55,8 +55,9 @@ def _query_uspto(
 
     max_results: int = 500
     patents: pd.DataFrame
+    query_str: str
     if applications:
-        query_str: str = build_uspto_patent_query_string(field_code="AD")
+        query_str = build_uspto_patent_query_string(field_code="AD")
         patents = (
             PublishedApplication.objects.filter(query=query_str)
             .limit(max_results)
@@ -73,7 +74,7 @@ def _query_uspto(
         )
 
     else:
-        query_str: str = build_uspto_patent_query_string(field_code="PD")
+        query_str = build_uspto_patent_query_string(field_code="PD")
         patents = (
             Patent.objects.filter(query=query_str)
             .limit(max_results)
@@ -108,6 +109,8 @@ def _reformat_uspto_search_results(
     Returns: DataFrame with reordered search results
 
     """
+
+    new_columns: list[str]
     if applications:
         patents.rename(
             columns={
@@ -123,7 +126,7 @@ def _reformat_uspto_search_results(
             },
             inplace=True,
         )
-        new_columns: list[str] = [
+        new_columns = [
             "GUID",
             "Date de dépôt",
             "ID de l'application",
@@ -150,7 +153,7 @@ def _reformat_uspto_search_results(
             },
             inplace=True,
         )
-        new_columns: list[str] = [
+        new_columns = [
             "GUID",
             "Date de délivrance",
             "Date de dépôt",
@@ -227,15 +230,15 @@ def query_uspto_patents_and_applications(
         # Add dataframe columns with lists and counts of local inventors
         patents["local inventors"] = patents["inventors"].apply(
             lambda inventors: [
-                lastname
-                for [lastname, firstname] in reference_query.au_names
+                name[0]
+                for name in reference_query.au_names
                 if any(
                     (
-                        to_lower_no_accents_no_hyphens(lastname)
+                        to_lower_no_accents_no_hyphens(name[0])
                         in to_lower_no_accents_no_hyphens(inventor)
                     )
                     and (
-                        to_lower_no_accents_no_hyphens(firstname)
+                        to_lower_no_accents_no_hyphens(name[1])
                         in to_lower_no_accents_no_hyphens(inventor)
                     )
                     for inventor in inventors
@@ -255,7 +258,7 @@ def query_uspto_patents_and_applications(
         # Remove applications for which patents have been delivered, i.e.
         # patent applications having same "appl_id" as delivered patents.
         # Compile list of patent/application ids before removal (used later)
-        application_ids: list = patents["appl_id"].to_list()
+        application_ids = patents["appl_id"].to_list()
         if applications and application_ids_to_remove:
             mask = patents["appl_id"].isin(application_ids_to_remove)
             patents.drop(patents[mask].index, inplace=True)
