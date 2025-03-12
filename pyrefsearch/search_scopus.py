@@ -77,8 +77,9 @@ def _check_author_name_correspondance(
             )
         else:
             # Check for name discrepancies between input and Scopus database
-            scopus_last_name: str = to_lower_no_accents_no_hyphens(scopus_last_name)
-            if scopus_last_name != to_lower_no_accents_no_hyphens(input_last_name):
+            if to_lower_no_accents_no_hyphens(
+                scopus_last_name
+            ) != to_lower_no_accents_no_hyphens(input_last_name):
                 query_error = "Disparité de noms de famille"
                 console.print(
                     f"[red]ERREUR pour l'identifiant {au_id}: "
@@ -90,18 +91,18 @@ def _check_author_name_correspondance(
                 )
 
             # Check for affiliation discrepancies between input and Scopus database
-            affiliation: str = (
+            affiliation_tl: str = (
                 ""
                 if affiliation is None
                 else to_lower_no_accents_no_hyphens(affiliation)
             )
-            parent_affiliation: str = (
+            parent_affiliation_tl: str = (
                 ""
                 if parent_affiliation is None
                 else to_lower_no_accents_no_hyphens(parent_affiliation)
             )
             if all(
-                s not in affiliation and s not in parent_affiliation
+                s not in affiliation_tl and s not in parent_affiliation_tl
                 for s in reference_query.local_affiliations
             ):
                 query_error = (
@@ -230,7 +231,7 @@ def _flag_matched_scopus_author_ids_and_affiliations(
 
     """
 
-    def set_affiliation_and_id(row):
+    def set_affiliation_and_id(row) -> str | None:
         if row.affiliation is not None:
             local_affiliation_match: bool = any(
                 s in to_lower_no_accents_no_hyphens(row.affiliation)
@@ -394,8 +395,8 @@ def query_scopus_author_profiles_by_name(
     """
 
     author_profiles_all = pd.DataFrame()
-    for [lastname, firstname] in reference_query.au_names:
-        query_string: str = f"AUTHLAST({lastname}) and AUTHFIRST({firstname})"
+    for name in reference_query.au_names:
+        query_string: str = f"AUTHLAST({name[0]}) and AUTHFIRST({name[1]})"
         author_profiles_from_name_search_results = AuthorSearch(
             query=query_string,
             refresh=reference_query.scopus_database_refresh_days,
@@ -431,7 +432,7 @@ def query_scopus_author_profiles_by_name(
                 )
         elif not homonyms_only:
             console.print(
-                f"[red]ERREUR: aucun résultat pour l'auteur.e '{lastname}, {firstname}' [/red]",
+                f"[red]ERREUR: aucun résultat pour l'auteur.e '{name[0]}, {name[1]}' [/red]",
                 soft_wrap=True,
             )
 
@@ -469,7 +470,7 @@ def query_scopus_publications(
 
     # Loop through list of author IDs to fetch publications, count pub types by author
     publications = pd.DataFrame()
-    pub_type_counts_by_author: list[list[int | None]] = []
+    pub_type_counts_by_author: list = []
     for au_id in reference_query.au_ids:
         if au_id > 0:
             query_str: str = (
