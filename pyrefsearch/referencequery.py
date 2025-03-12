@@ -250,7 +250,7 @@ class ReferenceQuery:
             sys.exit()
 
         # Build input/output Excel filename Path objects, check for access
-        self.in_excel_file = self.data_dir / Path(in_excel_file)
+        self.in_excel_file: Path = self.data_dir / Path(in_excel_file)
         self.out_excel_file: Path = data_dir / (
             Path(
                 f"{self.in_excel_file.stem}"
@@ -278,13 +278,14 @@ class ReferenceQuery:
         # Extract author names from the input data, formatted either as a 3IT database
         # (author status tabulated by fiscal year) or as a simple list of names
         authors = self.extract_authors_from_df(input_data_full)
-        self.au_names = authors[["Nom", "Prénom"]].values.tolist()
+        self.au_names: list = authors[["Nom", "Prénom"]].values.tolist()
         console.print(
             f"Nombre d'auteur.e.s dans le fichier '{self.in_excel_file}': {len(authors)}"
         )
 
         # Extract Scopus IDs from the input data, replace non-integer values with 0
-        self.au_ids = []
+        self.au_id_to_index: dict = {}
+        self.au_ids: list[int] = []
         if "ID Scopus" in authors:
             for scopus_id in authors["ID Scopus"].values.tolist():
                 try:
