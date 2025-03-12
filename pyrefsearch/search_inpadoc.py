@@ -178,12 +178,11 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
         f"Recherche dans espacenet des {len(reference_query.au_names)} inventeurs..."
     )
     for name in reference_query.au_names:
-        lastname, firstname = name
         patent_families_raw = pd.concat(
             [
                 patent_families_raw,
                 _fetch_inpadoc_patent_families_by_author_name(
-                    last_name=lastname, first_name=firstname
+                    last_name=name[0], first_name=name[1]
                 ),
             ],
             ignore_index=True,
@@ -355,28 +354,25 @@ def query_espacenet_patents_and_applications(
     """
 
     # Search espacenet or get previous research results from file
+    patent_families: pd.DataFrame
     if reference_query.espacenet_patent_search_results_file:
-        patent_families: pd.DataFrame = _load_inpadoc_search_results_from_excel_file(
-            reference_query
-        )
+        patent_families = _load_inpadoc_search_results_from_excel_file(reference_query)
     else:
         # else, search espacenet for patent families by author name, save to file
-        patent_families: pd.DataFrame = _search_espacenet_by_author_name(
-            reference_query
-        )
+        patent_families = _search_espacenet_by_author_name(reference_query)
 
     # Add columns with local inventors and number of co-inventors to the dataframe
     local_inventors = patent_families["Inventeurs"].apply(
         lambda inventors: [
-            lastname
-            for [lastname, firstname] in reference_query.au_names
+            name[0]
+            for name in reference_query.au_names
             if any(
                 (
-                    to_lower_no_accents_no_hyphens(lastname)
+                    to_lower_no_accents_no_hyphens(name[0])
                     in to_lower_no_accents_no_hyphens(inventor)
                 )
                 and (
-                    to_lower_no_accents_no_hyphens(firstname)
+                    to_lower_no_accents_no_hyphens(name[0])
                     in to_lower_no_accents_no_hyphens(inventor)
                 )
                 for inventor in inventors
