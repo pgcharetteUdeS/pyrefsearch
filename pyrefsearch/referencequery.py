@@ -277,7 +277,7 @@ class ReferenceQuery:
 
         # Extract author names from the input data, formatted either as a 3IT database
         # (author status tabulated by fiscal year) or as a simple list of names
-        authors = self.extract_authors_from_df(input_data_full)
+        authors: pd.DataFrame = self.extract_authors_from_df(input_data_full)
         self.au_names: list = authors[["Nom", "Prénom"]].values.tolist()
         console.print(
             f"Nombre d'auteur.e.s dans le fichier '{self.in_excel_file}': {len(authors)}"
