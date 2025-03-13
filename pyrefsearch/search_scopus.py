@@ -18,7 +18,6 @@ __all__ = [
     "query_scopus_publications",
 ]
 
-import numpy as np
 import pandas as pd
 import pybliometrics
 from pybliometrics.scopus.exception import ScopusException
@@ -232,27 +231,25 @@ def _flag_matched_scopus_author_ids_and_affiliations(
     """
 
     def set_affiliation_and_id(row) -> str | None:
-        if row.affiliation is not None:
-            local_affiliation_match: bool = any(
-                s in to_lower_no_accents_no_hyphens(row.affiliation)
-                for s in reference_query.local_affiliations
-            )
-            au_id_index: int | None = reference_query.au_id_to_index.get(int(row.eid))
-            au_id_match: bool = (
-                au_id_index is not None
-                and to_lower_no_accents_no_hyphens(
-                    reference_query.au_names[au_id_index][0]
-                )
-                == to_lower_no_accents_no_hyphens(row.surname)
-            )
-            if local_affiliation_match and au_id_match:
-                return "Affl. + ID"
-            elif local_affiliation_match:
-                return "Affl."
-            elif au_id_match:
-                return "ID"
-            else:
-                return None
+        if row.affiliation is None:
+            return None
+
+        local_affiliation_match: bool = any(
+            s in to_lower_no_accents_no_hyphens(row.affiliation)
+            for s in reference_query.local_affiliations
+        )
+        au_id_index: int | None = reference_query.au_id_to_index.get(int(row.eid))
+        au_id_match: bool = au_id_index is not None and to_lower_no_accents_no_hyphens(
+            reference_query.au_names[au_id_index][0]
+        ) == to_lower_no_accents_no_hyphens(row.surname)
+        if local_affiliation_match and au_id_match:
+            return "Affl. + ID"
+        elif local_affiliation_match:
+            return "Affl."
+        elif au_id_match:
+            return "ID"
+        else:
+            return None
 
     # Precompute dictionary mapping Scopus IDs to their indices for constant-time lookups.
     reference_query.au_id_to_index = {
@@ -505,14 +502,16 @@ def query_scopus_publications(
             pub_type_counts_by_author.append(
                 [None] * len(reference_query.publication_type_codes)
             )
-    pub_type_counts_by_author = np.transpose(pub_type_counts_by_author).tolist()
+    pub_type_counts_by_author_transpose: list = [
+        list(row) for row in zip(*pub_type_counts_by_author)
+    ]
 
     if not publications.empty:
         publications = _add_coauthor_columns_and_clean_up_publications_df(
             publications, reference_query
         )
 
-    return publications, pub_type_counts_by_author
+    return publications, pub_type_counts_by_author_transpose
 
 
 def query_scopus_author_profiles(reference_query: ReferenceQuery) -> None:
