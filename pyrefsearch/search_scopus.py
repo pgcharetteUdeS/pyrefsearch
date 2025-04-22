@@ -293,6 +293,7 @@ def _reindex_author_profiles_df(df: pd.DataFrame) -> pd.DataFrame:
             ]
         )
     ]
+    df = df.rename(columns={"eid": "ID Scopus"})
     return df
 
 
