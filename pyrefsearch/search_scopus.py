@@ -20,7 +20,7 @@ __all__ = [
 
 import pandas as pd
 import pybliometrics
-from pybliometrics.scopus.exception import ScopusException
+from pybliometrics.exception import ScopusException
 from pybliometrics.scopus import AuthorRetrieval, AuthorSearch, ScopusSearch
 import sys
 

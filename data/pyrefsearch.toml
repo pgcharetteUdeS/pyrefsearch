@@ -55,4 +55,4 @@ scopus_database_refresh_days = 7
 #    où YYYYMMDD est la date de la recherche.
 uspto_patent_search = false
 espacenet_patent_search = true
-espacenet_patent_search_results_file = "espacenet_INPADOC_results_20250227.xlsx"
+#espacenet_patent_search_results_file = "espacenet_INPADOC_results_20250227.xlsx"
