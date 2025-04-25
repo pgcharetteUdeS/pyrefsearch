@@ -231,7 +231,7 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
             )
             exit()
 
-        # Check that the family contains a Canadian inventor and the title is not empty
+        # Check that family contains at leat one Canadian inventor and title not empty
         if any("[CA]" in s for s in member_info.inventors_epodoc) and member_info.title:
             # Store tile, inventors, and applicants for this family
             families.append(member_info.family_id)
