@@ -144,7 +144,20 @@ def _fetch_inpadoc_patent_families_by_author_name(
             query_str = f'in=("{last_name}" prox/distance<1 "{first_name}")'
         return query_str
 
-    patents = Inpadoc.objects.filter(cql_query=inventor_query_str()).to_pandas()
+    # Fetch parent record for the author
+    try:
+        patents = Inpadoc.objects.filter(cql_query=inventor_query_str()).to_pandas()
+    except Exception as e:
+        console.print(
+            "[red]Erreur dans la recherche de brevets INPADOC pour l'auteur "
+            f"{first_name} {last_name} ('{e}'): "
+            "cette erreur vient généralement du fait que la limite du nombre "
+            "d'accès dans une même journée à Espacenet a été excédée...[/red]"
+        )
+        console.print()
+        exit()
+
+    # Parse patents into a dataframe, retaining only "family_id" and "patent_id" columns
     patents_name_list: list[dict] = []
     for _, row in patents.iterrows():
         patent_id_info: dict = dict(row.values)
@@ -206,7 +219,18 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
         )
         if not hash(i) % 10 and hash(i) > 0:
             console.print("")
-        member_info = Inpadoc.objects.get(row["patent_id"])
+
+        # Fetch patent family info from INPADOC
+        try:
+            member_info = Inpadoc.objects.get(row["family_id"])
+        except Exception as e:
+            console.print(
+                f"\n[red]Erreur dans la recherche de brevets INPADOC ('{e}'): "
+                "cette erreur vient généralement du fait que la limite du nombre "
+                "d'accès dans une même journée à Espacenet a été excédée...[/red]"
+            )
+            exit()
+        # Check that the family contains a Canadian inventor and the title is not empty
         if any("[CA]" in s for s in member_info.inventors_epodoc) and member_info.title:
             # Store tile, inventors, and applicants for this family
             families.append(member_info.family_id)
