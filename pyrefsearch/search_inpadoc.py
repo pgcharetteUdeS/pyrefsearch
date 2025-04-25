@@ -185,7 +185,7 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
 
     """
 
-    # Fetch unique patent families by author name, add delay so that search is not blocked
+    # Fetch unique patent families by author name
     patent_families_raw: pd.DataFrame = pd.DataFrame([])
     console.print(
         f"Recherche dans espacenet des {len(reference_query.au_names)} inventeurs..."
@@ -203,7 +203,7 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
     patent_families_raw = patent_families_raw.drop_duplicates(subset=["family_id"])
     patent_families_raw = patent_families_raw.reset_index(drop=True)
 
-    # Fetch detailed patent family info
+    # Loop to fetch patent family info
     families: list = []
     titles: list = []
     inventors: list = []
@@ -256,7 +256,7 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
     patent_families["Numéros de brevet"] = patent_ids
     patent_families["Dates de publication"] = publication_dates
 
-    # Add earliest patent application and granted patent to the patent families dataframe
+    # Add earliest patent application and granted patent to the dataframe
     _extract_earliest_inpadoc_patent_family_members(patent_families)
 
     # Sort family dataframe by title
