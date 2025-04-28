@@ -152,7 +152,7 @@ def _fetch_inpadoc_patent_families_by_author_name(
             "[red]Erreur dans la recherche de brevets INPADOC pour l'auteur "
             f"{first_name} {last_name} ('{e}'): "
             "cette erreur vient généralement du fait que la limite du nombre "
-            "d'accès dans une même journée à Espacenet a été excédée...[/red]"
+            "d'accès pour une période donnée à Espacenet a été excédée...[/red]"
         )
         console.print()
         exit()
@@ -227,7 +227,7 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
             console.print(
                 f"\n[red]Erreur dans la recherche de brevets INPADOC ('{e}'): "
                 "cette erreur vient généralement du fait que la limite du nombre "
-                "d'accès dans une même journée à Espacenet a été excédée...[/red]"
+                "d'accès pour une période donnée à Espacenet a été excédée...[/red]"
             )
             exit()
 
