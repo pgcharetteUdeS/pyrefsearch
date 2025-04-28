@@ -37,6 +37,9 @@ aux revendications, des modifications cléricales, etc.).
 - Les résultats de la recherche sont écrits dans un fichier Excel de sortie (voir *pyrefsearch.toml*)
 - Tous les fichiers spécifiés sont lus/écrits dans le même répertoire que le fichier .toml
 
+<div style="page-break-before:always">&nbsp;</div>
+<p></p>
+
 ## Fichier des paramètres d'exécution *pyrefsearch.toml* (voir le fichier donné en exemple pour plus d'infos sur les paramètres) :
 - *search_type* ("Publications" ou "Profils"): Type de recherche (publications & brevets ou profils d'auteur.e.s)
 - *in_excel_file* : Fichier Excel d'entrée
