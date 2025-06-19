@@ -69,23 +69,6 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         reference_query=reference_query
     )
 
-    # Loop to parse publications by type into separate dataframes, store dfs in a list
-    publications_dfs_list_by_pub_type: list[pd.DataFrame] = []
-    if not publications_all.empty:
-        for [pub_type, pub_code, pub_counts] in zip(
-            reference_query.publication_types,
-            reference_query.publication_type_codes,
-            pub_type_counts_by_author,
-        ):
-            # Extract "pub_type" publications into a dataframe, add dataframe to list
-            df: pd.DataFrame = publications_all[publications_all["subtype"] == pub_code]
-            publications_dfs_list_by_pub_type.append(df)
-            console.print(f"{pub_type}: {len(df)}")
-
-            # Add "pub_type" publication counts to the author profiles
-            if len(df) > 0:
-                author_profiles_by_ids[pub_type] = pub_counts
-
     # Fetch USPTO applications and granted patents into separate dataframes, if required
     uspto_patents: pd.DataFrame = pd.DataFrame()
     uspto_patent_applications: pd.DataFrame = pd.DataFrame()
@@ -143,7 +126,8 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     # Write results to output Excel file
     write_reference_query_results_to_excel(
         reference_query=reference_query,
-        publications_dfs_list_by_pub_type=publications_dfs_list_by_pub_type,
+        publications_all=publications_all,
+        pub_type_counts_by_author=pub_type_counts_by_author,
         uspto_patents=uspto_patents,
         uspto_patent_applications=uspto_patent_applications,
         inpadoc_patents=inpadoc_patents,
