@@ -155,7 +155,8 @@ def _create_results_summary_df(
 
 def write_reference_query_results_to_excel(
     reference_query: ReferenceQuery,
-    publications_dfs_list_by_pub_type: list[pd.DataFrame],
+    publications_all: pd.DataFrame,
+    pub_type_counts_by_author: list,
     uspto_patents: pd.DataFrame,
     uspto_patent_applications: pd.DataFrame,
     inpadoc_patents: pd.DataFrame,
@@ -168,7 +169,8 @@ def write_reference_query_results_to_excel(
 
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
-        publications_dfs_list_by_pub_type (list): list of DataFrames with search results by type
+        publications_all (pd.DataFrame): dataFrames publications found in Scopus
+        pub_type_counts_by_author (list): lists of publication type by author
         uspto_patents (pd.DataFrame): USPTO patent application search results
         uspto_patent_applications (pd.DataFrame): USPTO patent search results
         inpadoc_patents (pd.DataFrame): INPADOC patent search result
@@ -179,6 +181,23 @@ def write_reference_query_results_to_excel(
     Returns: None
 
     """
+
+    # Loop to parse publications by type into separate dataframes, store dfs in a list
+    publications_dfs_list_by_pub_type: list[pd.DataFrame] = []
+    if not publications_all.empty:
+        for [pub_type, pub_code, pub_counts] in zip(
+            reference_query.publication_types,
+            reference_query.publication_type_codes,
+            pub_type_counts_by_author,
+        ):
+            # Extract "pub_type" publications into a dataframe, add dataframe to list
+            df: pd.DataFrame = publications_all[publications_all["subtype"] == pub_code]
+            publications_dfs_list_by_pub_type.append(df)
+            console.print(f"{pub_type}: {len(df)}")
+
+            # Add "pub_type" publication counts to the author profiles
+            if len(df) > 0:
+                author_profiles_by_ids[pub_type] = pub_counts
 
     # Create results summary dataframe
     results: pd.DataFrame = _create_results_summary_df(
@@ -205,6 +224,14 @@ def write_reference_query_results_to_excel(
                     df=df,
                     sheet_name=pub_type,
                 )
+
+        # Write all Scopus search result to a simgle sheet
+        publications_all.to_excel(
+            writer,
+            index=False,
+            sheet_name="Scopus (résultats complets)",
+            freeze_panes=(1, 1),
+        )
 
         # USPTO search result sheets
         if not uspto_patent_applications.empty:
