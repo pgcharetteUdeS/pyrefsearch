@@ -155,7 +155,7 @@ def _add_coauthor_columns_and_clean_up_publications_df(
 ) -> pd.DataFrame:
     """
     Add columns listing names and counts of local coauthors to the publications DataFrame,
-    and sort by publication date
+    and sort by title
 
     Args:
         publications_in (pd.DataFrame): DataFrame with publications
@@ -209,8 +209,8 @@ def _add_coauthor_columns_and_clean_up_publications_df(
             else:
                 console.print("", soft_wrap=True)
 
-    # Sort by publication date
-    publications = publications.sort_values(by=["coverDate"])
+    # Sort by title (date is unreliable)
+    publications = publications.sort_values(by=["title"])
 
     return publications
 
