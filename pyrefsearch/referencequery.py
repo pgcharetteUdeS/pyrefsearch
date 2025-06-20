@@ -218,6 +218,7 @@ class ReferenceQuery:
         in_excel_file_author_sheet: str,
         pub_year_first: int,
         pub_year_last: int,
+        extract_scopus_diff: bool,
         publication_types: list[str],
         local_affiliations: list[str],
         scopus_database_refresh_days: bool | int,
@@ -229,6 +230,7 @@ class ReferenceQuery:
         self.data_dir: Path = Path(data_dir)
         self.pub_year_first: int = pub_year_first
         self.pub_year_last: int = pub_year_last
+        self.extract_scopus_diff: bool = extract_scopus_diff
         self.publication_types: list[str] = [row[0] for row in publication_types]
         self.publication_type_codes: list[str] = [row[1] for row in publication_types]
         self.local_affiliations: list[str] = [
