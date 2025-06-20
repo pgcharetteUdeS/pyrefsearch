@@ -13,8 +13,13 @@ in_excel_file = "Liste chercheurs-membres_VF.xlsx"
 in_excel_file_author_sheet = "Membres"
 
 # Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)
-pub_year_first = 2024
-pub_year_last = 2024
+pub_year_first = 2025
+pub_year_last = 2025
+
+# Activer/désactiver l'extraction différentielle de la recherche Scopus
+# relativement au mois précédant (fichier de résultats du 1er du mois précédant)
+# WHAT ABOUT JANUARY?? CHANGE IN SERACH YEAR...
+extract_scopus_diff = true
 
 # Noms d'institutions et d'affiliations considérées commme "locales", pour valider
 # les profils d'auteurs dans les recherches
@@ -54,5 +59,5 @@ scopus_database_refresh_days = 7
 #    en ligne et les résultats sont sauvegardés dans le fichier "espacenet_INPADOC_results_YYYYMMDD.xlsx"
 #    où YYYYMMDD est la date de la recherche.
 uspto_patent_search = false
-espacenet_patent_search = true
-#espacenet_patent_search_results_file = "espacenet_INPADOC_results_20250422.xlsx"
+espacenet_patent_search = false
+espacenet_patent_search_results_file = "espacenet_INPADOC_results_20250425.xlsx"
