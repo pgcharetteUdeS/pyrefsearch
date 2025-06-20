@@ -12,7 +12,8 @@
 """
 
 import argparse
-from datetime import timedelta
+from datetime import date, timedelta
+from dateutil.relativedelta import relativedelta
 import pandas as pd
 from pathlib import Path
 import sys
@@ -32,6 +33,47 @@ from search_scopus import (
 from search_uspto import query_uspto_patents_and_applications
 from utils import console
 from version import __version__
+
+
+def differential_scopus_search_results(
+    reference_query: ReferenceQuery, publications_current: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Return publications in publications_current that do not appear in publications_previous
+
+    Args:
+        publications_current (pd.DataFrame): dataframe of current publications
+
+    Returns:
+        pd.DataFrame
+
+    """
+
+    # Load Scopus search results from previous month
+    # WHAT ABOUT JANUARY?? CHANGE IN SERACH YEAR...
+    first_of_last_month = (date.today() - relativedelta(months=1)).replace(day=1)
+    stem = reference_query.out_excel_file.stem
+    publications_previous_filename = reference_query.out_excel_file.with_stem(
+        f"{stem[:-len('_YYYY-MM-DD')]}_{first_of_last_month}"
+    )
+    with pd.ExcelFile(publications_previous_filename) as reader:
+        publications_previous = pd.read_excel(
+            reader, sheet_name="Scopus (résultats complets)"
+        )
+    publications_diff = publications_previous.merge(
+        publications_current,
+        on=["title"],
+        how="right",
+        suffixes=("_left", None),
+        indicator=True,
+    )
+    publications_diff = publications_diff[publications_diff["_merge"] == "right_only"]
+    publications_diff = publications_diff.loc[
+        :, ~publications_diff.columns.str.endswith("_left")
+    ]
+    publications_diff.drop("_merge", axis=1, inplace=True)
+
+    return publications_diff
 
 
 def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
@@ -136,6 +178,24 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         author_profiles_by_name=author_profiles_by_name,
     )
 
+    # Differential Scopus publication search results relative to last month
+    if reference_query.extract_scopus_diff:
+        publications_diff: pd.DataFrame = differential_scopus_search_results(
+            reference_query=reference_query, publications_current=publications_all
+        )
+        write_reference_query_results_to_excel(
+            reference_query=reference_query,
+            publications_all=publications_diff,
+            pub_type_counts_by_author=pub_type_counts_by_author,
+            uspto_patents=pd.DataFrame(),
+            uspto_patent_applications=pd.DataFrame(),
+            inpadoc_patents=pd.DataFrame(),
+            inpadoc_patent_applications=pd.DataFrame(),
+            author_profiles_by_ids=author_profiles_by_ids,
+            author_profiles_by_name=author_profiles_by_name,
+            publications_diff=True,
+        )
+
 
 def pyrefsearch() -> None:
     # Console info starting messages
@@ -168,6 +228,7 @@ def pyrefsearch() -> None:
         in_excel_file_author_sheet=toml_dict["in_excel_file_author_sheet"],
         pub_year_first=toml_dict["pub_year_first"],
         pub_year_last=toml_dict["pub_year_last"],
+        extract_scopus_diff=toml_dict.get("extract_scopus_diff", False),
         publication_types=toml_dict["publication_types"],
         local_affiliations=toml_dict["local_affiliations"],
         scopus_database_refresh_days=toml_dict.get("scopus_database_refresh_days", 0),

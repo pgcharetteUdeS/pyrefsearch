@@ -230,7 +230,9 @@ class ReferenceQuery:
         self.data_dir: Path = Path(data_dir)
         self.pub_year_first: int = pub_year_first
         self.pub_year_last: int = pub_year_last
-        self.extract_scopus_diff: bool = extract_scopus_diff
+        self.extract_scopus_diff: bool = (
+            extract_scopus_diff if date.today().month != 1 else False
+        )
         self.publication_types: list[str] = [row[0] for row in publication_types]
         self.publication_type_codes: list[str] = [row[1] for row in publication_types]
         self.local_affiliations: list[str] = [
