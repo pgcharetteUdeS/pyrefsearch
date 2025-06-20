@@ -211,6 +211,7 @@ def _add_coauthor_columns_and_clean_up_publications_df(
 
     # Sort by title (date is unreliable)
     publications = publications.sort_values(by=["title"])
+    publications.reset_index(drop=True, inplace=True)
 
     return publications
 
