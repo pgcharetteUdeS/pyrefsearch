@@ -6,6 +6,7 @@ ReferenceQuery Class definition for storing reference query parameters
 
 __all__ = ["ReferenceQuery"]
 
+from datetime import date
 import pandas as pd
 from pathlib import Path
 import re
@@ -255,7 +256,7 @@ class ReferenceQuery:
             Path(
                 f"{self.in_excel_file.stem}"
                 f"_{self.pub_year_first}-{self.pub_year_last}"
-                f"_publications{self.in_excel_file.suffix}"
+                f"_publications_{str(date.today())}{self.in_excel_file.suffix}"
             )
             if self.search_type == "Publications"
             else Path(
