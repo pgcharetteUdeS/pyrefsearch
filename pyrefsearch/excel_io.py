@@ -163,6 +163,7 @@ def write_reference_query_results_to_excel(
     inpadoc_patent_applications: pd.DataFrame,
     author_profiles_by_ids: pd.DataFrame,
     author_profiles_by_name: pd.DataFrame,
+    publications_diff: bool = False,
 ) -> None:
     """
     Write publications search results to the output Excel file
@@ -177,6 +178,7 @@ def write_reference_query_results_to_excel(
         inpadoc_patent_applications (pd.DataFrame): INPADOC patent search results
         author_profiles_by_ids (pd.DataFrame): author search results by ids
         author_profiles_by_name (pd.DataFrame): author search results by names
+        publications_diff (bool): True of this a Scopus differential request
 
     Returns: None
 
@@ -210,7 +212,14 @@ def write_reference_query_results_to_excel(
     )
 
     # Write dataframes in separate sheets to the output Excel file
-    with pd.ExcelWriter(reference_query.out_excel_file) as writer:
+    out_excel_file = (
+        reference_query.out_excel_file.with_stem(
+            f"{reference_query.out_excel_file.stem}_diff"
+        )
+        if publications_diff
+        else reference_query.out_excel_file
+    )
+    with pd.ExcelWriter(out_excel_file) as writer:
         # Results (first) sheet
         results.to_excel(writer, index=False, header=False, sheet_name="Résultats")
 
@@ -225,58 +234,61 @@ def write_reference_query_results_to_excel(
                     sheet_name=pub_type,
                 )
 
-        # Write all Scopus search result to a simgle sheet
-        publications_all.to_excel(
-            writer,
-            index=False,
-            sheet_name="Scopus (résultats complets)",
-            freeze_panes=(1, 1),
-        )
-
-        # USPTO search result sheets
-        if not uspto_patent_applications.empty:
-            uspto_patent_applications.to_excel(
+        if not publications_diff:
+            # Write all Scopus search result to a simgle sheet
+            publications_all.to_excel(
                 writer,
                 index=False,
-                sheet_name="Brevets US (en instance)",
-                freeze_panes=(1, 1),
-            )
-        if not uspto_patents.empty:
-            uspto_patents.to_excel(
-                writer,
-                index=False,
-                sheet_name="Brevets US (délivrés)",
+                sheet_name="Scopus (résultats complets)",
                 freeze_panes=(1, 1),
             )
 
-        # INPADOC search result sheets
-        if not inpadoc_patent_applications.empty:
-            inpadoc_patent_applications.to_excel(
-                writer,
-                index=False,
-                sheet_name="Brevets INPADOC (en instance)",
-                freeze_panes=(1, 1),
-            )
-        if not inpadoc_patents.empty:
-            inpadoc_patents.to_excel(
-                writer,
-                index=False,
-                sheet_name="Brevets INPADOC (délivrés)",
-                freeze_panes=(1, 1),
-            )
+            # USPTO search result sheets
+            if not uspto_patent_applications.empty:
+                uspto_patent_applications.to_excel(
+                    writer,
+                    index=False,
+                    sheet_name="Brevets US (en instance)",
+                    freeze_panes=(1, 1),
+                )
+            if not uspto_patents.empty:
+                uspto_patents.to_excel(
+                    writer,
+                    index=False,
+                    sheet_name="Brevets US (délivrés)",
+                    freeze_panes=(1, 1),
+                )
 
-        # Author profile sheets
-        col: pd.Series = author_profiles_by_ids.pop("Période active")
-        author_profiles_by_ids["Période active"] = col
-        author_profiles_by_ids.to_excel(
-            writer, index=False, sheet_name="Auteurs - Profils", freeze_panes=(1, 1)
-        )
-        author_profiles_by_name.to_excel(
-            writer, index=False, sheet_name="Auteurs - Homonymes", freeze_panes=(1, 1)
-        )
+            # INPADOC search result sheets
+            if not inpadoc_patent_applications.empty:
+                inpadoc_patent_applications.to_excel(
+                    writer,
+                    index=False,
+                    sheet_name="Brevets INPADOC (en instance)",
+                    freeze_panes=(1, 1),
+                )
+            if not inpadoc_patents.empty:
+                inpadoc_patents.to_excel(
+                    writer,
+                    index=False,
+                    sheet_name="Brevets INPADOC (délivrés)",
+                    freeze_panes=(1, 1),
+                )
+
+            # Author profile sheets
+            col: pd.Series = author_profiles_by_ids.pop("Période active")
+            author_profiles_by_ids["Période active"] = col
+            author_profiles_by_ids.to_excel(
+                writer, index=False, sheet_name="Auteurs - Profils", freeze_panes=(1, 1)
+            )
+            author_profiles_by_name.to_excel(
+                writer,
+                index=False,
+                sheet_name="Auteurs - Homonymes",
+                freeze_panes=(1, 1),
+            )
     console.print(
-        "Résultats de la recherche sauvegardés "
-        f"dans le fichier '{reference_query.out_excel_file}'",
+        "Résultats de la recherche sauvegardés " f"dans le fichier '{out_excel_file}'",
         soft_wrap=True,
     )
 
@@ -284,7 +296,7 @@ def write_reference_query_results_to_excel(
     # The solution is a hack because the auto_size/bestFit properties in
     # openpyxl.worksheet.dimensions.ColumnDimension() don't seem to work and the actual
     # column width sizing in Excel is system-dependant and a bit of a black box.
-    workbook = load_workbook(reference_query.out_excel_file)
+    workbook = load_workbook(out_excel_file)
     col_width_max: int = 100
     for sheet_name in workbook.sheetnames:
         for i, col in enumerate(workbook[sheet_name].columns):
@@ -294,4 +306,4 @@ def write_reference_query_results_to_excel(
             workbook[sheet_name].column_dimensions[col[0].column_letter].width = max(
                 min(col_width_max, col_width), col_width_min
             )
-    workbook.save(reference_query.out_excel_file)
+    workbook.save(out_excel_file)
