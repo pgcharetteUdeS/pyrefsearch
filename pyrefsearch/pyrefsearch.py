@@ -42,6 +42,7 @@ def differential_scopus_search_results(
     Return publications in publications_current that do not appear in publications_previous
 
     Args:
+        reference_query (ReferenceQuery): Reference query
         publications_current (pd.DataFrame): dataframe of current publications
 
     Returns:
