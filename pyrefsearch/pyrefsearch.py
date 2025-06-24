@@ -50,13 +50,23 @@ def differential_scopus_search_results(
 
     """
 
-    # Load Scopus search results from previous month
-    # WHAT ABOUT JANUARY?? CHANGE IN SERACH YEAR...
+    # Load Scopus search results from the previous month
     first_of_last_month = (date.today() - relativedelta(months=1)).replace(day=1)
+    year_range: str = (
+        f"{reference_query.pub_year_first-1}-{reference_query.pub_year_last-1}"
+        if date.today().month == 1
+        else f"{reference_query.pub_year_first}-{reference_query.pub_year_last}"
+    )
     stem = reference_query.out_excel_file.stem
     publications_previous_filename = reference_query.out_excel_file.with_stem(
-        f"{stem[:-len('_YYYY-MM-DD')]}_{first_of_last_month}"
+        f"{stem[:-len('_YYYY-YYYY_publications_YYYY-MM-DD')]}"
+        f"_{year_range}_publications_{first_of_last_month}"
     )
+    console.print(
+        f"Fichier de référence: '{publications_previous_filename}'",
+        soft_wrap=True,
+    )
+
     with pd.ExcelFile(publications_previous_filename) as reader:
         publications_previous = pd.read_excel(
             reader, sheet_name="Scopus (résultats complets)"
