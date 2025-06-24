@@ -91,7 +91,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
 
     # Console banner
     console.print(
-        "[green]** Recherche de publications et brevets pour la période "
+        "[green]Recherche de publications et brevets pour la période "
         f"{reference_query.pub_year_first}-{reference_query.pub_year_last}[/green]",
         soft_wrap=True,
     )
@@ -101,13 +101,13 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
 
     # Fetch author profiles corresponding to user-supplied Scopus IDs, check they match
     # the user-supplied names, flag any inconsistencies in the "Erreurs" column
-    console.print("[green]** Recherche de profils d'auteurs dans Scopus...[/green]")
+    console.print("[green]\n** Recherche de profils d'auteurs dans Scopus **[/green]")
     author_profiles_by_ids: pd.DataFrame = query_scopus_author_profiles_by_id(
         reference_query=reference_query
     )
 
     # Fetch publications by type in Scopus database, count publication types by author
-    console.print("[green]** Recherche de publications dans Scopus...[/green]")
+    console.print("[green]\n** Recherche de publications dans Scopus **[/green]")
     publications_all: pd.DataFrame
     pub_type_counts_by_author: list[list[int | None]]
     publications_all, pub_type_counts_by_author = query_scopus_publications(
@@ -119,7 +119,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     uspto_patent_applications: pd.DataFrame = pd.DataFrame()
     if reference_query.uspto_patent_search:
         console.print(
-            "[green]** Recherche de brevets dans la base de données USPTO...[/green]"
+            "[green]\n** Recherche de brevets dans la base de données USPTO **[/green]"
         )
         uspto_patent_application_ids: list
         uspto_patent_counts_by_author: list
@@ -149,7 +149,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     inpadoc_patent_applications = pd.DataFrame()
     inpadoc_patents = pd.DataFrame()
     if reference_query.espacenet_patent_search:
-        console.print("[green]** Recherche brevets dans espacenet...[/green]")
+        console.print("[green]\n** Recherche brevets dans espacenet **[/green]")
 
         (
             inpadoc_patent_applications,
@@ -189,8 +189,9 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     # Differential Scopus publication search results relative to last month
     if reference_query.extract_scopus_diff:
         console.print(
-            "[green]** Recherche différentielle de publications dans Scopus"
-            " relativement au 1er du mois dernier...[/green]"
+            "[green]\n** Recherche différentielle de publications dans Scopus"
+            " relativement au 1er du mois dernier **[/green]",
+            soft_wrap=True,
         )
         publications_diff: pd.DataFrame = differential_scopus_search_results(
             reference_query=reference_query, publications_current=publications_all
