@@ -269,5 +269,5 @@ if __name__ == "__main__":
     start_time = time.time()
     pyrefsearch()
     console.print(
-        f"Temps d'exécution: {str(timedelta(seconds=int(time.time() - start_time)))}"
+        f"\nTemps d'exécution: {str(timedelta(seconds=int(time.time() - start_time)))}"
     )

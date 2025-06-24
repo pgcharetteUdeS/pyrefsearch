@@ -1,7 +1,12 @@
-# In Notepad++, use Encoding/ASCII
+# PowerShell script to send completion email via smtp.gmail.com
+# NB: when edting in Notepad++, use Encoding/ASCII
+
+# Destination email address
+$EmailTo = "paul.charette@usherbrooke.ca"
+
+# Code to send email
 $currentDirectory = (Get-Location).Path
 $Body = "Résultats dans le répertoire '" + $currentDirectory + "\data'"
-$EmailTo = "paul.charette@usherbrooke.ca"
 $EmailFrom = "pgcharette@gmail.com"
 $Subject = "pyrefsearch terminé!" 
 $filenameAndPath = "pyrefsearch.log"
