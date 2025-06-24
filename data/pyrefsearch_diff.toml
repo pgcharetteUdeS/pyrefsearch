@@ -16,8 +16,7 @@ in_excel_file_author_sheet = "Membres"
 pub_year_first = 2024
 pub_year_last = 2025
 
-# Activer/désactiver l'extraction différentielle de la recherche Scopus
-# relativement au mois précédant (fichier de résultats du 1er du mois précédant)
+# Activer/désactiver l'extraction différentielle Scopus relativement au 1er du mois précédant
 extract_scopus_diff = true
 
 # Noms d'institutions et d'affiliations considérées commme "locales", pour valider
