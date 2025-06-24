@@ -50,6 +50,7 @@ def differential_scopus_search_results(
 
     """
 
+    # Load Scopus search results from the previous month (publications_previous)
     first_of_last_month = (date.today() - relativedelta(months=1)).replace(day=1)
     year_range: str = (
         f"{reference_query.pub_year_first-1}-{reference_query.pub_year_last-1}"
@@ -69,6 +70,8 @@ def differential_scopus_search_results(
         publications_previous = pd.read_excel(
             reader, sheet_name="Scopus (résultats complets)"
         )
+
+    # Publications in publications_current that do not appear in publications_previous
     publications_diff = publications_previous.merge(
         publications_current,
         on=["title"],
