@@ -8,6 +8,7 @@ __all__ = ["write_reference_query_results_to_excel"]
 
 from openpyxl import load_workbook
 import pandas as pd
+from pathlib import Path
 
 from referencequery import ReferenceQuery
 from utils import console
@@ -164,7 +165,7 @@ def write_reference_query_results_to_excel(
     author_profiles_by_ids: pd.DataFrame,
     author_profiles_by_name: pd.DataFrame,
     publications_diff: bool = False,
-) -> None:
+) -> Path:
     """
     Write publications search results to the output Excel file
 
@@ -180,7 +181,7 @@ def write_reference_query_results_to_excel(
         author_profiles_by_name (pd.DataFrame): author search results by names
         publications_diff (bool): True of this a Scopus differential request
 
-    Returns: None
+    Returns (Path): Excel output filename
 
     """
 
@@ -212,14 +213,14 @@ def write_reference_query_results_to_excel(
     )
 
     # Write dataframes in separate sheets to the output Excel file
-    out_excel_file = (
+    out_excel_filename: Path = (
         reference_query.out_excel_file.with_stem(
             f"{reference_query.out_excel_file.stem}_diff"
         )
         if publications_diff
         else reference_query.out_excel_file
     )
-    with pd.ExcelWriter(out_excel_file) as writer:
+    with pd.ExcelWriter(out_excel_filename) as writer:
         # Results (first) sheet
         results.to_excel(writer, index=False, header=False, sheet_name="Résultats")
 
@@ -288,7 +289,8 @@ def write_reference_query_results_to_excel(
                 freeze_panes=(1, 1),
             )
     console.print(
-        "Résultats de la recherche sauvegardés " f"dans le fichier '{out_excel_file}'",
+        "Résultats de la recherche sauvegardés "
+        f"dans le fichier '{out_excel_filename}'",
         soft_wrap=True,
     )
 
@@ -296,7 +298,7 @@ def write_reference_query_results_to_excel(
     # The solution is a hack because the auto_size/bestFit properties in
     # openpyxl.worksheet.dimensions.ColumnDimension() don't seem to work and the actual
     # column width sizing in Excel is system-dependant and a bit of a black box.
-    workbook = load_workbook(out_excel_file)
+    workbook = load_workbook(out_excel_filename)
     col_width_max: int = 100
     for sheet_name in workbook.sheetnames:
         for i, col in enumerate(workbook[sheet_name].columns):
@@ -306,4 +308,7 @@ def write_reference_query_results_to_excel(
             workbook[sheet_name].column_dimensions[col[0].column_letter].width = max(
                 min(col_width_max, col_width), col_width_min
             )
-    workbook.save(out_excel_file)
+    workbook.save(out_excel_filename)
+
+    # Return Excel output filename
+    return out_excel_filename
