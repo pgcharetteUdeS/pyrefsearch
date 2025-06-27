@@ -291,6 +291,16 @@ def write_reference_query_results_to_excel(
                 sheet_name="Auteurs - Homonymes",
                 freeze_panes=(1, 1),
             )
+
+        else:
+            # Author profile sheets
+            author_profiles_by_ids_minimal: pd.DataFrame = author_profiles_by_ids[
+                ["Nom de famille", "Prénom"]
+            ].copy()
+            author_profiles_by_ids_minimal.to_excel(
+                writer, index=False, sheet_name="Auteurs", freeze_panes=(1, 1)
+            )
+
     console.print(
         "Résultats de la recherche sauvegardés "
         f"dans le fichier '{out_excel_filename}'",
