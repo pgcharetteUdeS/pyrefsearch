@@ -37,7 +37,7 @@ from version import __version__
 
 def differential_scopus_search_results(
     reference_query: ReferenceQuery, publications_current: pd.DataFrame
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, Path]:
     """
     Return publications in publications_current that do not appear in publications_previous
 
@@ -46,7 +46,7 @@ def differential_scopus_search_results(
         publications_current (pd.DataFrame): dataframe of current publications
 
     Returns:
-        pd.DataFrame
+        publications_diff (pd.DataFrame), publications_previous_filename (Path)
 
     """
 
@@ -85,7 +85,41 @@ def differential_scopus_search_results(
     ]
     publications_diff.drop("_merge", axis=1, inplace=True)
 
-    return publications_diff
+    return publications_diff, publications_previous_filename
+
+
+def send_confirmation_email(
+    reference_query: ReferenceQuery, out_excel_filename: Path
+) -> None:
+    """
+    Send confirmation email to people on a mailing list
+
+    Args:
+        reference_query (ReferenceQuery): Reference query object
+        out_excel_filename (Path): Path to the output excel file
+
+    Returns: None
+
+    """
+
+    with open("pyrefsearch_send_email_confirmation.ps1", "w") as f:
+        f.write("# Call script to send email\n")
+        f.write("$currentDirectory = (Get-Location).Path\n")
+        f.write('$logfilename = $currentDirectory + "\\pyrefsearch.log"\n')
+        f.write(
+            f'$resultsfilename = $currentDirectory + "\\{str(out_excel_filename)}"\n'
+        )
+        f.write(
+            'powershell.exe -File "send_email_confirmation.ps1"'
+            f' -EmailTo "{reference_query.extract_scopus_diff_confirmation_emails[0]}" '
+            "-AttachmentFilename $logfilename\n"
+        )
+        for email_address in reference_query.extract_scopus_diff_confirmation_emails:
+            f.write(
+                'powershell.exe -File "send_email_confirmation.ps1"'
+                f' -EmailTo "{email_address}" '
+                "-AttachmentFilename $resultsfilename\n"
+            )
 
 
 def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
@@ -204,10 +238,12 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             " relativement au 1er du mois dernier **[/green]",
             soft_wrap=True,
         )
-        publications_diff: pd.DataFrame = differential_scopus_search_results(
-            reference_query=reference_query, publications_current=publications_all
+        publications_diff, publications_previous_filename = (
+            differential_scopus_search_results(
+                reference_query=reference_query, publications_current=publications_all
+            )
         )
-        write_reference_query_results_to_excel(
+        out_excel_filename: Path = write_reference_query_results_to_excel(
             reference_query=reference_query,
             publications_all=publications_diff,
             pub_type_counts_by_author=pub_type_counts_by_author,
@@ -218,6 +254,10 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             author_profiles_by_ids=author_profiles_by_ids,
             author_profiles_by_name=author_profiles_by_name,
             publications_diff=True,
+            publications_previous_filename=publications_previous_filename,
+        )
+        send_confirmation_email(
+            reference_query=reference_query, out_excel_filename=out_excel_filename
         )
 
 
@@ -253,6 +293,9 @@ def pyrefsearch() -> None:
         pub_year_first=toml_dict["pub_year_first"],
         pub_year_last=toml_dict["pub_year_last"],
         extract_scopus_diff=toml_dict.get("extract_scopus_diff", False),
+        extract_scopus_diff_confirmation_emails=toml_dict[
+            "extract_scopus_diff_confirmation_emails"
+        ],
         publication_types=toml_dict["publication_types"],
         local_affiliations=toml_dict["local_affiliations"],
         scopus_database_refresh_days=toml_dict.get("scopus_database_refresh_days", 0),
