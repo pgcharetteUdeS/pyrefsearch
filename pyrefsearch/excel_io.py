@@ -165,6 +165,7 @@ def write_reference_query_results_to_excel(
     author_profiles_by_ids: pd.DataFrame,
     author_profiles_by_name: pd.DataFrame,
     publications_diff: bool = False,
+    publications_previous_filename: Path = Path(""),
 ) -> Path:
     """
     Write publications search results to the output Excel file
@@ -180,6 +181,7 @@ def write_reference_query_results_to_excel(
         author_profiles_by_ids (pd.DataFrame): author search results by ids
         author_profiles_by_name (pd.DataFrame): author search results by names
         publications_diff (bool): True of this a Scopus differential request
+        publications_previous_filename (Path): Path to the Excel file with results from previous month
 
     Returns (Path): Excel output filename
 
@@ -215,7 +217,8 @@ def write_reference_query_results_to_excel(
     # Write dataframes in separate sheets to the output Excel file
     out_excel_filename: Path = (
         reference_query.out_excel_file.with_stem(
-            f"{reference_query.out_excel_file.stem}_diff"
+            f"{reference_query.out_excel_file.stem}_DIFF_"
+            f"{publications_previous_filename.stem[-len('YYYY-MM-DD'):]}"
         )
         if publications_diff
         else reference_query.out_excel_file
