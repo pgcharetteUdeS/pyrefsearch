@@ -219,6 +219,7 @@ class ReferenceQuery:
         pub_year_first: int,
         pub_year_last: int,
         extract_scopus_diff: bool,
+        extract_scopus_diff_confirmation_emails: list[str],
         publication_types: list[str],
         local_affiliations: list[str],
         scopus_database_refresh_days: bool | int,
@@ -232,6 +233,9 @@ class ReferenceQuery:
         self.pub_year_last: int = pub_year_last
         self.extract_scopus_diff: bool = (
             extract_scopus_diff if date.today().month != 1 else False
+        )
+        self.extract_scopus_diff_confirmation_emails: list[str] = (
+            extract_scopus_diff_confirmation_emails
         )
         self.publication_types: list[str] = [row[0] for row in publication_types]
         self.publication_type_codes: list[str] = [row[1] for row in publication_types]
