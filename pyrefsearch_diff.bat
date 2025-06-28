@@ -1,10 +1,28 @@
 @echo off
 
-echo Running pyrefsearch...
+:: Run the Scopus search
+echo Running pyrefsearch.py...
 set PYTHONDIR="C:\Program Files\Python\Python312"
 set WORKINGDIR="C:\Users\chap1202\OneDrive - USherbrooke\Documents on OneDrive\Python\Pycharm\pyrefsearch"
 cd %WORKINGDIR%
 %PYTHONDIR%\python.exe pyrefsearch\pyrefsearch.py data\pyrefsearch_diff.toml > pyrefsearch.log 2>&1
 
-echo Sending email confirmation...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File pyrefsearch_send_email_confirmation.ps1
+:: if the PowerShell script "pyrefsearch_send_email_confirmation.ps1" exists, pyrefsearch.py ran successfully
+set EMAIL_POWERSHELL_SCRIPT="pyrefsearch_send_email_confirmation.ps1"
+if exist %EMAIL_POWERSHELL_SCRIPT% GOTO run_power_shell_script
+GOTO pyrefsearch_failed
+
+:: pyrefsearch.py failed to run, send email
+:pyrefsearch_failed
+echo pyrefsearch.py failed to run, send error log email...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File pyrefsearch_send_email_failure_to_run.ps1
+GOTO end
+
+:: pydersearch.py ran correctly, send confirmation emails, delete the PowerShell script
+:run_power_shell_script
+echo Sending email confirmations...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File %EMAIL_POWERSHELL_SCRIPT%
+del %EMAIL_POWERSHELL_SCRIPT%
+GOTO end
+
+:end
