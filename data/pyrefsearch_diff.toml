@@ -27,9 +27,6 @@ extract_scopus_diff_confirmation_emails = [
     "catherine.labrecque@usherbrooke.ca",
     "christelle.hauchard@usherbrooke.ca",
 ]
-#extract_scopus_diff_confirmation_emails = [
-#    "Paul.Charette@USherbrooke.ca",
-#]
 
 # Noms d'institutions et d'affiliations considérées commme "locales", pour valider
 # les profils d'auteurs dans les recherches
