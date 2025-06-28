@@ -52,7 +52,7 @@ publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Absracts", "ab"], ["
 # sauvegardés dans une base de données locale pour éviter de refaire la recherche
 # en ligne à chaque fois. Cette base de données locale est mise à jour à
 # intervalles réguliers (valeur par défaut = 0, i.e. mise à jour à chaque recherche).
-scopus_database_refresh_days = 7
+scopus_database_refresh_days = 0
 
 # BREVETS : Activer/désactiver (true/false) la recherche de brevets USPTO et ESPACENET (INPADOC)
 # 1) La recherche de brevets dans INPADOC est préférable à l'USPTO parce que les brevets
