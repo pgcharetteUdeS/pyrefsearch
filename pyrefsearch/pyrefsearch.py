@@ -88,15 +88,16 @@ def differential_scopus_search_results(
     return publications_diff, publications_previous_filename
 
 
-def send_confirmation_email(
+def gen_power_shell_script_to_send_confirmation_emails(
     reference_query: ReferenceQuery, out_excel_filename: Path
 ) -> None:
     """
-    Send confirmation email to people on a mailing list
+    Generate a Windows PowerShell script ("pyrefsearch_send_email_confirmation.ps1")
+    to send confirmation email to people on a mailing list
 
     Args:
         reference_query (ReferenceQuery): Reference query object
-        out_excel_filename (Path): Path to the output excel file
+        out_excel_filename (Path): Path to the output Excel file
 
     Returns: None
 
@@ -256,7 +257,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             publications_diff=True,
             publications_previous_filename=publications_previous_filename,
         )
-        send_confirmation_email(
+        gen_power_shell_script_to_send_confirmation_emails(
             reference_query=reference_query, out_excel_filename=out_excel_filename
         )
 
