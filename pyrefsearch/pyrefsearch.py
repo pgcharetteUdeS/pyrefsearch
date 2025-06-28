@@ -104,7 +104,8 @@ def gen_power_shell_script_to_send_confirmation_emails(
     """
 
     with open("pyrefsearch_send_email_confirmation.ps1", "w") as f:
-        f.write("# Call script to send email\n")
+        f.write("# Script to send confirmation emails to a list of recipients\n")
+        f.write("# NB: the script is generated automatically by pyrefsearch.py\n")
         f.write("$currentDirectory = (Get-Location).Path\n")
         f.write('$logfilename = $currentDirectory + "\\pyrefsearch.log"\n')
         f.write(
