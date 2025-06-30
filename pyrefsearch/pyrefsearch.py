@@ -154,11 +154,14 @@ def gen_power_shell_script_to_send_confirmation_emails(
             f'send_email -EmailTo "{reference_query.extract_scopus_diff_confirmation_emails[0]}" '
             "-AttachmentFilename $logfilename\n"
         )
-        for email_address in reference_query.extract_scopus_diff_confirmation_emails:
-            f.write(
-                f'send_email -EmailTo "{email_address}" '
-                "-AttachmentFilename $resultsfilename\n"
-            )
+        f.write(
+            '$recipients = "'
+            + ",".join(reference_query.extract_scopus_diff_confirmation_emails)
+            + '"\n'
+        )
+        f.write(
+            "send_email -EmailTo $recipients -AttachmentFilename $resultsfilename\n"
+        )
 
 
 def query_publications_and_patents(reference_query: ReferenceQuery) -> None:

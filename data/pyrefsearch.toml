@@ -22,8 +22,10 @@ pub_year_last = 2025
 # où la première adresse email reçoit aussi un fichier log de l'exécution.
 extract_scopus_diff = true
 extract_scopus_diff_confirmation_emails = [
-    "Paul.Charette@USherbrooke.ca",
     "Paul.G.Charette@USherbrooke.ca",
+	"alice@usherbrooke.ca",
+    "Paul.Charette@USherbrooke.ca",
+	"bob@usherbrooke.ca",
 ]
 
 # Noms d'institutions et d'affiliations considérées commme "locales", pour valider
