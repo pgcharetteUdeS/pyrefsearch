@@ -126,16 +126,16 @@ def gen_power_shell_script_to_send_confirmation_emails(
             -len("YYYY-MM-YY_DIFF_YYYY-MM-YY") : -len("_DIFF_YYYY-MM-YY")
         ]
         f.write(
+            '$recipients = "'
+            + ",".join(reference_query.extract_scopus_diff_confirmation_emails)
+            + '"\n'
+        )
+        f.write(
             f'\t$Subject = "Résultats de la recherche Scopus du {date_from} au {date_to}"\n'
         )
         f.write("$Body = $Subject\n")
         f.write(
             f'$resultsfilename = $currentDirectory + "\\{str(out_excel_filename)}"\n'
-        )
-        f.write(
-            '$recipients = "'
-            + ",".join(reference_query.extract_scopus_diff_confirmation_emails)
-            + '"\n'
         )
         f.write(
             '& ".\\send_email.ps1" -EmailTo $recipients'
