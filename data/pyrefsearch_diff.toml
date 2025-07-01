@@ -22,6 +22,7 @@ pub_year_last = 2025
 extract_scopus_diff = true
 extract_scopus_diff_confirmation_emails = [
     "Paul.G.Charette@USherbrooke.ca",
+    "bob@USherbrooke.cs",
     "Paul.Charette@USherbrooke.ca",
 ]
 #extract_scopus_diff_confirmation_emails = [
