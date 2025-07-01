@@ -23,9 +23,7 @@ pub_year_last = 2025
 extract_scopus_diff = true
 extract_scopus_diff_confirmation_emails = [
     "Paul.G.Charette@USherbrooke.ca",
-	"alice@usherbrooke.ca",
     "Paul.Charette@USherbrooke.ca",
-	"bob@usherbrooke.ca",
 ]
 
 # Noms d'institutions et d'affiliations considérées commme "locales", pour valider
