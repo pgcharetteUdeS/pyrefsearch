@@ -103,43 +103,39 @@ def gen_power_shell_script_to_send_confirmation_emails(
 
     """
 
+    date_from: str = str(out_excel_filename.stem)[-len("YYYY-MM-YY") :]
+    date_to: str = str(out_excel_filename.stem)[
+        -len("YYYY-MM-YY_DIFF_YYYY-MM-YY") : -len("_DIFF_YYYY-MM-YY")
+    ]
+
     with open("pyrefsearch_send_email_confirmation.ps1", "w") as f:
         f.write("# Script to send confirmation emails to a list of recipients\n")
         f.write("# NB: the script is generated automatically by pyrefsearch.py\n\n")
-        f.write("$currentDirectory = (Get-Location).Path\n")
+        f.write(
+            f'$Subject = "Résultats de la recherche Scopus du {date_from} au {date_to}"\n'
+        )
+        f.write("$currentDirectory = (Get-Location).Path\n\n")
 
         # Send logfile to Paul.Charette@Usehrbrooke.ca
-        f.write(
-            '$Subject = "pydefsearch.py failed to run! If running from home, need VPN..."\n'
-        )
-        f.write("$Body = $Subject\n")
         f.write('$logfilename = $currentDirectory + "\\pyrefsearch.log"\n')
         f.write(
             f'& ".\\send_email.ps1" -EmailTo "{reference_query.extract_scopus_diff_confirmation_emails[0]}"'
-            " -Subject $Subject -Body $Body"
-            " -AttachmentFilename $logfilename\n"
+            " -Subject $Subject -Body $Subject"
+            " -AttachmentFilename $logfilename\n\n"
         )
 
         # Send Excel results file to list of recipients
-        date_from: str = str(out_excel_filename.stem)[-len("YYYY-MM-YY") :]
-        date_to: str = str(out_excel_filename.stem)[
-            -len("YYYY-MM-YY_DIFF_YYYY-MM-YY") : -len("_DIFF_YYYY-MM-YY")
-        ]
         f.write(
             '$recipients = "'
             + ",".join(reference_query.extract_scopus_diff_confirmation_emails)
             + '"\n'
         )
         f.write(
-            f'\t$Subject = "Résultats de la recherche Scopus du {date_from} au {date_to}"\n'
-        )
-        f.write("$Body = $Subject\n")
-        f.write(
             f'$resultsfilename = $currentDirectory + "\\{str(out_excel_filename)}"\n'
         )
         f.write(
             '& ".\\send_email.ps1" -EmailTo $recipients'
-            " -Subject $Subject -Body $Body"
+            " -Subject $Subject -Body $Subject"
             " -AttachmentFilename $resultsfilename\n"
         )
 
