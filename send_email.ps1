@@ -7,6 +7,7 @@ param(
 	[string]$AttachmentFilename
 
 )
+
 $EmailFrom = "pgcharette@gmail.com"
 $SMTPServer = "smtp.gmail.com"
 $SMTPMessage = New-Object System.Net.Mail.MailMessage($EmailFrom,$EmailTo,$Subject,$Body)
