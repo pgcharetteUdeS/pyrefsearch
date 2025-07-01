@@ -104,55 +104,33 @@ def gen_power_shell_script_to_send_confirmation_emails(
     """
 
     with open("pyrefsearch_send_email_confirmation.ps1", "w") as f:
-        # Comments at beginning of script
         f.write("# Script to send confirmation emails to a list of recipients\n")
         f.write("# NB: the script is generated automatically by pyrefsearch.py\n\n")
+        f.write("$currentDirectory = (Get-Location).Path\n")
 
-        # Function to send an email
+        # Send logfile to Paul.Charette@Usehrbrooke.ca
+        f.write(
+            '$Subject = "pydefsearch.py failed to run! If running from home, need VPN..."\n'
+        )
+        f.write("$Body = $Subject\n")
+        f.write('$logfilename = $currentDirectory + "\\pyrefsearch.log"\n')
+        f.write(
+            f'& ".\\send_email.ps1" -EmailTo "{reference_query.extract_scopus_diff_confirmation_emails[0]}"'
+            " -Subject $Subject -Body $Body"
+            " -AttachmentFilename $logfilename\n"
+        )
+
+        # Send Excel results file to list of recipients
         date_from: str = str(out_excel_filename.stem)[-len("YYYY-MM-YY") :]
         date_to: str = str(out_excel_filename.stem)[
             -len("YYYY-MM-YY_DIFF_YYYY-MM-YY") : -len("_DIFF_YYYY-MM-YY")
         ]
-        f.write("function send_email\n")
-        f.write("{\n")
-        f.write("\tparam(\n")
-        f.write("\t\t[string]$EmailTo,\n")
-        f.write("\t\t[string]$AttachmentFilename\n\n")
-        f.write("\t)\n")
-        f.write('\t$EmailFrom = "pgcharette@gmail.com"\n')
         f.write(
             f'\t$Subject = "Résultats de la recherche Scopus du {date_from} au {date_to}"\n'
         )
-        f.write(
-            f'\t$Body = "Résultats de la recherche Scopus du {date_from} au {date_to}"\n'
-        )
-        f.write('\t$SMTPServer = "smtp.gmail.com"\n')
-        f.write(
-            "\t$SMTPMessage = New-Object System.Net.Mail.MailMessage"
-            "($EmailFrom,$EmailTo,$Subject,$Body)\n"
-        )
-        f.write(
-            "\t$attachment = New-Object System.Net.Mail.Attachment($AttachmentFilename)\n"
-        )
-        f.write("\t$SMTPMessage.Attachments.Add($attachment)\n")
-        f.write("\t$SMTPClient = New-Object Net.Mail.SmtpClient($SmtpServer, 587)\n")
-        f.write("\t$SMTPClient.EnableSsl = $true\n")
-        f.write(
-            "\t$SMTPClient.Credentials = New-Object System.Net.NetworkCredential"
-            '("pgcharette@gmail.com", "iqgsfyhwlitpopzb");\n'
-        )
-        f.write("\t$SMTPClient.Send($SMTPMessage)\n")
-        f.write("}\n\n")
-
-        # Send results emails to recipients (logfile as well to the first recipient)
-        f.write("$currentDirectory = (Get-Location).Path\n")
-        f.write('$logfilename = $currentDirectory + "\\pyrefsearch.log"\n')
+        f.write("$Body = $Subject\n")
         f.write(
             f'$resultsfilename = $currentDirectory + "\\{str(out_excel_filename)}"\n'
-        )
-        f.write(
-            f'send_email -EmailTo "{reference_query.extract_scopus_diff_confirmation_emails[0]}" '
-            "-AttachmentFilename $logfilename\n"
         )
         f.write(
             '$recipients = "'
@@ -160,7 +138,9 @@ def gen_power_shell_script_to_send_confirmation_emails(
             + '"\n'
         )
         f.write(
-            "send_email -EmailTo $recipients -AttachmentFilename $resultsfilename\n"
+            '& ".\\send_email.ps1" -EmailTo $recipients'
+            " -Subject $Subject -Body $Body"
+            " -AttachmentFilename $resultsfilename\n"
         )
 
 
