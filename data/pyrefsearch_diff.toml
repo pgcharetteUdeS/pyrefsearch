@@ -21,17 +21,12 @@ pub_year_last = 2025
 # où la première adresse email reçoit aussi un fichier log de l'exécution.
 extract_scopus_diff = true
 extract_scopus_diff_confirmation_emails = [
-    "Paul.G.Charette@USherbrooke.ca",
-    "bob@USherbrooke.cs",
     "Paul.Charette@USherbrooke.ca",
+    "francois.z.thibeault@usherbrooke.ca",
+    "denis.machon@usherbrooke.ca",
+    "catherine.labrecque@usherbrooke.ca",
+    "christelle.hauchard@usherbrooke.ca",
 ]
-#extract_scopus_diff_confirmation_emails = [
-#    "Paul.Charette@USherbrooke.ca",
-#    "francois.z.thibeault@usherbrooke.ca",
-#    "denis.machon@usherbrooke.ca",
-#    "catherine.labrecque@usherbrooke.ca",
-#    "christelle.hauchard@usherbrooke.ca",
-#]
 
 # Noms d'institutions et d'affiliations considérées commme "locales", pour valider
 # les profils d'auteurs dans les recherches
