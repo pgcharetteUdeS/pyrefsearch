@@ -1,5 +1,8 @@
 @echo off
 
+:: This task is run by the Windows Task Scheduler on CharetteXPS04.3it.usherbrooke.ca (ordi au bout de la rangée de Guillaume)
+:: every 1srt of the month
+
 :: Run the Scopus search
 echo Running pyrefsearch.py...
 set PYTHONDIR="C:\Users\chap1202\AppData\Local\Programs\Python\Python312"
@@ -26,4 +29,3 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File send_email_pyrefsearch_f
 GOTO end
 
 :end
-pause
