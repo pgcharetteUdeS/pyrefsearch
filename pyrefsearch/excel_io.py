@@ -7,6 +7,7 @@ Excel file I/O utilities
 __all__ = ["write_reference_query_results_to_excel"]
 
 from openpyxl import load_workbook
+from openpyxl.styles import Alignment
 import pandas as pd
 from pathlib import Path
 
@@ -35,8 +36,8 @@ def _export_publications_df_to_excel_sheet(
                 "coverDate": "Date",
                 "title": "Titre",
                 "Nb auteurs locaux": "Nb auteurs locaux",
-                "Auteurs locaux": "Auteurs locaux",
-                "Auteur non-local": "Auteur non-local",
+                "Auteurs locaux (chercheurs)": "Auteurs locaux (chercheurs)",
+                "Auteurs non-locaux": "Auteurs non-locaux",
                 "author_names": "Auteurs",
                 "publicationName": "Publication",
                 "volume": "Volume",
@@ -49,8 +50,8 @@ def _export_publications_df_to_excel_sheet(
                 "Titre",
                 "Date",
                 "Nb auteurs locaux",
-                "Auteurs locaux",
-                "Auteur non-local",
+                "Auteurs locaux (chercheurs)",
+                "Auteurs non-locaux",
                 "Auteurs",
                 "Publication",
                 "Volume",
@@ -238,6 +239,21 @@ def write_reference_query_results_to_excel(
                     writer=writer,
                     df=df,
                     sheet_name=pub_type,
+                )
+                # Add summing formulae
+                worksheet = writer.sheets[pub_type]
+                worksheet[f"A{len(df)+3}"] = "NOMBRE TOTAL"
+                worksheet[f"A{len(df)+3}"].alignment = Alignment(horizontal="right")
+                worksheet[f"A{len(df)+4}"] = f"=COUNTA(A2:A{len(df)+1})"
+                worksheet[f"C{len(df)+3}"] = "% DU TOTAL"
+                worksheet[f"C{len(df)+3}"].alignment = Alignment(horizontal="right")
+                worksheet[f"C{len(df)+4}"] = (
+                    f"=ROUND(COUNTA(C2:C{len(df)+1})/A{len(df)+4}*100, 1)"
+                )
+                worksheet[f"E{len(df)+3}"] = "% DU TOTAL"
+                worksheet[f"E{len(df)+3}"].alignment = Alignment(horizontal="right")
+                worksheet[f"E{len(df)+4}"] = (
+                    f'=ROUND(COUNTIF(E2:E{len(df)+1}, "X")/A{len(df)+4}*100, 1)'
                 )
 
         if not publications_diff:

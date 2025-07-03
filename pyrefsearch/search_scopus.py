@@ -191,23 +191,23 @@ def _add_coauthor_and_externals_columns_and_sort_by_tile_df(
         return "X" if non_local_coauthors else ""
 
     # Add columns listing names and counts of local authors
-    publications["Auteurs locaux"] = publications["author_ids"].apply(
+    publications["Auteurs locaux (chercheurs)"] = publications["author_ids"].apply(
         list_local_authors
     )
     publications["Nb auteurs locaux"] = [
         len(co_authors) if len(co_authors) > 1 else None
-        for co_authors in publications["Auteurs locaux"]
+        for co_authors in publications["Auteurs locaux (chercheurs)"]
     ]
 
     # Add column flagging publications with at least one non-local author
-    publications["Auteur non-local"] = publications["author_afids"].apply(
+    publications["Auteurs non-locaux"] = publications["author_afids"].apply(
         flag_non_local_authors
     )
 
     # Check that there is at least one local author in the list of author Scopus IDs.
     # If not, the only local author probably has more than one Scopus ID, show warning.
     for _, row in publications.iterrows():
-        if not row["Auteurs locaux"]:
+        if not row["Auteurs locaux (chercheurs)"]:
             console.print(
                 f"[yellow]WARNING: Le document '{row['title']}' "
                 f"({row['subtypeDescription']}) n'a pas "
