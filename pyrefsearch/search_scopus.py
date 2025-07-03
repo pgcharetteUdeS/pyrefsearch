@@ -22,6 +22,7 @@ import pandas as pd
 import pybliometrics
 from pybliometrics.exception import ScopusException
 from pybliometrics.scopus import AuthorRetrieval, AuthorSearch, ScopusSearch
+import re
 import sys
 
 from referencequery import ReferenceQuery
@@ -151,11 +152,13 @@ def _count_publications_by_type_in_df(
         ]
 
 
-def _add_coauthor_columns_and_clean_up_publications_df(
+def _add_coauthor_and_externals_columns_and_sort_by_tile_df(
     publications_in: pd.DataFrame, reference_query: ReferenceQuery
 ) -> pd.DataFrame:
     """
-    Add columns listing names and counts of local coauthors to the publications DataFrame,
+    Add columns to the publications DataFrame:
+        1) names and counts of local coauthors
+        2) "X" when at least one external author
     and sort by title
 
     Args:
@@ -168,8 +171,8 @@ def _add_coauthor_columns_and_clean_up_publications_df(
     # Remove duplicates
     publications: pd.DataFrame = publications_in.drop_duplicates("eid").copy()
 
-    # Add columns listing names and counts of local coauthors
-    def find_local_coauthors(author_ids) -> list:
+    # List of local coauthors
+    def list_local_authors(author_ids) -> list:
         co_authors_local: list[str] = [
             name[0]
             for name, au_id in zip(reference_query.au_names, reference_query.au_ids)
@@ -177,13 +180,29 @@ def _add_coauthor_columns_and_clean_up_publications_df(
         ]
         return co_authors_local
 
+    # Flag publication with at least one non-local author
+    def flag_non_local_authors(author_afids) -> str:
+        if author_afids is None:
+            return ""
+        non_local_coauthors: bool = any(
+            afid not in reference_query.local_affiliations_IDs
+            for afid in re.split(r"[-;]", author_afids)
+        )
+        return "X" if non_local_coauthors else ""
+
+    # Add columns listing names and counts of local authors
     publications["Auteurs locaux"] = publications["author_ids"].apply(
-        find_local_coauthors
+        list_local_authors
     )
-    publications["Nb co-auteurs locaux"] = [
+    publications["Nb auteurs locaux"] = [
         len(co_authors) if len(co_authors) > 1 else None
         for co_authors in publications["Auteurs locaux"]
     ]
+
+    # Add column flagging publications with at least one non-local author
+    publications["Auteur non-local"] = publications["author_afids"].apply(
+        flag_non_local_authors
+    )
 
     # Check that there is at least one local author in the list of author Scopus IDs.
     # If not, the only local author probably has more than one Scopus ID, show warning.
@@ -510,7 +529,7 @@ def query_scopus_publications(
     ]
 
     if not publications.empty:
-        publications = _add_coauthor_columns_and_clean_up_publications_df(
+        publications = _add_coauthor_and_externals_columns_and_sort_by_tile_df(
             publications, reference_query
         )
 

@@ -240,8 +240,14 @@ class ReferenceQuery:
         self.publication_types: list[str] = [row[0] for row in publication_types]
         self.publication_type_codes: list[str] = [row[1] for row in publication_types]
         self.local_affiliations: list[dict] = [
-            {"name": affiliation[0], "ID": int(affiliation[1])}
+            {
+                "name": to_lower_no_accents_no_hyphens(affiliation[0]),
+                "ID": int(affiliation[1]),
+            }
             for affiliation in local_affiliations
+        ]
+        self.local_affiliations_IDs: list[str] = [
+            affiliation[1] for affiliation in local_affiliations
         ]
         self.scopus_database_refresh_days: bool | int = scopus_database_refresh_days
         self.uspto_patent_search: bool = uspto_patent_search

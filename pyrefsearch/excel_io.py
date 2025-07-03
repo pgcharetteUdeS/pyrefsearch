@@ -34,8 +34,9 @@ def _export_publications_df_to_excel_sheet(
             columns={
                 "coverDate": "Date",
                 "title": "Titre",
-                "Nb co-auteurs locaux": "Nb co-auteurs locaux",
+                "Nb auteurs locaux": "Nb auteurs locaux",
                 "Auteurs locaux": "Auteurs locaux",
+                "Auteur non-local": "Auteur non-local",
                 "author_names": "Auteurs",
                 "publicationName": "Publication",
                 "volume": "Volume",
@@ -47,8 +48,9 @@ def _export_publications_df_to_excel_sheet(
             [
                 "Titre",
                 "Date",
-                "Nb co-auteurs locaux",
+                "Nb auteurs locaux",
                 "Auteurs locaux",
+                "Auteur non-local",
                 "Auteurs",
                 "Publication",
                 "Volume",
@@ -106,7 +108,7 @@ def _create_results_summary_df(
             0 if df.empty else len(df) for df in publications_dfs_list_by_pub_type
         ]
         co_authors += [
-            None if df.empty else len(df[df["Nb co-auteurs locaux"] > 1])
+            None if df.empty else len(df[df["Nb auteurs locaux"] > 1])
             for df in publications_dfs_list_by_pub_type
         ]
     else:
