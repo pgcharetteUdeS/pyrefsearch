@@ -101,7 +101,8 @@ def _check_author_name_correspondance(
                 else to_lower_no_accents_no_hyphens(parent_affiliation)
             )
             if all(
-                s not in affiliation_tl and s not in parent_affiliation_tl
+                s["name"] not in affiliation_tl
+                and s["name"] not in parent_affiliation_tl
                 for s in reference_query.local_affiliations
             ):
                 query_error = (
@@ -236,7 +237,7 @@ def _flag_matched_scopus_author_ids_and_affiliations(
             return None
 
         local_affiliation_match: bool = any(
-            s in to_lower_no_accents_no_hyphens(row.affiliation)
+            s["name"] in to_lower_no_accents_no_hyphens(row.affiliation)
             for s in reference_query.local_affiliations
         )
         au_id_index: int | None = reference_query.au_id_to_index.get(int(row.eid))
