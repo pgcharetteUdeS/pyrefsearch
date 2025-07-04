@@ -188,9 +188,11 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
     # Fetch unique patent families by author name
     patent_families_raw: pd.DataFrame = pd.DataFrame([])
     console.print(
-        f"Recherche dans espacenet des {len(reference_query.au_names)} inventeurs..."
+        f"Recherche dans espacenet des {len(reference_query.au_names)} inventeurs",
+        end="",
     )
     for name in reference_query.au_names:
+        print(f" - {name[0]}", end="")
         patent_families_raw = pd.concat(
             [
                 patent_families_raw,
@@ -200,6 +202,7 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
             ],
             ignore_index=True,
         )
+    print("")
     patent_families_raw = patent_families_raw.drop_duplicates(subset=["family_id"])
     patent_families_raw = patent_families_raw.reset_index(drop=True)
 
@@ -220,7 +223,26 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
         if not hash(i) % 10 and hash(i) > 0:
             console.print("")
 
-        # Fetch patent family info from INPADOC
+        # Fetch patent info from INPADOC
+        try:
+            patent_info = Inpadoc.objects.get(row["patent_id"])
+        except Exception as e:
+            console.print(
+                f"\n[red]Erreur dans la recherche de brevets INPADOC ('{e}'): "
+                "cette erreur vient généralement du fait que la limite du nombre "
+                "d'accès pour une période donnée à Espacenet a été excédée...[/red]"
+            )
+            exit()
+
+        # Check that family contains at leat one Canadian inventor and title not empty
+        if any("[CA]" in s for s in patent_info.inventors_epodoc) and patent_info.title:
+            # Store tile, inventors, and applicants for this family
+            families.append(patent_info.family_id)
+            titles.append(patent_info.title)
+            inventors.append(patent_info.inventors_original)
+            applicants.append(patent_info.applicants_original)
+
+        """
         try:
             member_info = Inpadoc.objects.get(row["family_id"])
         except Exception as e:
@@ -246,6 +268,7 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
             ) = _extract_patent_family_members(member_info)
             patent_ids.append(family_member_patent_ids)
             publication_dates.append(family_member_publication_dates)
+        """
     console.print("")
 
     # Create dataframe with patent family info

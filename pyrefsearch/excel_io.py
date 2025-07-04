@@ -39,6 +39,7 @@ def _export_publications_df_to_excel_sheet(
         "Nb auteurs locaux > 1",
         "Collab interne",
         "Collab externe",
+        "Collab interne+externe",
         "Auteurs",
         "Publication",
         "Volume",
@@ -53,6 +54,7 @@ def _export_publications_df_to_excel_sheet(
                 "Nb auteurs locaux > 1": "Nb auteurs locaux > 1",
                 "Collab interne": "Collab interne",
                 "Collab externe": "Collab externe",
+                "Collab interne+externe": "Collab interne+externe",
                 "author_names": "Auteurs",
                 "publicationName": "Publication",
                 "volume": "Volume",
@@ -185,25 +187,43 @@ def _add_totals_formulae_to_sheet(
     worksheet[f"A{n + 3}"] = f"=COUNTA(A2:A{n + 1})"
 
     # Add % sum formula to column "Nb auteurs locaux > 1"
-    col = ascii_uppercase[column_names.index("Nb auteurs locaux > 1")]
+    col_name = "Nb auteurs locaux > 1"
+    col = ascii_uppercase[column_names.index(col_name)]
     worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
     worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
     worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
     worksheet[f"{col}{n + 2}"].alignment = Alignment(horizontal="right")
-    worksheet[f"{col}{n + 3}"] = f"=ROUND(COUNTA(C2:C{n + 1})/A{n + 3}*100, 1)"
+    worksheet[f"{col}{n + 3}"] = f"=ROUND(COUNTA({col}2:{col}{n + 1})/A{n + 3}*100, 1)"
     for row in worksheet:
-        cell = row[column_names.index("Nb auteurs locaux > 1")]
+        cell = row[column_names.index(col_name)]
         cell.alignment = Alignment(horizontal="center")
 
     # Add % sum formula to column "Collab externe"
-    col = ascii_uppercase[column_names.index("Collab externe")]
+    col_name = "Collab externe"
+    col = ascii_uppercase[column_names.index(col_name)]
     worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
     worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
     worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
     worksheet[f"{col}{n + 2}"].alignment = Alignment(horizontal="right")
-    worksheet[f"{col}{n + 3}"] = f'=ROUND(COUNTIF(E2:E{n + 1}, "X")/A{n + 3}*100, 1)'
+    worksheet[f"{col}{n + 3}"] = (
+        f'=ROUND(COUNTIF({col}2:{col}{n + 1}, "X")/A{n + 3}*100, 1)'
+    )
     for row in worksheet:
-        cell = row[column_names.index("Collab externe")]
+        cell = row[column_names.index(col_name)]
+        cell.alignment = Alignment(horizontal="center")
+
+    # Add % sum formula to column "Collab interne+externe"
+    col_name = "Collab interne+externe"
+    col = ascii_uppercase[column_names.index(col_name)]
+    worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
+    worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
+    worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
+    worksheet[f"{col}{n + 2}"].alignment = Alignment(horizontal="right")
+    worksheet[f"{col}{n + 3}"] = (
+        f'=ROUND(COUNTIF({col}2:{col}{n + 1}, "X")/A{n + 3}*100, 1)'
+    )
+    for row in worksheet:
+        cell = row[column_names.index(col_name)]
         cell.alignment = Alignment(horizontal="center")
 
 
