@@ -7,9 +7,12 @@ Excel file I/O utilities
 __all__ = ["write_reference_query_results_to_excel"]
 
 from openpyxl import load_workbook
+from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.styles import Alignment
+from openpyxl.styles.borders import Border, Side
 import pandas as pd
 from pathlib import Path
+from string import ascii_uppercase
 
 from referencequery import ReferenceQuery
 from utils import console
@@ -17,7 +20,7 @@ from utils import console
 
 def _export_publications_df_to_excel_sheet(
     writer: pd.ExcelWriter, df: pd.DataFrame, sheet_name: str
-) -> None:
+) -> list:
     """
     Write selected set of publication dataframe columns to Excel sheet
 
@@ -26,18 +29,30 @@ def _export_publications_df_to_excel_sheet(
         df (pd.DataFrame): articles dataframe
         sheet_name (str): Excel file sheet name
 
-    Returns: None
+    Returns: list of column names to write to the Excel file
 
     """
 
+    column_names: list[str] = [
+        "Titre",
+        "Date",
+        "Nb auteurs locaux > 1",
+        "Auteurs locaux (chercheurs)",
+        "Avec auteurs non-locaux",
+        "Auteurs",
+        "Publication",
+        "Volume",
+        "Pages",
+        "DOI",
+    ]
     if not df.empty:
         df_copy: pd.DataFrame = df.rename(
             columns={
                 "coverDate": "Date",
                 "title": "Titre",
-                "Nb auteurs locaux": "Nb auteurs locaux",
+                "Nb auteurs locaux > 1": "Nb auteurs locaux > 1",
                 "Auteurs locaux (chercheurs)": "Auteurs locaux (chercheurs)",
-                "Auteurs non-locaux": "Auteurs non-locaux",
+                "Avec auteurs non-locaux": "Avec auteurs non-locaux",
                 "author_names": "Auteurs",
                 "publicationName": "Publication",
                 "volume": "Volume",
@@ -45,20 +60,10 @@ def _export_publications_df_to_excel_sheet(
                 "doi": "DOI",
             },
         ).copy()
-        df_copy[
-            [
-                "Titre",
-                "Date",
-                "Nb auteurs locaux",
-                "Auteurs locaux (chercheurs)",
-                "Auteurs non-locaux",
-                "Auteurs",
-                "Publication",
-                "Volume",
-                "Pages",
-                "DOI",
-            ]
-        ].to_excel(writer, index=False, sheet_name=sheet_name, freeze_panes=(1, 1))
+        df_copy[column_names].to_excel(
+            writer, index=False, sheet_name=sheet_name, freeze_panes=(1, 1)
+        )
+    return column_names
 
 
 def _create_results_summary_df(
@@ -109,7 +114,7 @@ def _create_results_summary_df(
             0 if df.empty else len(df) for df in publications_dfs_list_by_pub_type
         ]
         co_authors += [
-            None if df.empty else len(df[df["Nb auteurs locaux"] > 1])
+            None if df.empty else len(df[df["Nb auteurs locaux > 1"] > 1])
             for df in publications_dfs_list_by_pub_type
         ]
     else:
@@ -155,6 +160,42 @@ def _create_results_summary_df(
         co_authors += [inpadoc_patent_applications_count, inpadoc_patents_count]
 
     return pd.DataFrame([results, values, co_authors]).T
+
+
+def _add_totals_formulae_to_sheet(
+    worksheet: Worksheet, df: pd.DataFrame, column_names: list
+) -> None:
+    # Add summing formula to first column
+    worksheet[f"A{len(df) + 2}"] = "NOMBRE TOTAL"
+    worksheet[f"A{len(df) + 2}"].border = Border(top=Side(style="thin"))
+    worksheet[f"A{len(df) + 2}"].alignment = Alignment(horizontal="right")
+    worksheet[f"A{len(df) + 3}"] = f"=COUNTA(A2:A{len(df) + 1})"
+
+    # Add % sum formula to column "Nb auteurs locaux > 1", format cells
+    col = ascii_uppercase[column_names.index("Nb auteurs locaux > 1")]
+    worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
+    worksheet[f"{col}{len(df) + 2}"] = "% DU TOTAL"
+    worksheet[f"{col}{len(df) + 2}"].border = Border(top=Side(style="thin"))
+    worksheet[f"{col}{len(df) + 2}"].alignment = Alignment(horizontal="right")
+    worksheet[f"{col}{len(df) + 3}"] = (
+        f"=ROUND(COUNTA(C2:C{len(df) + 1})/A{len(df) + 3}*100, 1)"
+    )
+    for row in worksheet:
+        cell = row[column_names.index("Nb auteurs locaux > 1")]
+        cell.alignment = Alignment(horizontal="center")
+
+    # Add % sum formula to column "Avec auteurs non-locaux", format cells
+    col = ascii_uppercase[column_names.index("Avec auteurs non-locaux")]
+    worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
+    worksheet[f"{col}{len(df) + 2}"] = "% DU TOTAL"
+    worksheet[f"{col}{len(df) + 2}"].border = Border(top=Side(style="thin"))
+    worksheet[f"{col}{len(df) + 2}"].alignment = Alignment(horizontal="right")
+    worksheet[f"{col}{len(df) + 3}"] = (
+        f'=ROUND(COUNTIF(E2:E{len(df) + 1}, "X")/A{len(df) + 3}*100, 1)'
+    )
+    for row in worksheet:
+        cell = row[column_names.index("Avec auteurs non-locaux")]
+        cell.alignment = Alignment(horizontal="center")
 
 
 def write_reference_query_results_to_excel(
@@ -235,25 +276,14 @@ def write_reference_query_results_to_excel(
             publications_dfs_list_by_pub_type, reference_query.publication_types
         ):
             if not df.empty:
-                _export_publications_df_to_excel_sheet(
+                # Write columns
+                column_names: list = _export_publications_df_to_excel_sheet(
                     writer=writer,
                     df=df,
                     sheet_name=pub_type,
                 )
-                # Add summing formulae
-                worksheet = writer.sheets[pub_type]
-                worksheet[f"A{len(df)+3}"] = "NOMBRE TOTAL"
-                worksheet[f"A{len(df)+3}"].alignment = Alignment(horizontal="right")
-                worksheet[f"A{len(df)+4}"] = f"=COUNTA(A2:A{len(df)+1})"
-                worksheet[f"C{len(df)+3}"] = "% DU TOTAL"
-                worksheet[f"C{len(df)+3}"].alignment = Alignment(horizontal="right")
-                worksheet[f"C{len(df)+4}"] = (
-                    f"=ROUND(COUNTA(C2:C{len(df)+1})/A{len(df)+4}*100, 1)"
-                )
-                worksheet[f"E{len(df)+3}"] = "% DU TOTAL"
-                worksheet[f"E{len(df)+3}"].alignment = Alignment(horizontal="right")
-                worksheet[f"E{len(df)+4}"] = (
-                    f'=ROUND(COUNTIF(E2:E{len(df)+1}, "X")/A{len(df)+4}*100, 1)'
+                _add_totals_formulae_to_sheet(
+                    worksheet=writer.sheets[pub_type], df=df, column_names=column_names
                 )
 
         if not publications_diff:

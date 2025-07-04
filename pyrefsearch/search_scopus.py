@@ -194,13 +194,13 @@ def _add_coauthor_and_externals_columns_and_sort_by_tile_df(
     publications["Auteurs locaux (chercheurs)"] = publications["author_ids"].apply(
         list_local_authors
     )
-    publications["Nb auteurs locaux"] = [
+    publications["Nb auteurs locaux > 1"] = [
         len(co_authors) if len(co_authors) > 1 else None
         for co_authors in publications["Auteurs locaux (chercheurs)"]
     ]
 
     # Add column flagging publications with at least one non-local author
-    publications["Auteurs non-locaux"] = publications["author_afids"].apply(
+    publications["Avec auteurs non-locaux"] = publications["author_afids"].apply(
         flag_non_local_authors
     )
 
