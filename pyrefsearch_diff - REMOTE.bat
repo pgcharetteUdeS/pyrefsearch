@@ -22,7 +22,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File %EMAIL_POWERSHELL_SCRIPT
 del %EMAIL_POWERSHELL_SCRIPT%
 GOTO end
 
-:: pyrefsearch.py failed to run, send email tp Paul.Charette@USherbrooke.ca with logfile
+:: pyrefsearch.py failed to run, send email to Paul.Charette@USherbrooke.ca with logfile
 :pyrefsearch_failed
 echo pyrefsearch.py failed to run, send error log email...
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File send_email_pyrefsearch_failure_to_run.ps1
