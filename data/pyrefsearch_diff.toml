@@ -31,11 +31,11 @@ extract_scopus_diff_confirmation_emails = [
 # Noms d'institutions et d'affiliations considérées commme "locales", pour valider
 # les profils d'auteurs dans les recherches
 local_affiliations = [
-    "Université de Sherbrooke",
-    "3IT",
-    "Institut interdisciplinaire d'innovation technologique",
-    "LN2",
-    "Laboratoire nanotechnologies et nanosystèmes",
+    ["Université de Sherbrooke", "60011832"],
+    ["3IT", "60190927"],
+    ["Institut interdisciplinaire d'innovation technologique", "60190927"],
+    ["LN2", "60108180"],
+    ["Laboratoire nanotechnologies et nanosystèmes", "60108180"]
 ]
 
 # SCOPUS : Paires de descriptifs (au choix de l'usager) et codes à deux lettres Scopus
