@@ -37,8 +37,8 @@ def _export_publications_df_to_excel_sheet(
         "Titre",
         "Date",
         "Nb auteurs locaux > 1",
-        "Auteurs locaux (chercheurs)",
-        "Avec auteurs non-locaux",
+        "Collab interne",
+        "Collab externe",
         "Auteurs",
         "Publication",
         "Volume",
@@ -51,8 +51,8 @@ def _export_publications_df_to_excel_sheet(
                 "coverDate": "Date",
                 "title": "Titre",
                 "Nb auteurs locaux > 1": "Nb auteurs locaux > 1",
-                "Auteurs locaux (chercheurs)": "Auteurs locaux (chercheurs)",
-                "Avec auteurs non-locaux": "Avec auteurs non-locaux",
+                "Collab interne": "Collab interne",
+                "Collab externe": "Collab externe",
                 "author_names": "Auteurs",
                 "publicationName": "Publication",
                 "volume": "Volume",
@@ -167,7 +167,7 @@ def _add_totals_formulae_to_sheet(
 ) -> None:
     """
     Add total and % totals at the end of an Excel sheet in columns A, "Nb auteurs locaux > 1"
-    and "Avec auteurs non-locaux". Format the data in the columns.
+    and "Collab externe". Format the data in the columns.
 
     Args
         worksheet (Worksheet): worksheet to which to add the totals
@@ -195,15 +195,15 @@ def _add_totals_formulae_to_sheet(
         cell = row[column_names.index("Nb auteurs locaux > 1")]
         cell.alignment = Alignment(horizontal="center")
 
-    # Add % sum formula to column "Avec auteurs non-locaux"
-    col = ascii_uppercase[column_names.index("Avec auteurs non-locaux")]
+    # Add % sum formula to column "Collab externe"
+    col = ascii_uppercase[column_names.index("Collab externe")]
     worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
     worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
     worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
     worksheet[f"{col}{n + 2}"].alignment = Alignment(horizontal="right")
     worksheet[f"{col}{n + 3}"] = f'=ROUND(COUNTIF(E2:E{n + 1}, "X")/A{n + 3}*100, 1)'
     for row in worksheet:
-        cell = row[column_names.index("Avec auteurs non-locaux")]
+        cell = row[column_names.index("Collab externe")]
         cell.alignment = Alignment(horizontal="center")
 
 
