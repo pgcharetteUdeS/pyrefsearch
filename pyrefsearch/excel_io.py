@@ -163,36 +163,45 @@ def _create_results_summary_df(
 
 
 def _add_totals_formulae_to_sheet(
-    worksheet: Worksheet, df: pd.DataFrame, column_names: list
+    worksheet: Worksheet, n: int, column_names: list
 ) -> None:
-    # Add summing formula to first column
-    worksheet[f"A{len(df) + 2}"] = "NOMBRE TOTAL"
-    worksheet[f"A{len(df) + 2}"].border = Border(top=Side(style="thin"))
-    worksheet[f"A{len(df) + 2}"].alignment = Alignment(horizontal="right")
-    worksheet[f"A{len(df) + 3}"] = f"=COUNTA(A2:A{len(df) + 1})"
+    """
+    Add total and % totals at the end of an Excel sheet in columns A, "Nb auteurs locaux > 1"
+    and "Avec auteurs non-locaux". Format the data in the columns.
 
-    # Add % sum formula to column "Nb auteurs locaux > 1", format cells
+    Args
+        worksheet (Worksheet): worksheet to which to add the totals
+        n (int): number of data rows in the worksheet
+        column_names (list): list of column names in the worksheet
+
+    Returns: None
+
+    """
+
+    # Add summing formula to first column
+    worksheet[f"A{n + 2}"] = "NOMBRE TOTAL"
+    worksheet[f"A{n + 2}"].border = Border(top=Side(style="thin"))
+    worksheet[f"A{n + 2}"].alignment = Alignment(horizontal="right")
+    worksheet[f"A{n + 3}"] = f"=COUNTA(A2:A{n + 1})"
+
+    # Add % sum formula to column "Nb auteurs locaux > 1"
     col = ascii_uppercase[column_names.index("Nb auteurs locaux > 1")]
     worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
-    worksheet[f"{col}{len(df) + 2}"] = "% DU TOTAL"
-    worksheet[f"{col}{len(df) + 2}"].border = Border(top=Side(style="thin"))
-    worksheet[f"{col}{len(df) + 2}"].alignment = Alignment(horizontal="right")
-    worksheet[f"{col}{len(df) + 3}"] = (
-        f"=ROUND(COUNTA(C2:C{len(df) + 1})/A{len(df) + 3}*100, 1)"
-    )
+    worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
+    worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
+    worksheet[f"{col}{n + 2}"].alignment = Alignment(horizontal="right")
+    worksheet[f"{col}{n + 3}"] = f"=ROUND(COUNTA(C2:C{n + 1})/A{n + 3}*100, 1)"
     for row in worksheet:
         cell = row[column_names.index("Nb auteurs locaux > 1")]
         cell.alignment = Alignment(horizontal="center")
 
-    # Add % sum formula to column "Avec auteurs non-locaux", format cells
+    # Add % sum formula to column "Avec auteurs non-locaux"
     col = ascii_uppercase[column_names.index("Avec auteurs non-locaux")]
     worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
-    worksheet[f"{col}{len(df) + 2}"] = "% DU TOTAL"
-    worksheet[f"{col}{len(df) + 2}"].border = Border(top=Side(style="thin"))
-    worksheet[f"{col}{len(df) + 2}"].alignment = Alignment(horizontal="right")
-    worksheet[f"{col}{len(df) + 3}"] = (
-        f'=ROUND(COUNTIF(E2:E{len(df) + 1}, "X")/A{len(df) + 3}*100, 1)'
-    )
+    worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
+    worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
+    worksheet[f"{col}{n + 2}"].alignment = Alignment(horizontal="right")
+    worksheet[f"{col}{n + 3}"] = f'=ROUND(COUNTIF(E2:E{n + 1}, "X")/A{n + 3}*100, 1)'
     for row in worksheet:
         cell = row[column_names.index("Avec auteurs non-locaux")]
         cell.alignment = Alignment(horizontal="center")
@@ -283,7 +292,9 @@ def write_reference_query_results_to_excel(
                     sheet_name=pub_type,
                 )
                 _add_totals_formulae_to_sheet(
-                    worksheet=writer.sheets[pub_type], df=df, column_names=column_names
+                    worksheet=writer.sheets[pub_type],
+                    n=len(df),
+                    column_names=column_names,
                 )
 
         if not publications_diff:
