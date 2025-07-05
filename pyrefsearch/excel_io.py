@@ -36,7 +36,7 @@ def _export_publications_df_to_excel_sheet(
     column_names: list[str] = [
         "Titre",
         "Date",
-        "Nb auteurs locaux > 1",
+        "Auteurs locaux",
         "Collab interne",
         "Collab externe",
         "Collab interne+externe",
@@ -51,7 +51,7 @@ def _export_publications_df_to_excel_sheet(
             columns={
                 "coverDate": "Date",
                 "title": "Titre",
-                "Nb auteurs locaux > 1": "Nb auteurs locaux > 1",
+                "Auteurs locaux": "Auteurs locaux",
                 "Collab interne": "Collab interne",
                 "Collab externe": "Collab externe",
                 "Collab interne+externe": "Collab interne+externe",
@@ -116,7 +116,7 @@ def _create_results_summary_df(
             0 if df.empty else len(df) for df in publications_dfs_list_by_pub_type
         ]
         co_authors += [
-            None if df.empty else len(df[df["Nb auteurs locaux > 1"] > 1])
+            None if df.empty else len(df[df["Collab interne"] > 1])
             for df in publications_dfs_list_by_pub_type
         ]
     else:
@@ -168,7 +168,7 @@ def _add_totals_formulae_to_sheet(
     worksheet: Worksheet, n: int, column_names: list
 ) -> None:
     """
-    Add total and % totals at the end of an Excel sheet in columns A, "Nb auteurs locaux > 1"
+    Add total and % totals at the end of an Excel sheet in columns A, "Collab interne"
     and "Collab externe". Format the data in the columns.
 
     Args
@@ -186,8 +186,8 @@ def _add_totals_formulae_to_sheet(
     worksheet[f"A{n + 2}"].alignment = Alignment(horizontal="right")
     worksheet[f"A{n + 3}"] = f"=COUNTA(A2:A{n + 1})"
 
-    # Add % sum formula to column "Nb auteurs locaux > 1"
-    col_name = "Nb auteurs locaux > 1"
+    # Add % sum formula to column "Collab interne"
+    col_name = "Collab interne"
     col = ascii_uppercase[column_names.index(col_name)]
     worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
     worksheet[f"{col}{n + 2}"] = "% DU TOTAL"

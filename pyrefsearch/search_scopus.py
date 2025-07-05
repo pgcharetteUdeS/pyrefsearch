@@ -152,6 +152,13 @@ def _count_publications_by_type_in_df(
         ]
 
 
+def _is_internal_and_external_collab(row) -> str:
+    if len(row["Auteurs locaux"]) > 1 and row["Collab externe"] != "":
+        return "X"
+    else:
+        return ""
+
+
 def _add_coauthor_and_externals_columns_and_sort_by_tile_df(
     publications_in: pd.DataFrame, reference_query: ReferenceQuery
 ) -> pd.DataFrame:
@@ -190,24 +197,29 @@ def _add_coauthor_and_externals_columns_and_sort_by_tile_df(
         )
         return "X" if non_local_coauthors else ""
 
-    # Add columns listing names and counts of local authors
-    publications["Collab interne"] = publications["author_ids"].apply(
+    # Add columns listing names and counts of local authors ("local collaborations", if n > 1)
+    publications["Auteurs locaux"] = publications["author_ids"].apply(
         list_local_authors
     )
-    publications["Nb auteurs locaux > 1"] = [
+    publications["Collab interne"] = [
         len(co_authors) if len(co_authors) > 1 else None
-        for co_authors in publications["Collab interne"]
+        for co_authors in publications["Auteurs locaux"]
     ]
 
-    # Add column flagging publications with at least one non-local author
+    # Add column flagging publications with at least one non-local author ("external collaborations")
     publications["Collab externe"] = publications["author_afids"].apply(
         flag_non_local_authors
+    )
+
+    # Add column flagging publications with internal + external collaborations
+    publications["Collab interne+externe"] = publications.apply(
+        _is_internal_and_external_collab, axis=1
     )
 
     # Check that there is at least one local author in the list of author Scopus IDs.
     # If not, the only local author probably has more than one Scopus ID, show warning.
     for _, row in publications.iterrows():
-        if not row["Collab interne"]:
+        if not row["Auteurs locaux"]:
             console.print(
                 f"[yellow]WARNING: Le document '{row['title']}' "
                 f"({row['subtypeDescription']}) n'a pas "
