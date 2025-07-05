@@ -194,7 +194,7 @@ def _add_totals_formulae_to_sheet(
 
     # Add % sum formula to column "Collab interne"
     col_name = "Collab interne"
-    col = get_column_letter(column_names.index(col_name))
+    col = get_column_letter(column_names.index(col_name)+1)
     worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
     worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
     worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
@@ -204,7 +204,7 @@ def _add_totals_formulae_to_sheet(
 
     # Add % sum formula to column "Collab externe"
     col_name = "Collab externe"
-    col = get_column_letter(column_names.index(col_name))
+    col = get_column_letter(column_names.index(col_name)+1)
     worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
     worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
     worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
@@ -216,7 +216,7 @@ def _add_totals_formulae_to_sheet(
 
     # Add % sum formula to column "Collab interne+externe"
     col_name = "Collab interne+externe"
-    col = get_column_letter(column_names.index(col_name))
+    col = get_column_letter(column_names.index(col_name)+1)
     worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
     worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
     worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
