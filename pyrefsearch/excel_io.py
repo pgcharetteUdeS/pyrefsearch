@@ -10,9 +10,9 @@ from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.styles import Alignment
 from openpyxl.styles.borders import Border, Side
+from openpyxl.utils import get_column_letter
 import pandas as pd
 from pathlib import Path
-from string import ascii_uppercase
 
 from referencequery import ReferenceQuery
 from utils import console
@@ -164,6 +164,12 @@ def _create_results_summary_df(
     return pd.DataFrame([results, values, co_authors]).T
 
 
+def _center_column_by_index(worksheet: Worksheet, i: int):
+    for row in worksheet:
+        cell = row[i]
+        cell.alignment = Alignment(horizontal="center")
+
+
 def _add_totals_formulae_to_sheet(
     worksheet: Worksheet, n: int, column_names: list
 ) -> None:
@@ -188,19 +194,17 @@ def _add_totals_formulae_to_sheet(
 
     # Add % sum formula to column "Collab interne"
     col_name = "Collab interne"
-    col = ascii_uppercase[column_names.index(col_name)]
+    col = get_column_letter(column_names.index(col_name))
     worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
     worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
     worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
     worksheet[f"{col}{n + 2}"].alignment = Alignment(horizontal="right")
     worksheet[f"{col}{n + 3}"] = f"=ROUND(COUNTA({col}2:{col}{n + 1})/A{n + 3}*100, 1)"
-    for row in worksheet:
-        cell = row[column_names.index(col_name)]
-        cell.alignment = Alignment(horizontal="center")
+    _center_column_by_index(worksheet=worksheet, i=column_names.index(col_name))
 
     # Add % sum formula to column "Collab externe"
     col_name = "Collab externe"
-    col = ascii_uppercase[column_names.index(col_name)]
+    col = get_column_letter(column_names.index(col_name))
     worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
     worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
     worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
@@ -208,13 +212,11 @@ def _add_totals_formulae_to_sheet(
     worksheet[f"{col}{n + 3}"] = (
         f'=ROUND(COUNTIF({col}2:{col}{n + 1}, "X")/A{n + 3}*100, 1)'
     )
-    for row in worksheet:
-        cell = row[column_names.index(col_name)]
-        cell.alignment = Alignment(horizontal="center")
+    _center_column_by_index(worksheet=worksheet, i=column_names.index(col_name))
 
     # Add % sum formula to column "Collab interne+externe"
     col_name = "Collab interne+externe"
-    col = ascii_uppercase[column_names.index(col_name)]
+    col = get_column_letter(column_names.index(col_name))
     worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
     worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
     worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
@@ -222,9 +224,7 @@ def _add_totals_formulae_to_sheet(
     worksheet[f"{col}{n + 3}"] = (
         f'=ROUND(COUNTIF({col}2:{col}{n + 1}, "X")/A{n + 3}*100, 1)'
     )
-    for row in worksheet:
-        cell = row[column_names.index(col_name)]
-        cell.alignment = Alignment(horizontal="center")
+    _center_column_by_index(worksheet=worksheet, i=column_names.index(col_name))
 
 
 def write_reference_query_results_to_excel(
@@ -316,6 +316,10 @@ def write_reference_query_results_to_excel(
                     n=len(df),
                     column_names=column_names,
                 )
+                _center_column_by_index(
+                    worksheet=writer.sheets[pub_type],
+                    i=column_names.index("Auteurs locaux"),
+                )
 
         if not publications_diff:
             # Write all Scopus search result to a simgle sheet
@@ -396,7 +400,7 @@ def write_reference_query_results_to_excel(
         for i, col in enumerate(workbook[sheet_name].columns):
             # workbook[sheet_name].column_dimensions[col[0].column_letter].bestFit = True
             col_width: int = int(max(len(str(cell.value)) for cell in col) * 0.85)
-            col_width_min: int = 18 if i == 0 else 10
+            col_width_min: int = 20 if i == 0 else 10
             workbook[sheet_name].column_dimensions[col[0].column_letter].width = max(
                 min(col_width_max, col_width), col_width_min
             )
