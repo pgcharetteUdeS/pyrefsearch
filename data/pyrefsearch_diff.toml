@@ -16,9 +16,9 @@ in_excel_file_author_sheet = "Membres"
 pub_year_first = 2024
 pub_year_last = 2025
 
-# Activer/désactiver l'extraction différentielle Scopus relativement au 1er du mois précédant, spécificiation de la
-# liste d'envois de courriels de confirmation via le script WindowsPowerShell "pyrefsearch_send_email_confirmation.ps1",
-# où la première adresse email reçoit aussi un fichier log de l'exécution.
+# Activer/désactiver l'extraction différentielle Scopus relativement au 1er du mois précédant,
+# spécification de la liste d'envois de courriels de confirmation, où la première adresse
+# email reçoit aussi le fichier log de l'exécution.
 extract_scopus_diff = true
 extract_scopus_diff_confirmation_emails = [
     "Paul.Charette@USherbrooke.ca",
@@ -28,8 +28,8 @@ extract_scopus_diff_confirmation_emails = [
     "christelle.hauchard@usherbrooke.ca",
 ]
 
-# Noms d'institutions et d'affiliations considérées commme "locales", pour valider
-# les profils d'auteurs dans les recherches
+# Noms d'institutions/affiliations considérées commme "locales" avec leurs identifiants Scopus,
+# pour valider les profils d'auteurs dans les recherches
 local_affiliations = [
     ["Université de Sherbrooke", "60011832"],
     ["3IT", "60190927"],
