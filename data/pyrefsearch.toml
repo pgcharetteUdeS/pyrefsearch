@@ -16,10 +16,9 @@ in_excel_file_author_sheet = "Membres"
 pub_year_first = 2024
 pub_year_last = 2025
 
-# Activer/désactiver l'extraction différentielle Scopus relativement au 1er du mois précédant
-# Activer/désactiver l'extraction différentielle Scopus relativement au 1er du mois précédant, spécificiation de la
-# liste d'envois de courriels de confirmation via le script WindowsPowerShell "pyrefsearch_send_email_confirmation.ps1",
-# où la première adresse email reçoit aussi un fichier log de l'exécution.
+# Activer/désactiver l'extraction différentielle Scopus relativement au 1er du mois précédant,
+# spécification de la liste d'envois de courriels de confirmation, où la première adresse
+# email reçoit aussi le fichier log de l'exécution.
 extract_scopus_diff = false
 extract_scopus_diff_confirmation_emails = [
     "Paul.G.Charette@USherbrooke.ca",
