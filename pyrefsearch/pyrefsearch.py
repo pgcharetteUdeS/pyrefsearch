@@ -311,9 +311,9 @@ def pyrefsearch() -> None:
         pub_year_first=toml_dict["pub_year_first"],
         pub_year_last=toml_dict["pub_year_last"],
         extract_scopus_diff=toml_dict.get("extract_scopus_diff", False),
-        extract_scopus_diff_confirmation_emails=toml_dict[
-            "extract_scopus_diff_confirmation_emails"
-        ],
+        extract_scopus_diff_confirmation_emails=toml_dict.get(
+            "extract_scopus_diff_confirmation_emails", []
+        ),
         publication_types=toml_dict["publication_types"],
         local_affiliations=toml_dict["local_affiliations"],
         scopus_database_refresh_days=toml_dict.get("scopus_database_refresh_days", 0),
