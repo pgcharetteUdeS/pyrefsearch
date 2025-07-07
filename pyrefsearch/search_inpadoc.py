@@ -27,15 +27,15 @@ from referencequery import ReferenceQuery
 from utils import console, tabulate_patents_per_author, to_lower_no_accents_no_hyphens
 
 
-def _extract_patent_family_members(member_info) -> tuple[list, list]:
+def _extract_patent_family_members(root_member_info) -> tuple[list, list]:
     # Start the list of member patent info for this family with the parent
-    family_member_patent_ids: list = [member_info.application_number]
+    family_member_patent_ids: list = [root_member_info.application_number]
     family_member_publication_dates: list = [
-        str(member_info.publication_reference_epodoc.date)
+        str(root_member_info.publication_reference_epodoc.date)
     ]
 
     # Add remaining family member patent info to the list
-    for member in member_info.family:
+    for member in root_member_info.family:
         family_member_patent_ids.append(member.publication_number)
         family_member_publication_dates.append(
             str(member.publication_reference[0]["date"])
@@ -145,17 +145,27 @@ def _fetch_inpadoc_patent_families_by_author_name(
         return query_str
 
     # Fetch parent record for the author
-    try:
-        patents = Inpadoc.objects.filter(cql_query=inventor_query_str()).to_pandas()
-    except Exception as e:
-        console.print(
-            "[red]Erreur dans la recherche de brevets INPADOC pour l'auteur "
-            f"{first_name} {last_name} ('{e}'): "
-            "cette erreur vient généralement du fait que la limite du nombre "
-            "d'accès pour une période donnée à Espacenet a été excédée...[/red]"
-        )
-        console.print()
-        exit()
+    max_retries: int = 10
+    retries: int = 0
+    success: bool = False
+    patents: pd.DataFrame = pd.DataFrame()
+    while retries < max_retries and not success:
+        try:
+            patents = Inpadoc.objects.filter(cql_query=inventor_query_str()).to_pandas()
+            success = True
+        except Exception as e:
+            retries += 1
+            if retries == max_retries:
+                console.print(
+                    "[red]Erreur dans la recherche de brevets INPADOC pour l'auteur "
+                    f"{first_name} {last_name} ('{e}'): "
+                    "cette erreur vient généralement du fait que la limite du nombre "
+                    "d'accès pour une période donnée à espacenet a été excédée"
+                    f" ({retries}) essais...[/red]"
+                )
+                console.print()
+                exit()
+            time.sleep(0.1)
 
     # Parse patents into a dataframe, retaining only "family_id" and "patent_id" columns
     patents_name_list: list[dict] = []
@@ -213,26 +223,37 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
     applicants: list = []
     patent_ids: list[list] = []
     publication_dates: list[list] = []
+    max_retries: int = 10
     console.print(
         f"Analyze dans espacenet des {len(patent_families_raw.index)} familles de brevets..."
     )
     for i, row in patent_families_raw.iterrows():
         console.print(
-            f"{row['family_id']} ({i}/{len(patent_families_raw.index)})", end=", "
+            f"{row['family_id']} ({hash(i)+1}/{len(patent_families_raw.index)})",
+            end=", ",
         )
         if not hash(i) % 10 and hash(i) > 0:
             console.print("")
 
         # Fetch patent info from INPADOC
-        try:
-            patent_info = Inpadoc.objects.get(row["patent_id"])
-        except Exception as e:
-            console.print(
-                f"\n[red]Erreur dans la recherche de brevets INPADOC ('{e}'): "
-                "cette erreur vient généralement du fait que la limite du nombre "
-                "d'accès pour une période donnée à Espacenet a été excédée...[/red]"
-            )
-            exit()
+        retries: int = 0
+        success: bool = False
+        patent_info: Inpadoc = Inpadoc()
+        while retries < max_retries and not success:
+            try:
+                patent_info = Inpadoc.objects.get(row["patent_id"])
+                success = True
+            except Exception as e:
+                retries += 1
+                if retries == max_retries:
+                    console.print(
+                        f"\n[red]Erreur dans la recherche de brevets INPADOC ('{e}'): "
+                        "cette erreur vient généralement du fait que la limite du nombre "
+                        "d'accès pour une période donnée à espacenet a été excédée"
+                        f" ({retries} essais)...[/red]"
+                    )
+                    exit()
+                time.sleep(0.1)
 
         # Check that family contains at leat one Canadian inventor and title not empty
         if any("[CA]" in s for s in patent_info.inventors_epodoc) and patent_info.title:
@@ -242,33 +263,13 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
             inventors.append(patent_info.inventors_original)
             applicants.append(patent_info.applicants_original)
 
-        """
-        try:
-            member_info = Inpadoc.objects.get(row["family_id"])
-        except Exception as e:
-            console.print(
-                f"\n[red]Erreur dans la recherche de brevets INPADOC ('{e}'): "
-                "cette erreur vient généralement du fait que la limite du nombre "
-                "d'accès pour une période donnée à Espacenet a été excédée...[/red]"
-            )
-            exit()
-
-        # Check that family contains at leat one Canadian inventor and title not empty
-        if any("[CA]" in s for s in member_info.inventors_epodoc) and member_info.title:
-            # Store tile, inventors, and applicants for this family
-            families.append(member_info.family_id)
-            titles.append(member_info.title)
-            inventors.append(member_info.inventors_original)
-            applicants.append(member_info.applicants_original)
-
             # Store patent member info for this family
             (
                 family_member_patent_ids,
                 family_member_publication_dates,
-            ) = _extract_patent_family_members(member_info)
+            ) = _extract_patent_family_members(root_member_info=patent_info)
             patent_ids.append(family_member_patent_ids)
             publication_dates.append(family_member_publication_dates)
-        """
     console.print("")
 
     # Create dataframe with patent family info
