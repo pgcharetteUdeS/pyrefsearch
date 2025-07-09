@@ -319,7 +319,7 @@ def pyrefsearch() -> None:
         scopus_database_refresh_days=toml_dict.get("scopus_database_refresh_days", 0),
         uspto_patent_search=toml_dict.get("uspto_patent_search", True),
         espacenet_patent_search=toml_dict.get("espacenet_patent_search", True),
-        espacenet_max_retries=toml_dict.get("espacenet_max_retries", 10),
+        espacenet_max_retries=toml_dict.get("espacenet_max_retries", 25),
         espacenet_patent_search_results_file=toml_dict.get(
             "espacenet_patent_search_results_file", ""
         ),
