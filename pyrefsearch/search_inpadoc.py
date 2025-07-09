@@ -99,12 +99,13 @@ def _extract_earliest_inpadoc_patent_family_members(patent_families: pd.DataFram
 
 
 def _fetch_inpadoc_patent_families_by_author_name(
-    last_name: str, first_name: str
+    reference_query: ReferenceQuery, last_name: str, first_name: str
 ) -> pd.DataFrame:
     """
     Fetch INPADOC patent family IDs for author
 
     Args:
+        reference_query (ReferenceQuery): Reference query object
         last_name (str): Last name of author
         first_name (str): First name of author
 
@@ -145,17 +146,16 @@ def _fetch_inpadoc_patent_families_by_author_name(
         return query_str
 
     # Fetch parent record for the author
-    max_retries: int = 10
     retries: int = 0
     success: bool = False
     patents: pd.DataFrame = pd.DataFrame()
-    while retries < max_retries and not success:
+    while retries < reference_query.espacenet_max_retries and not success:
         try:
             patents = Inpadoc.objects.filter(cql_query=inventor_query_str()).to_pandas()
             success = True
         except Exception as e:
             retries += 1
-            if retries == max_retries:
+            if retries == reference_query.espacenet_max_retries:
                 console.print(
                     "[red]Erreur dans la recherche de brevets INPADOC pour l'auteur "
                     f"{first_name} {last_name} ('{e}'): "
@@ -207,7 +207,9 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
             [
                 patent_families_raw,
                 _fetch_inpadoc_patent_families_by_author_name(
-                    last_name=name[0], first_name=name[1]
+                    reference_query=reference_query,
+                    last_name=name[0],
+                    first_name=name[1],
                 ),
             ],
             ignore_index=True,
@@ -223,7 +225,6 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
     applicants: list = []
     patent_ids: list[list] = []
     publication_dates: list[list] = []
-    max_retries: int = 10
     console.print(
         f"Analyze dans espacenet des {len(patent_families_raw.index)} familles de brevets..."
     )
@@ -239,13 +240,13 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
         retries: int = 0
         success: bool = False
         patent_info: Inpadoc = Inpadoc()
-        while retries < max_retries and not success:
+        while retries < reference_query.espacenet_max_retries and not success:
             try:
                 patent_info = Inpadoc.objects.get(row["patent_id"])
                 success = True
             except Exception as e:
                 retries += 1
-                if retries == max_retries:
+                if retries == reference_query.espacenet_max_retries:
                     console.print(
                         f"\n[red]Erreur dans la recherche de brevets INPADOC ('{e}'): "
                         "cette erreur vient généralement du fait que la limite du nombre "

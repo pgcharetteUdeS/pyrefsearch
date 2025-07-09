@@ -225,6 +225,7 @@ class ReferenceQuery:
         scopus_database_refresh_days: bool | int,
         uspto_patent_search: bool,
         espacenet_patent_search: bool,
+        espacenet_max_retries: int,
         espacenet_patent_search_results_file: str,
     ):
         self.search_type = search_type
@@ -252,6 +253,7 @@ class ReferenceQuery:
         self.scopus_database_refresh_days: bool | int = scopus_database_refresh_days
         self.uspto_patent_search: bool = uspto_patent_search
         self.espacenet_patent_search: bool = espacenet_patent_search
+        self.espacenet_max_retries: int = espacenet_max_retries
         self.espacenet_patent_search_results_file: str = (
             espacenet_patent_search_results_file
         )
