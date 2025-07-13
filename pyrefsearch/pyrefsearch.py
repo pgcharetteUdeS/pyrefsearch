@@ -20,9 +20,9 @@ import sys
 import time
 import toml
 
-from excel_io import write_reference_query_results_to_excel
+from excel_io import write_reference_query_results_to_excel_file
 from referencequery import ReferenceQuery
-from search_inpadoc import query_espacenet_patents_and_applications
+from search_espacenet import query_espacenet_patents_and_applications
 from search_scopus import (
     scopus_init_api,
     query_scopus_author_profiles,
@@ -237,7 +237,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     )
 
     # Write results to output Excel file
-    write_reference_query_results_to_excel(
+    write_reference_query_results_to_excel_file(
         reference_query=reference_query,
         publications_all=publications_all,
         pub_type_counts_by_author=pub_type_counts_by_author,
@@ -261,7 +261,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
                 reference_query=reference_query, publications_current=publications_all
             )
         )
-        out_excel_filename: Path = write_reference_query_results_to_excel(
+        out_excel_filename: Path = write_reference_query_results_to_excel_file(
             reference_query=reference_query,
             publications_all=publications_diff,
             pub_type_counts_by_author=pub_type_counts_by_author,

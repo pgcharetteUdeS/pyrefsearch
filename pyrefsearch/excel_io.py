@@ -4,8 +4,15 @@ Excel file I/O utilities
 
 """
 
-__all__ = ["write_reference_query_results_to_excel"]
+__all__ = [
+    "load_espacenet_search_results_from_excel_file",
+    "write_espacenet_search_results_to_excel_file",
+    "write_reference_query_results_to_excel_file",
+]
 
+import ast
+import datetime
+from datetime import timedelta
 from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.styles import Alignment
@@ -13,6 +20,9 @@ from openpyxl.styles.borders import Border, Side
 from openpyxl.utils import get_column_letter
 import pandas as pd
 from pathlib import Path
+import re
+import sys
+import time
 
 from referencequery import ReferenceQuery
 from utils import console
@@ -194,7 +204,7 @@ def _add_totals_formulae_to_sheet(
 
     # Add % sum formula to column "Collab interne"
     col_name = "Collab interne"
-    col = get_column_letter(column_names.index(col_name)+1)
+    col = get_column_letter(column_names.index(col_name) + 1)
     worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
     worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
     worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
@@ -204,7 +214,7 @@ def _add_totals_formulae_to_sheet(
 
     # Add % sum formula to column "Collab externe"
     col_name = "Collab externe"
-    col = get_column_letter(column_names.index(col_name)+1)
+    col = get_column_letter(column_names.index(col_name) + 1)
     worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
     worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
     worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
@@ -216,7 +226,7 @@ def _add_totals_formulae_to_sheet(
 
     # Add % sum formula to column "Collab interne+externe"
     col_name = "Collab interne+externe"
-    col = get_column_letter(column_names.index(col_name)+1)
+    col = get_column_letter(column_names.index(col_name) + 1)
     worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
     worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
     worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
@@ -227,7 +237,7 @@ def _add_totals_formulae_to_sheet(
     _center_column_by_index(worksheet=worksheet, i=column_names.index(col_name))
 
 
-def write_reference_query_results_to_excel(
+def write_reference_query_results_to_excel_file(
     reference_query: ReferenceQuery,
     publications_all: pd.DataFrame,
     pub_type_counts_by_author: list,
@@ -408,3 +418,90 @@ def write_reference_query_results_to_excel(
 
     # Return Excel output filename
     return out_excel_filename
+
+
+def load_espacenet_search_results_from_excel_file(
+    reference_query: ReferenceQuery,
+) -> pd.DataFrame:
+    """
+    Load previous espacenet search results from Excel file, where search date is in the
+    file name <filename>YYYYMMDD.xlsx
+
+    Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+
+    Returns: DataFrame with espacenet search results
+
+    """
+
+    # Extract date from file name, show warning on console if file is older than 30 days
+    if not (
+        match := re.search(
+            r"(\d{8}).xlsx",
+            reference_query.espacenet_patent_search_results_file,
+        )
+    ):
+        console.print(
+            "[red]Impossible d'extraire la date du fichier de résultats de recherche"
+            f" '{reference_query.espacenet_patent_search_results_file}' "
+            "qui doit être en format '<filename>YYYYMMDD.xlsx'![/red]",
+            soft_wrap=True,
+        )
+        sys.exit()
+
+    file_date = datetime.datetime.strptime(match[1], "%Y%m%d").date()
+    if datetime.date.today() - file_date >= timedelta(days=30):
+        console.print(
+            "[yellow]WARNING: Les données dans le fichier "
+            f"'{reference_query.espacenet_patent_search_results_file}' "
+            "ont plus de 30 jours![/yellow]",
+            soft_wrap=True,
+        )
+
+    # Load data from Excel file
+    patent_families: pd.DataFrame = pd.read_excel(
+        reference_query.data_dir
+        / Path(reference_query.espacenet_patent_search_results_file)
+    )
+
+    def parse_list_field(value):
+        """
+        Attempts to parse a string representation of a list.
+        First, it tries using ast.literal_eval. If that fails,
+        it falls back to regex-based extraction.
+        """
+        try:
+            parsed_value = ast.literal_eval(value)
+            if isinstance(parsed_value, list):
+                return parsed_value
+        except (ValueError, SyntaxError):
+            # Fall back to extracting items between apostrophes.
+            return re.findall(r"'([^']+)'", value)
+        return []
+
+    # Reformat inventors and applicants columns into proper lists using the robust parser
+    patent_families["Inventeurs"] = patent_families["Inventeurs"].apply(
+        parse_list_field
+    )
+    patent_families["Cessionnaires"] = patent_families["Cessionnaires"].apply(
+        parse_list_field
+    )
+
+    return patent_families
+
+
+def write_espacenet_search_results_to_excel_file(
+    reference_query: ReferenceQuery, patent_families: pd.DataFrame
+) -> None:
+    # Write dataframe of all patent results to output Excel file
+    with pd.ExcelWriter(
+        reference_query.data_dir
+        / Path(f"espacenet_espacenet_results_{time.strftime('%Y%m%d')}.xlsx")
+    ) as writer:
+        patent_families.to_excel(
+            writer,
+            index=False,
+            header=True,
+            sheet_name="Recherche par inventeurs",
+            freeze_panes=(1, 1),
+        )

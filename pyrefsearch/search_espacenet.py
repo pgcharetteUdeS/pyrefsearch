@@ -1,28 +1,24 @@
-"""search_inpadoc.py
+"""search_espacenet.py
 
-    Search the INPADOC worldwide patent library via espacenet
+    Search the espacenet patent database
 
-    The script uses the "patent_client" package for searches in the INPADOC database,
+    The script uses the "patent_client" package for searches,
     see https://patent-client.readthedocs.io/en/latest/index.html.
 
-    NB: An API key is required to access INPADOC ("International Patent Documentation"
-        database of patent information maintained by the European Patent Office,
-        accessible via espacent), see pyrefsearch.toml.
+    NB: An API key is required, see pyrefsearch.toml.
 
 """
 
 __all__ = ["query_espacenet_patents_and_applications"]
 
-import ast
-import datetime
-from datetime import timedelta
 import pandas as pd
 from patent_client import Inpadoc
-from pathlib import Path
-import re
-import sys
 import time
 
+from excel_io import (
+    load_espacenet_search_results_from_excel_file,
+    write_espacenet_search_results_to_excel_file,
+)
 from referencequery import ReferenceQuery
 from utils import console, tabulate_patents_per_author, to_lower_no_accents_no_hyphens
 
@@ -54,7 +50,7 @@ def _extract_patent_family_members(root_member_info) -> tuple[list, list]:
     return family_member_patent_ids_filtered, family_member_publication_dates_filtered
 
 
-def _extract_earliest_inpadoc_patent_family_members(patent_families: pd.DataFrame):
+def _extract_earliest_espacenet_patent_family_members(patent_families: pd.DataFrame):
     """
     Extract earliest patent application and granted patent from patent families
 
@@ -98,18 +94,18 @@ def _extract_earliest_inpadoc_patent_family_members(patent_families: pd.DataFram
     patent_families["Date de délivrance"] = earliest_granting_dates
 
 
-def _fetch_inpadoc_patent_families_by_author_name(
+def _fetch_espacenet_patent_families_by_author_name(
     reference_query: ReferenceQuery, last_name: str, first_name: str
 ) -> pd.DataFrame:
     """
-    Fetch INPADOC patent family IDs for author
+    Fetch espacenet patent family IDs for author
 
     Args:
         reference_query (ReferenceQuery): Reference query object
         last_name (str): Last name of author
         first_name (str): First name of author
 
-    Returns: DataFrame with unique INPADOC patent family & patent IDs
+    Returns: DataFrame with unique espacenet patent family & patent IDs
 
     """
 
@@ -157,10 +153,10 @@ def _fetch_inpadoc_patent_families_by_author_name(
             retries += 1
             if retries == reference_query.espacenet_max_retries:
                 console.print(
-                    "[red]Erreur dans la recherche de brevets INPADOC pour l'auteur "
+                    "[red]Erreur dans la recherche de brevets espacenet pour l'auteur "
                     f"{first_name} {last_name} ('{e}'): "
                     "cette erreur vient généralement du fait que la limite du nombre "
-                    "d'accès pour une période donnée à espacenet a été excédée"
+                    "d'accès pour une période donnée à la base de données a été excédée"
                     f" ({retries}) essais...[/red]"
                 )
                 console.print()
@@ -186,7 +182,7 @@ def _fetch_inpadoc_patent_families_by_author_name(
 
 def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.DataFrame:
     """
-    Search the INPADOC worldwide patent library via espacenet by author name
+    Search the espacenet worldwide patent library by author name
 
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
@@ -206,7 +202,7 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
         patent_families_raw = pd.concat(
             [
                 patent_families_raw,
-                _fetch_inpadoc_patent_families_by_author_name(
+                _fetch_espacenet_patent_families_by_author_name(
                     reference_query=reference_query,
                     last_name=name[0],
                     first_name=name[1],
@@ -229,14 +225,7 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
         f"Analyze dans espacenet des {len(patent_families_raw.index)} familles de brevets..."
     )
     for i, row in patent_families_raw.iterrows():
-        console.print(
-            f"{row['family_id']} ({hash(i)+1}/{len(patent_families_raw.index)})",
-            end=", ",
-        )
-        if not hash(i) % 10 and hash(i) > 0:
-            console.print("")
-
-        # Fetch patent info from INPADOC
+        # Fetch patent info from espacenet
         retries: int = 0
         success: bool = False
         patent_info: Inpadoc = Inpadoc()
@@ -248,13 +237,21 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
                 retries += 1
                 if retries == reference_query.espacenet_max_retries:
                     console.print(
-                        f"\n[red]Erreur dans la recherche de brevets INPADOC ('{e}'): "
+                        f"\n[red]Erreur dans la recherche de brevets espacenet ('{e}'): "
                         "cette erreur vient généralement du fait que la limite du nombre "
-                        "d'accès pour une période donnée à espacenet a été excédée"
+                        "d'accès pour une période donnée à la base de données a été excédée"
                         f" ({retries} essais)...[/red]"
                     )
                     exit()
                 time.sleep(0.1)
+
+        console.print(
+            f"{row['family_id']} ({hash(i)+1}/{len(patent_families_raw.index)}, "
+            f"{retries} retries)",
+            end=", ",
+        )
+        if not hash(i) % 6 and hash(i) > 0:
+            console.print("")
 
         # Check that family contains at leat one Canadian inventor and title not empty
         if any("[CA]" in s for s in patent_info.inventors_epodoc) and patent_info.title:
@@ -282,95 +279,17 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
     patent_families["Dates de publication"] = publication_dates
 
     # Add earliest patent application and granted patent to the dataframe
-    _extract_earliest_inpadoc_patent_family_members(patent_families)
+    _extract_earliest_espacenet_patent_family_members(patent_families)
 
     # Sort family dataframe by title
     patent_families = patent_families.sort_values(by=["Titre"])
 
     # Write dataframe of all patent results to output Excel file
-    with pd.ExcelWriter(
-        reference_query.data_dir
-        / Path(f"espacenet_INPADOC_results_{time.strftime('%Y%m%d')}.xlsx")
-    ) as writer:
-        patent_families.to_excel(
-            writer,
-            index=False,
-            header=True,
-            sheet_name="Recherche par inventeurs",
-            freeze_panes=(1, 1),
-        )
+    write_espacenet_search_results_to_excel_file(
+        reference_query=reference_query, patent_families=patent_families
+    )
 
     # Return dataframe of search results
-    return patent_families
-
-
-def _load_inpadoc_search_results_from_excel_file(
-    reference_query: ReferenceQuery,
-) -> pd.DataFrame:
-    """
-    Load previous INPADOC search results from Excel file, where search date is in the
-    file name <filename>YYYYMMDD.xlsx
-
-    Args:
-        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
-
-    Returns: DataFrame with INPADOC search results
-
-    """
-
-    # Extract date from file name, show warning on console if file is older than 30 days
-    if not (
-        match := re.search(
-            r"(\d{8}).xlsx",
-            reference_query.espacenet_patent_search_results_file,
-        )
-    ):
-        console.print(
-            "[red]Impossible d'extraire la date du fichier de résultats de recherche"
-            f" '{reference_query.espacenet_patent_search_results_file}' "
-            "qui doit être en format '<filename>YYYYMMDD.xlsx'![/red]",
-            soft_wrap=True,
-        )
-        sys.exit()
-
-    file_date = datetime.datetime.strptime(match[1], "%Y%m%d").date()
-    if datetime.date.today() - file_date >= timedelta(days=30):
-        console.print(
-            "[yellow]WARNING: Les données dans le fichier "
-            f"'{reference_query.espacenet_patent_search_results_file}' "
-            "ont plus de 30 jours![/yellow]",
-            soft_wrap=True,
-        )
-
-    # Load data from Excel file
-    patent_families: pd.DataFrame = pd.read_excel(
-        reference_query.data_dir
-        / Path(reference_query.espacenet_patent_search_results_file)
-    )
-
-    def parse_list_field(value):
-        """
-        Attempts to parse a string representation of a list.
-        First, it tries using ast.literal_eval. If that fails,
-        it falls back to regex-based extraction.
-        """
-        try:
-            parsed_value = ast.literal_eval(value)
-            if isinstance(parsed_value, list):
-                return parsed_value
-        except (ValueError, SyntaxError):
-            # Fall back to extracting items between apostrophes.
-            return re.findall(r"'([^']+)'", value)
-        return []
-
-    # Reformat inventors and applicants columns into proper lists using the robust parser
-    patent_families["Inventeurs"] = patent_families["Inventeurs"].apply(
-        parse_list_field
-    )
-    patent_families["Cessionnaires"] = patent_families["Cessionnaires"].apply(
-        parse_list_field
-    )
-
     return patent_families
 
 
@@ -379,11 +298,9 @@ def query_espacenet_patents_and_applications(
 ) -> tuple[pd.DataFrame, list, pd.DataFrame, list]:
     """
 
-    Query the INPADOC worldwide patent library via espacenet. INPADOC (International
-    Patent Documentation) is a free database of patent information. The European
-    Patent Office (EPO) produces and maintains the database.
+    Query the espacenet worldwide patent library.
 
-    To connect to the INPADOC worldwide patent search services, API keys are
+    To connect to the espacenet worldwide patent search services, API keys are
     required and must then be defined locally as environmental variables, see:
       - https://patent-client.readthedocs.io/en/stable/getting_started.html
       - https://www.epo.org/en/searching-for-patents/data/web-services/ops
@@ -406,7 +323,7 @@ def query_espacenet_patents_and_applications(
     # Search espacenet or get previous research results from file
     patent_families: pd.DataFrame
     if reference_query.espacenet_patent_search_results_file:
-        patent_families = _load_inpadoc_search_results_from_excel_file(reference_query)
+        patent_families = load_espacenet_search_results_from_excel_file(reference_query)
     else:
         # else, search espacenet for patent families by author name, save to file
         patent_families = _search_espacenet_by_author_name(reference_query)
@@ -468,7 +385,7 @@ def query_espacenet_patents_and_applications(
         patents=patents_granted_in_year_range,
     )
 
-    # Return dataframe for INPADOC patent applications and granted patents
+    # Return dataframe for espacenet patent applications and granted patents
     return (
         applications_published_in_year_range,
         patent_application_counts_by_author,
