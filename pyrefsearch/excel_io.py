@@ -496,7 +496,7 @@ def write_espacenet_search_results_to_excel_file(
     # Write dataframe of all patent results to output Excel file
     with pd.ExcelWriter(
         reference_query.data_dir
-        / Path(f"espacenet_espacenet_results_{time.strftime('%Y%m%d')}.xlsx")
+        / Path(f"espacenet_search_results_{time.strftime('%Y%m%d')}.xlsx")
     ) as writer:
         patent_families.to_excel(
             writer,
