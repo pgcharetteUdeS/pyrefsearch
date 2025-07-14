@@ -8,12 +8,12 @@ GOTO running_remote
 
 :running_locally
 set PYTHONDIR="C:\Program Files\Python\Python312"
-set WORKINGDIR="C:\Users\%COMPUTERNAME%\OneDrive - USherbrooke\Documents on OneDrive\Python\Pycharm\pyrefsearch"
+set WORKINGDIR="C:\Users\%USERNAME%\OneDrive - USherbrooke\Documents on OneDrive\Python\Pycharm\pyrefsearch"
 GOTO run_search
 
 :running_remote
 set PYTHONDIR="C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312"
-set WORKINGDIR="C:\Users\%COMPUTERNAME%\OneDrive - USherbrooke\Documents on OneDrive\Python\Pycharm\pyrefsearch-stable"
+set WORKINGDIR="C:\Users\%USERNAME%\OneDrive - USherbrooke\Documents on OneDrive\Python\Pycharm\pyrefsearch-stable"
 GOTO run_search
 
 :run_search
