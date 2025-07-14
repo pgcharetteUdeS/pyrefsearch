@@ -300,7 +300,7 @@ def write_reference_query_results_to_excel_file(
     # Write dataframes in separate sheets to the output Excel file
     out_excel_filename: Path = (
         reference_query.out_excel_file.with_stem(
-            f"{reference_query.out_excel_file.stem}_DIFF_"
+            f"{reference_query.out_excel_file.stem}_SCOPUS_DIFF_"
             f"{publications_previous_filename.stem[-len('YYYY-MM-DD'):]}"
         )
         if publications_diff

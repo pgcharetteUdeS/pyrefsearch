@@ -19,7 +19,7 @@ pub_year_last = 2025
 # Activer/désactiver l'extraction différentielle Scopus relativement au 1er du mois précédant,
 # spécification de la liste d'envois de courriels de confirmation, où la première adresse
 # email reçoit aussi le fichier log de l'exécution.
-extract_scopus_diff = false
+extract_scopus_diff = true
 extract_scopus_diff_confirmation_emails = [
     "Paul.G.Charette@USherbrooke.ca",
     "Paul.Charette@USherbrooke.ca",
@@ -64,4 +64,4 @@ scopus_database_refresh_days = 7
 #    où YYYYMMDD est la date de la recherche.
 uspto_patent_search = false
 espacenet_patent_search = true
-espacenet_patent_search_results_file = "espacenet_INPADOC_results_20250713.xlsx"
+espacenet_patent_search_results_file = "espacenet_search_results_20250713.xlsx"
