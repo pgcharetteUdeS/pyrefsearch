@@ -62,6 +62,5 @@ scopus_database_refresh_days = 7
 #    dans espacenet est faite à partir de ce fichier, sinon une nouvelle recherche est faite
 #    en ligne et les résultats sont sauvegardés dans le fichier "espacenet_INPADOC_results_YYYYMMDD.xlsx"
 #    où YYYYMMDD est la date de la recherche.
-uspto_patent_search = false
 espacenet_patent_search = true
 espacenet_patent_search_results_file = "espacenet_search_results_20250713.xlsx"
