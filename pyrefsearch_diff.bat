@@ -19,10 +19,11 @@ GOTO run_search
 :: Run the Scopus differential search
 :run_search
 cd %WORKINGDIR%
+set EMAIL_POWERSHELL_SCRIPT="shell_scripts\pyrefsearch_send_email_confirmation.ps1"
+if exist  %EMAIL_POWERSHELL_SCRIPT% del /F  %EMAIL_POWERSHELL_SCRIPT%
 %PYTHONDIR%\python.exe pyrefsearch\pyrefsearch.py data\pyrefsearch_diff.toml > pyrefsearch.log 2>&1
 
 :: if the PowerShell script "pyrefsearch_send_email_confirmation.ps1" exists, pyrefsearch.py ran successfully
-set EMAIL_POWERSHELL_SCRIPT="shell_scripts\pyrefsearch_send_email_confirmation.ps1"
 if exist %EMAIL_POWERSHELL_SCRIPT% GOTO pyrefsearch_success
 GOTO pyrefsearch_failed
 
