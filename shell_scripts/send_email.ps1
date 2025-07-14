@@ -4,15 +4,16 @@ param(
 	[string]$EmailTo,
 	[string]$Subject,
 	[string]$Body,
-	[string]$AttachmentFilename
-
+	[string[]]$Attachments
 )
 
 $EmailFrom = "pgcharette@gmail.com"
 $SMTPServer = "smtp.gmail.com"
 $SMTPMessage = New-Object System.Net.Mail.MailMessage($EmailFrom,$EmailTo,$Subject,$Body)
-$attachment = New-Object System.Net.Mail.Attachment($AttachmentFilename)
-$SMTPMessage.Attachments.Add($attachment)
+foreach ($Attachment in $Attachments) {
+	$attachment = New-Object System.Net.Mail.Attachment($Attachment)
+	$SMTPMessage.Attachments.Add($attachment)
+}
 $SMTPClient = New-Object Net.Mail.SmtpClient($SmtpServer, 587)
 $SMTPClient.EnableSsl = $true
 $SMTPClient.Credentials = New-Object System.Net.NetworkCredential("pgcharette@gmail.com", "iqgsfyhwlitpopzb");

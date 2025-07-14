@@ -89,7 +89,7 @@ def differential_scopus_search_results(
 
 
 def gen_power_shell_script_to_send_confirmation_emails(
-    reference_query: ReferenceQuery, out_excel_filename: Path
+    reference_query: ReferenceQuery, diff_results_out_excel_filename: Path
 ) -> None:
     """
     Generate a Windows PowerShell script ("pyrefsearch_send_email_confirmation.ps1")
@@ -97,18 +97,18 @@ def gen_power_shell_script_to_send_confirmation_emails(
 
     Args:
         reference_query (ReferenceQuery): Reference query object
-        out_excel_filename (Path): Path to the output Excel file
+        diff_results_out_excel_filename (Path): Path to the output Excel file
 
     Returns: None
 
     """
 
-    date_from: str = str(out_excel_filename.stem)[-len("YYYY-MM-YY") :]
-    date_to: str = str(out_excel_filename.stem)[
+    date_from: str = str(diff_results_out_excel_filename.stem)[-len("YYYY-MM-YY") :]
+    date_to: str = str(diff_results_out_excel_filename.stem)[
         -len("YYYY-MM-YY_DIFF_YYYY-MM-YY") : -len("_DIFF_YYYY-MM-YY")
     ]
 
-    with open("shell_scripts\pyrefsearch_send_email_confirmation.ps1", "w") as f:
+    with open("shell_scripts\\pyrefsearch_send_email_confirmation.ps1", "w") as f:
         f.write("# Script to send confirmation emails to a list of recipients\n")
         f.write("# NB: the script is generated automatically by pyrefsearch.py\n\n")
         f.write(
@@ -118,25 +118,31 @@ def gen_power_shell_script_to_send_confirmation_emails(
 
         # Send logfile to Paul.Charette@Usehrbrooke.ca
         f.write('$logfilename = $currentDirectory + "\\pyrefsearch.log"\n')
+        f.write(f"$attachments = @($logfilename)\n")
         f.write(
-            f'& ".\\shell_scripts\\send_email.ps1" -EmailTo "{reference_query.extract_scopus_diff_confirmation_emails[0]}"'
+            '& ".\\shell_scripts\\send_email.ps1" -EmailTo '
+            f'"{reference_query.extract_scopus_diff_confirmation_emails[0]}"'
             " -Subject $Subject -Body $Subject"
-            " -AttachmentFilename $logfilename\n\n"
+            " -Attachments $attachments\n\n"
         )
 
-        # Send Excel results file to list of recipients
+        # Send Excel results files to list of recipients
         f.write(
             '$recipients = "'
             + ",".join(reference_query.extract_scopus_diff_confirmation_emails)
             + '"\n'
         )
         f.write(
-            f'$resultsfilename = $currentDirectory + "\\{str(out_excel_filename)}"\n'
+            f'$resultsfilename_current = $currentDirectory + "\\{str(reference_query.out_excel_file)}"\n'
         )
+        f.write(
+            f'$resultsfilename_diff = $currentDirectory + "\\{str(diff_results_out_excel_filename)}"\n'
+        )
+        f.write(f"$attachments = @($resultsfilename_diff, $resultsfilename_current)\n")
         f.write(
             '& ".\\shell_scripts\\send_email.ps1" -EmailTo $recipients'
             " -Subject $Subject -Body $Subject"
-            " -AttachmentFilename $resultsfilename\n"
+            " -Attachments $attachments\n"
         )
 
 
@@ -237,6 +243,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     )
 
     # Write results to output Excel file
+    console.print("[green]\n** Sauvegarde des résultats **[/green]")
     write_reference_query_results_to_excel_file(
         reference_query=reference_query,
         publications_all=publications_all,
@@ -261,21 +268,24 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
                 reference_query=reference_query, publications_current=publications_all
             )
         )
-        out_excel_filename: Path = write_reference_query_results_to_excel_file(
-            reference_query=reference_query,
-            publications_all=publications_diff,
-            pub_type_counts_by_author=pub_type_counts_by_author,
-            uspto_patents=pd.DataFrame(),
-            uspto_patent_applications=pd.DataFrame(),
-            inpadoc_patents=pd.DataFrame(),
-            inpadoc_patent_applications=pd.DataFrame(),
-            author_profiles_by_ids=author_profiles_by_ids,
-            author_profiles_by_name=author_profiles_by_name,
-            publications_diff=True,
-            publications_previous_filename=publications_previous_filename,
+        diff_results_out_excel_filename: Path = (
+            write_reference_query_results_to_excel_file(
+                reference_query=reference_query,
+                publications_all=publications_diff,
+                pub_type_counts_by_author=pub_type_counts_by_author,
+                uspto_patents=pd.DataFrame(),
+                uspto_patent_applications=pd.DataFrame(),
+                inpadoc_patents=pd.DataFrame(),
+                inpadoc_patent_applications=pd.DataFrame(),
+                author_profiles_by_ids=author_profiles_by_ids,
+                author_profiles_by_name=author_profiles_by_name,
+                publications_diff=True,
+                publications_previous_filename=publications_previous_filename,
+            )
         )
         gen_power_shell_script_to_send_confirmation_emails(
-            reference_query=reference_query, out_excel_filename=out_excel_filename
+            reference_query=reference_query,
+            diff_results_out_excel_filename=diff_results_out_excel_filename,
         )
 
 
@@ -317,8 +327,8 @@ def pyrefsearch() -> None:
         publication_types=toml_dict["publication_types"],
         local_affiliations=toml_dict["local_affiliations"],
         scopus_database_refresh_days=toml_dict.get("scopus_database_refresh_days", 0),
-        uspto_patent_search=toml_dict.get("uspto_patent_search", True),
-        espacenet_patent_search=toml_dict.get("espacenet_patent_search", True),
+        uspto_patent_search=toml_dict.get("uspto_patent_search", False),
+        espacenet_patent_search=toml_dict.get("espacenet_patent_search", False),
         espacenet_max_retries=toml_dict.get("espacenet_max_retries", 25),
         espacenet_patent_search_results_file=toml_dict.get(
             "espacenet_patent_search_results_file", ""

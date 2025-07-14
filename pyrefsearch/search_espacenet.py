@@ -324,6 +324,10 @@ def query_espacenet_patents_and_applications(
     patent_families: pd.DataFrame
     if reference_query.espacenet_patent_search_results_file:
         patent_families = load_espacenet_search_results_from_excel_file(reference_query)
+        console.print(
+            "Recherche espacenet dans le fichier "
+            f"'{reference_query.espacenet_patent_search_results_file}'"
+        )
     else:
         # else, search espacenet for patent families by author name, save to file
         patent_families = _search_espacenet_by_author_name(reference_query)
