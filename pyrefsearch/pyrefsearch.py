@@ -108,7 +108,7 @@ def gen_power_shell_script_to_send_confirmation_emails(
         -len("YYYY-MM-YY_DIFF_YYYY-MM-YY") : -len("_DIFF_YYYY-MM-YY")
     ]
 
-    with open("pyrefsearch_send_email_confirmation.ps1", "w") as f:
+    with open("shell_scripts\pyrefsearch_send_email_confirmation.ps1", "w") as f:
         f.write("# Script to send confirmation emails to a list of recipients\n")
         f.write("# NB: the script is generated automatically by pyrefsearch.py\n\n")
         f.write(
@@ -119,7 +119,7 @@ def gen_power_shell_script_to_send_confirmation_emails(
         # Send logfile to Paul.Charette@Usehrbrooke.ca
         f.write('$logfilename = $currentDirectory + "\\pyrefsearch.log"\n')
         f.write(
-            f'& ".\\send_email.ps1" -EmailTo "{reference_query.extract_scopus_diff_confirmation_emails[0]}"'
+            f'& ".\\shell_scripts\\send_email.ps1" -EmailTo "{reference_query.extract_scopus_diff_confirmation_emails[0]}"'
             " -Subject $Subject -Body $Subject"
             " -AttachmentFilename $logfilename\n\n"
         )
@@ -134,7 +134,7 @@ def gen_power_shell_script_to_send_confirmation_emails(
             f'$resultsfilename = $currentDirectory + "\\{str(out_excel_filename)}"\n'
         )
         f.write(
-            '& ".\\send_email.ps1" -EmailTo $recipients'
+            '& ".\\shell_scripts\\send_email.ps1" -EmailTo $recipients'
             " -Subject $Subject -Body $Subject"
             " -AttachmentFilename $resultsfilename\n"
         )

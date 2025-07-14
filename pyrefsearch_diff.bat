@@ -1,9 +1,23 @@
 @echo off
 
-:: Run the Scopus search
 echo Running pyrefsearch.py...
+
+:: Set directory paths
+if %COMPUTERNAME% == 3IT-CHAP-W022 GOTO running_locally
+GOTO running_remote
+
+:running_locally
 set PYTHONDIR="C:\Program Files\Python\Python312"
-set WORKINGDIR="C:\Users\chap1202\OneDrive - USherbrooke\Documents on OneDrive\Python\Pycharm\pyrefsearch-stable"
+set WORKINGDIR="C:\Users\%COMPUTERNAME%\OneDrive - USherbrooke\Documents on OneDrive\Python\Pycharm\pyrefsearch"
+GOTO run_search
+
+:running_remote
+set PYTHONDIR="C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312"
+set WORKINGDIR="C:\Users\%COMPUTERNAME%\OneDrive - USherbrooke\Documents on OneDrive\Python\Pycharm\pyrefsearch-stable"
+GOTO run_search
+
+:run_search
+:: Run the Scopus differential search
 cd %WORKINGDIR%
 %PYTHONDIR%\python.exe pyrefsearch\pyrefsearch.py data\pyrefsearch_diff.toml > pyrefsearch.log 2>&1
 
@@ -17,6 +31,7 @@ GOTO pyrefsearch_failed
 echo Sending email confirmations...
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File %EMAIL_POWERSHELL_SCRIPT%
 del %EMAIL_POWERSHELL_SCRIPT%
+
 GOTO end
 
 :: pyrefsearch.py failed to run, send email tp Paul.Charette@USherbrooke.ca with logfile
@@ -26,3 +41,4 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File shell_scripts\send_email
 GOTO end
 
 :end
+pause
