@@ -20,12 +20,16 @@ pub_year_last = 2025
 # spécification de la liste d'envois de courriels de confirmation, où la première adresse
 # email reçoit aussi le fichier log de l'exécution.
 extract_scopus_diff = true
+#extract_scopus_diff_confirmation_emails = [
+#    "Paul.Charette@USherbrooke.ca",
+#    "francois.z.thibeault@usherbrooke.ca",
+#    "denis.machon@usherbrooke.ca",
+#    "catherine.labrecque@usherbrooke.ca",
+#    "christelle.hauchard@usherbrooke.ca",
+#]
 extract_scopus_diff_confirmation_emails = [
     "Paul.Charette@USherbrooke.ca",
-    "francois.z.thibeault@usherbrooke.ca",
-    "denis.machon@usherbrooke.ca",
-    "catherine.labrecque@usherbrooke.ca",
-    "christelle.hauchard@usherbrooke.ca",
+    "pgcharette@gmail.com",
 ]
 
 # Noms d'institutions/affiliations considérées commme "locales" avec leurs identifiants Scopus,

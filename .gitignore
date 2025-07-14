@@ -159,7 +159,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 /Archive/
-/Documentation/notes.txt
-/Documentation/EPO Keys.txt
-/Documentation/Scopus API key.txt
+/documentation/notes.txt
+/documentation/EPO Keys.txt
+/documentation/Scopus API key.txt
 /data/Liste chercheurs-membres_VF.xlsx

@@ -11,7 +11,7 @@ cd %WORKINGDIR%
 %PYTHONDIR%\python.exe pyrefsearch\pyrefsearch.py data\pyrefsearch_diff.toml > pyrefsearch.log 2>&1
 
 :: if the PowerShell script "pyrefsearch_send_email_confirmation.ps1" exists, pyrefsearch.py ran successfully
-set EMAIL_POWERSHELL_SCRIPT="pyrefsearch_send_email_confirmation.ps1"
+set EMAIL_POWERSHELL_SCRIPT="shell_scripts\pyrefsearch_send_email_confirmation.ps1"
 if exist %EMAIL_POWERSHELL_SCRIPT% GOTO pyrefsearch_success
 GOTO pyrefsearch_failed
 
@@ -25,7 +25,7 @@ GOTO end
 :: pyrefsearch.py failed to run, send email to Paul.Charette@USherbrooke.ca with logfile
 :pyrefsearch_failed
 echo pyrefsearch.py failed to run, send error log email...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File send_email_pyrefsearch_failure_to_run.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File shell_scripts\send_email_pyrefsearch_failure_to_run.ps1
 GOTO end
 
 :end
