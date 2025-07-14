@@ -16,8 +16,8 @@ set PYTHONDIR="C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312"
 set WORKINGDIR="C:\Users\%USERNAME%\OneDrive - USherbrooke\Documents on OneDrive\Python\Pycharm\pyrefsearch-stable"
 GOTO run_search
 
-:run_search
 :: Run the Scopus differential search
+:run_search
 cd %WORKINGDIR%
 %PYTHONDIR%\python.exe pyrefsearch\pyrefsearch.py data\pyrefsearch_diff.toml > pyrefsearch.log 2>&1
 
@@ -41,4 +41,3 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File shell_scripts\send_email
 GOTO end
 
 :end
-pause
