@@ -112,7 +112,8 @@ def gen_power_shell_script_to_send_confirmation_emails(
         f.write("# Script to send confirmation emails to a list of recipients\n")
         f.write("# NB: the script is generated automatically by pyrefsearch.py\n\n")
         f.write(
-            f'$Subject = "Résultats de la recherche Scopus du {date_from} au {date_to}"\n'
+            '$Subject = "Recherche de publications dans Scopus pour les membres '
+            f'réguliers du 3IT du {date_from} au {date_to}"\n'
         )
         f.write("$currentDirectory = (Get-Location).Path\n\n")
 
