@@ -105,7 +105,7 @@ def gen_power_shell_script_to_send_confirmation_emails(
 
     date_from: str = str(diff_results_out_excel_filename.stem)[-len("YYYY-MM-YY") :]
     date_to: str = str(diff_results_out_excel_filename.stem)[
-        -len("YYYY-MM-YY_DIFF_YYYY-MM-YY") : -len("_DIFF_YYYY-MM-YY")
+        -len("YYYY-MM-YY_SCOPUS_DIFF_YYYY-MM-YY") : -len("_SCOPUS_DIFF_YYYY-MM-YY")
     ]
 
     with open("shell_scripts\\pyrefsearch_send_email_confirmation.ps1", "w") as f:
