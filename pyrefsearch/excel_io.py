@@ -505,3 +505,8 @@ def write_espacenet_search_results_to_excel_file(
             sheet_name="Recherche par inventeurs",
             freeze_panes=(1, 1),
         )
+    console.print(
+        "Résultats de la recherche dans espacenet sauvegardés dans le fichier "
+        f"'{reference_query.data_dir / Path(f"espacenet_search_results_{time.strftime('%Y%m%d')}.xlsx")}'",
+        soft_wrap=True,
+    )
