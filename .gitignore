@@ -162,4 +162,5 @@ cython_debug/
 /documentation/notes.txt
 /documentation/EPO Keys.txt
 /documentation/Scopus API key.txt
-/data/Liste chercheurs-membres_VF.xlsx
+/data/*.xlsx
+/data/*.txt

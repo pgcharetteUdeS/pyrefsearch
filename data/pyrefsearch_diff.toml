@@ -57,17 +57,3 @@ publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Absracts", "ab"], ["
 # en ligne à chaque fois. Cette base de données locale est mise à jour à
 # intervalles réguliers (valeur par défaut = 0, i.e. mise à jour à chaque recherche).
 scopus_database_refresh_days = 7
-
-# BREVETS : Activer/désactiver (true/false) la recherche de brevets USPTO et ESPACENET (INPADOC)
-# 1) La recherche de brevets dans INPADOC est préférable à l'USPTO parce que les brevets
-#    sont groupés par familles, ce qui permet notamment de retenir uniquement les
-#    premiers dépots et octrois de brevets pour une invention et éviter les redondances
-#    (brevets dans plusieurs pays, multiples numéros de brevets pour une même invention
-#    reliés à des variations mineures comme des changements aux revendications,
-#    des modifications cléricales, etc.)
-# 2) Si un nom de fichier est spécifié par "espacenet_patent_search_results_file", la recherche
-#    dans espacenet est faite à partir de ce fichier, sinon une nouvelle recherche est faite
-#    en ligne et les résultats sont sauvegardés dans le fichier "espacenet_INPADOC_results_YYYYMMDD.xlsx"
-#    où YYYYMMDD est la date de la recherche.
-espacenet_patent_search = true
-espacenet_patent_search_results_file = "espacenet_search_results_20250713.xlsx"
