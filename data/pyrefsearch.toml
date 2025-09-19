@@ -9,12 +9,12 @@ search_type = "Publications"
 
 # Fichier Excel d'entrée et nom du feuillet contenant les information des auteur.e.s
 # (colonnes "Nom", "Prénom", ainsi que "Scopus ID" pour les recherches de publications)
-in_excel_file = "Liste chercheurs-membres_VF.xlsx"
+in_excel_file = "Liste chercheurs-membres.xlsx"
 in_excel_file_author_sheet = "Membres"
 
 # Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)
-pub_year_first = 2024
-pub_year_last = 2025
+pub_year_first = 2020
+pub_year_last = 2020
 
 # Activer/désactiver l'extraction différentielle Scopus relativement au 1er du mois précédant,
 # spécification de la liste d'envois de courriels de confirmation, où la première adresse

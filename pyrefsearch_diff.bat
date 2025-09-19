@@ -2,23 +2,23 @@
 
 echo Running pyrefsearch.py...
 
-:: Set directory paths
-if %COMPUTERNAME% == 3IT-CHAP-W022 GOTO running_locally
-GOTO running_remote
-
-:running_locally
-set PYTHONDIR="C:\Program Files\Python\Python312"
-set WORKINGDIR="C:\Users\%USERNAME%\OneDrive - USherbrooke\Documents on OneDrive\Python\Pycharm\pyrefsearch"
-GOTO run_search
-
-:running_remote
-set PYTHONDIR="C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312"
+:: Set working directory
 set WORKINGDIR="C:\Users\%USERNAME%\OneDrive - USherbrooke\Documents on OneDrive\Python\Pycharm\pyrefsearch-stable"
+cd %WORKINGDIR%
+
+:: Fetch the most recent file for 3IT membership
+copy "C:\Users\%USERNAME%\USherbrooke\3IT - Gestion Centrale - Documents\General\Membres\Liste chercheurs-membres.xlsx" data
+
+:: Set python.exe path (Paul's 3IT-CHAP-W022 laptop, versus others)
+if %COMPUTERNAME% == 3IT-CHAP-W022 GOTO running_3IT_CHAP_W022
+set PYTHONDIR="C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312"
+GOTO run_search
+:running_3IT_CHAP_W022
+set PYTHONDIR="C:\Program Files\Python\Python312"
 GOTO run_search
 
 :: Run the Scopus differential search
 :run_search
-cd %WORKINGDIR%
 set EMAIL_POWERSHELL_SCRIPT="shell_scripts\pyrefsearch_send_email_confirmation.ps1"
 if exist  %EMAIL_POWERSHELL_SCRIPT% del /F  %EMAIL_POWERSHELL_SCRIPT%
 %PYTHONDIR%\python.exe pyrefsearch\pyrefsearch.py data\pyrefsearch_diff.toml > pyrefsearch.log 2>&1
