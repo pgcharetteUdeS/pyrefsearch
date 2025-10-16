@@ -21,7 +21,12 @@ __all__ = [
 import pandas as pd
 import pybliometrics
 from pybliometrics.exception import ScopusException
-from pybliometrics.scopus import AuthorRetrieval, AuthorSearch, ScopusSearch
+from pybliometrics.scopus import (
+    AuthorRetrieval,
+    AuthorSearch,
+    ScopusSearch,
+    SerialSearch,
+)
 import re
 import sys
 
@@ -157,6 +162,39 @@ def _is_internal_and_external_collab(row) -> str:
         return "X"
     else:
         return ""
+
+
+def _add_scopus_cite_score_column(publications: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add scopus CiteScore column for the journal articles
+
+    Args:
+        publications (pd.DataFrame): DataFrame with publications
+
+    Returns: DataFrame with cite score column
+
+    """
+
+    def scopus_cite_score(issn) -> int | None:
+        if issn:
+            search_results = SerialSearch(query={"issn": issn})
+            if search_results and search_results.results:
+                journal: dict = search_results.results[0]
+                if "citeScoreCurrentMetric_2024" in journal:
+                    cite_score_current = journal["citeScoreCurrentMetric_2024"]
+                    """
+                    title = journal["title"]
+                    console.print(
+                        f"'{title}' has a Scopus CiteScore of {cite_score_current}",
+                        soft_wrap=True,
+                    )
+                    """
+                    return cite_score_current
+        return None
+
+    publications["CiteScore"] = publications["issn"].apply(scopus_cite_score)
+
+    return publications
 
 
 def _add_coauthor_and_externals_columns_and_sort_by_tile_df(
@@ -540,21 +578,8 @@ def query_scopus_publications(
         list(row) for row in zip(*pub_type_counts_by_author)
     ]
 
-    """
-    # Journal Scopus CiteScore metrics
-    from pybliometrics.scopus import SerialSearch
-    for _, row in publications.iterrows():
-        if row["issn"] and row["subtypeDescription"] == "Article":
-            journal: dict = SerialSearch(query={"issn": row["issn"]}).results[0]
-            cite_score_current = journal["citeScoreCurrentMetric_2024"]
-            title = journal["title"]
-            console.print(
-                f"'{title}' has a Scopus CiteScore of {cite_score_current}",
-                soft_wrap=True,
-            )
-    """
-
     if not publications.empty:
+        publications = _add_scopus_cite_score_column(publications)
         publications = _add_coauthor_and_externals_columns_and_sort_by_tile_df(
             publications, reference_query
         )
