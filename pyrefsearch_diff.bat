@@ -6,7 +6,7 @@ echo Running pyrefsearch.py...
 set WORKINGDIR="C:\Users\%USERNAME%\OneDrive - USherbrooke\Documents on OneDrive\Python\Pycharm\pyrefsearch-stable"
 cd %WORKINGDIR%
 
-:: Fetch the most recent file for 3IT membership
+:: Fetch the most recent 3IT membership file
 copy "C:\Users\%USERNAME%\USherbrooke\3IT - Gestion Centrale - Documents\General\Membres\Liste chercheurs-membres.xlsx" data
 
 :: Set python.exe path (Paul's 3IT-CHAP-W022 laptop, versus others)
@@ -27,7 +27,7 @@ if exist  %EMAIL_POWERSHELL_SCRIPT% del /F  %EMAIL_POWERSHELL_SCRIPT%
 if exist %EMAIL_POWERSHELL_SCRIPT% GOTO pyrefsearch_success
 GOTO pyrefsearch_failed
 
-:: pydersearch.py ran correctly, send confirmation emails, delete the PowerShell script
+:: pyrefsearch.py ran correctly, send confirmation emails, delete the PowerShell script
 :pyrefsearch_success
 echo Sending email confirmations...
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File %EMAIL_POWERSHELL_SCRIPT%
