@@ -20,7 +20,9 @@ __all__ = [
 
 import pandas as pd
 import pybliometrics
-from pybliometrics.exception import ScopusException
+from pybliometrics.scopus import exception as scopus_exceptions
+
+# from pybliometrics.scopus.exception import ScopusException
 from pybliometrics.scopus import (
     AuthorRetrieval,
     AuthorSearch,
@@ -192,7 +194,11 @@ def _add_scopus_cite_score_column(publications: pd.DataFrame) -> pd.DataFrame:
                     return cite_score_current
         return None
 
-    publications["CiteScore"] = publications["issn"].apply(scopus_cite_score)
+    publications["CiteScore"] = (
+        publications["issn"]
+        .apply(scopus_cite_score)
+        .combine_first(publications["eIssn"].apply(scopus_cite_score))
+    )
 
     return publications
 
@@ -257,7 +263,7 @@ def _add_coauthor_and_externals_columns_and_sort_by_tile_df(
     # Check that there is at least one local author in the list of author Scopus IDs.
     # If not, the only local author probably has more than one Scopus ID, show warning.
     for _, row in publications.iterrows():
-        if not row["Auteurs locaux"]:
+        if not list(row["Auteurs locaux"]):
             console.print(
                 f"[yellow]WARNING: Le document '{row['title']}' "
                 f"({row['subtypeDescription']}) n'a pas "
@@ -414,7 +420,7 @@ def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.Da
                 )
             else:
                 author_profiles.append([None] * len(columns))
-        except ScopusException as e:
+        except scopus_exceptions.ScopusException as e:
             vpn_required_str: str = (
                 " ou tentative d'accès hors du réseau "
                 "universitaire UdeS (VPN requis)"
@@ -554,7 +560,7 @@ def query_scopus_publications(
                     refresh=reference_query.scopus_database_refresh_days,
                     verbose=True,
                 )
-            except ScopusException as e:
+            except scopus_exceptions.ScopusException as e:
                 console.print(
                     f"[red]Erreur dans la recherche Scopus pour l'identifiant {au_id}, "
                     f"causes possibles: identifiant inconnu ou tentative d'accès "
