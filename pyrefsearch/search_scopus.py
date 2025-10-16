@@ -18,6 +18,7 @@ __all__ = [
     "query_scopus_publications",
 ]
 
+import datetime
 import pandas as pd
 import pybliometrics
 from pybliometrics.scopus import exception as scopus_exceptions
@@ -173,7 +174,7 @@ def _add_scopus_cite_score_column(publications: pd.DataFrame) -> pd.DataFrame:
     Args:
         publications (pd.DataFrame): DataFrame with publications
 
-    Returns: DataFrame with cite score column
+    Returns: DataFrame with Scopus CiteScore column
 
     """
 
@@ -182,18 +183,14 @@ def _add_scopus_cite_score_column(publications: pd.DataFrame) -> pd.DataFrame:
             search_results = SerialSearch(query={"issn": issn})
             if search_results and search_results.results:
                 journal: dict = search_results.results[0]
-                if "citeScoreCurrentMetric_2024" in journal:
-                    cite_score_current = journal["citeScoreCurrentMetric_2024"]
-                    """
-                    title = journal["title"]
-                    console.print(
-                        f"'{title}' has a Scopus CiteScore of {cite_score_current}",
-                        soft_wrap=True,
-                    )
-                    """
+                if cite_score_current_metric_str in journal:
+                    cite_score_current = journal[cite_score_current_metric_str]
                     return cite_score_current
         return None
 
+    cite_score_current_metric_str: str = (
+        f"citeScoreCurrentMetric_{datetime.date.today().year - 1}"
+    )
     publications["CiteScore"] = (
         publications["issn"]
         .apply(scopus_cite_score)
