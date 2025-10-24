@@ -219,8 +219,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     inpadoc_patent_applications = pd.DataFrame()
     inpadoc_patents = pd.DataFrame()
     if reference_query.espacenet_patent_search:
-        console.print("[green]\n** Recherche brevets dans espacenet **[/green]")
-
+        console.print("[green]\n** Recherche de brevets dans espacenet **[/green]")
         (
             inpadoc_patent_applications,
             inpadoc_patent_application_counts_per_author,

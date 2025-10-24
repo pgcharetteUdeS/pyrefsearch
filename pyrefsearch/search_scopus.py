@@ -19,6 +19,7 @@ __all__ = [
 ]
 
 import datetime
+import numpy as np
 import pandas as pd
 import pybliometrics
 from pybliometrics.scopus import exception as scopus_exceptions
@@ -79,7 +80,7 @@ def _check_author_name_correspondance(
             authors.loc[i, "Prénom"] = input_first_name
             query_error = "Aucun identifiant Scopus"
             console.print(
-                f"[yellow]WARNING: L'auteur.e '{input_last_name}, {input_first_name}' "
+                f"[yellow]WARNING: l'auteur.e '{input_last_name}, {input_first_name}' "
                 "n'a pas d'identifiant Scopus[/yellow]",
                 soft_wrap=True,
             )
@@ -331,6 +332,29 @@ def _flag_matched_scopus_author_ids_and_affiliations(
     }
     author_profiles["Affl/ID"] = author_profiles.apply(set_affiliation_and_id, axis=1)
 
+    # Flag authors with local affiliation and multiple Scopus IDs
+    no_multiple_scopus_ids: bool = True
+    for _, df_group in author_profiles.groupby(["author_count"]):
+        if (
+            np.count_nonzero(
+                np.asarray(df_group["Affl/ID"].str.contains("Affl").values)
+            )
+            > 1
+        ):
+            if no_multiple_scopus_ids:
+                console.print(
+                    "[green]\n** Recherche d'homonymes parmi les auteur.e.s **[/green]"
+                )
+                no_multiple_scopus_ids = False
+
+            surname: str = df_group["surname"].iloc[0]
+            given_name: str = df_group["givenname"].iloc[0]
+            console.print(
+                f"[yellow]WARNING: l'auteur.e '{surname}, {given_name}'"
+                " a plus d'un identifiant Scopus![/yellow]",
+                soft_wrap=True,
+            )
+
     return author_profiles
 
 
@@ -456,7 +480,7 @@ def query_scopus_author_profiles_by_name(
 ) -> pd.DataFrame:
     """
     Fetch author profiles by name in the Scopus database. If homonyms_only is True,
-    retain only author profiles with homonyms (multiple Scopus IDs for same name).
+    retain only author profiles with homonyms (multiple Scopus IDs for the same name).
 
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
@@ -467,6 +491,7 @@ def query_scopus_author_profiles_by_name(
     """
 
     author_profiles_all = pd.DataFrame()
+    author_count: int = 1
     for name in reference_query.au_names:
         query_string: str = f"AUTHLAST({name[0]}) and AUTHFIRST({name[1]})"
         author_profiles_from_name_search_results = AuthorSearch(
@@ -495,6 +520,8 @@ def query_scopus_author_profiles_by_name(
                 ]
             )
             if not homonyms_only or author_profiles_from_name.shape[0] > 1:
+                author_profiles_from_name["author_count"] = author_count
+                author_count += 1
                 author_profiles_all = pd.concat(
                     [author_profiles_all, author_profiles_from_name],
                     ignore_index=True,
@@ -512,6 +539,7 @@ def query_scopus_author_profiles_by_name(
         author_profiles_all = _flag_matched_scopus_author_ids_and_affiliations(
             reference_query=reference_query, author_profiles=author_profiles_all
         )
+        author_profiles_all.drop("author_count", axis=1, inplace=True)
         author_profiles_all = _reindex_author_profiles_df(df=author_profiles_all)
 
     return author_profiles_all
