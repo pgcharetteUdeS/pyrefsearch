@@ -23,6 +23,7 @@ import toml
 from excel_io import write_reference_query_results_to_excel_file
 from referencequery import ReferenceQuery
 from search_espacenet import query_espacenet_patents_and_applications
+from search_openalex import query_openalex_author_profiles
 from search_scopus import (
     scopus_init_api,
     query_scopus_author_profiles,
@@ -161,8 +162,8 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
 
     # Console banner
     console.print(
-        "[green]Recherche de publications et brevets pour la période "
-        f"{reference_query.pub_year_first}-{reference_query.pub_year_last}[/green]",
+        "[green]\n** Période de recherche : "
+        f"{reference_query.pub_year_first}-{reference_query.pub_year_last} **[/green]",
         soft_wrap=True,
     )
 
@@ -334,6 +335,9 @@ def pyrefsearch() -> None:
             "espacenet_patent_search_results_file", ""
         ),
     )
+
+    # OpenAlex search test
+    query_openalex_author_profiles(reference_query=reference_query)
 
     # Run the query
     if toml_dict["search_type"] == "Publications":

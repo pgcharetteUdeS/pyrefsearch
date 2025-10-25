@@ -1,4 +1,4 @@
-"""services/search_scopus.py
+"""search_scopus.py
 
     Search Scopus database for author profiles and publications
 
@@ -334,7 +334,7 @@ def _flag_matched_scopus_author_ids_and_affiliations(
 
     # Flag authors with local affiliation and multiple Scopus IDs
     no_multiple_scopus_ids: bool = True
-    for _, df_group in author_profiles.groupby(["author_count"]):
+    for _, df_group in author_profiles.groupby(["homonym"]):
         if (
             np.count_nonzero(
                 np.asarray(df_group["Affl/ID"].str.contains("Affl").values)
@@ -347,10 +347,9 @@ def _flag_matched_scopus_author_ids_and_affiliations(
                 )
                 no_multiple_scopus_ids = False
 
-            surname: str = df_group["surname"].iloc[0]
-            given_name: str = df_group["givenname"].iloc[0]
+            name: str = df_group["homonym"].iloc[0]
             console.print(
-                f"[yellow]WARNING: l'auteur.e '{surname}, {given_name}'"
+                f"[yellow]WARNING: l'auteur.e '{name}'"
                 " a plus d'un identifiant Scopus![/yellow]",
                 soft_wrap=True,
             )
@@ -491,7 +490,6 @@ def query_scopus_author_profiles_by_name(
     """
 
     author_profiles_all = pd.DataFrame()
-    author_count: int = 1
     for name in reference_query.au_names:
         query_string: str = f"AUTHLAST({name[0]}) and AUTHFIRST({name[1]})"
         author_profiles_from_name_search_results = AuthorSearch(
@@ -520,8 +518,7 @@ def query_scopus_author_profiles_by_name(
                 ]
             )
             if not homonyms_only or author_profiles_from_name.shape[0] > 1:
-                author_profiles_from_name["author_count"] = author_count
-                author_count += 1
+                author_profiles_from_name["homonym"] = ",".join(name)
                 author_profiles_all = pd.concat(
                     [author_profiles_all, author_profiles_from_name],
                     ignore_index=True,
@@ -539,7 +536,7 @@ def query_scopus_author_profiles_by_name(
         author_profiles_all = _flag_matched_scopus_author_ids_and_affiliations(
             reference_query=reference_query, author_profiles=author_profiles_all
         )
-        author_profiles_all.drop("author_count", axis=1, inplace=True)
+        author_profiles_all.drop("homonym", axis=1, inplace=True)
         author_profiles_all = _reindex_author_profiles_df(df=author_profiles_all)
 
     return author_profiles_all
