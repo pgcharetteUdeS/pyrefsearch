@@ -32,6 +32,7 @@ def query_openalex_author_profiles(reference_query: ReferenceQuery):
                 name[0],
                 name[1],
                 author["id"],
+                author["orcid"],
                 author["works_count"],
                 author["display_name"],
                 author["created_date"],
@@ -51,7 +52,8 @@ def query_openalex_author_profiles(reference_query: ReferenceQuery):
         columns=[
             "Surname",
             "Given name",
-            "ID",
+            "OpenAlex profile",
+            "ORCID profile",
             "Works count",
             "Display name",
             "Created date",
