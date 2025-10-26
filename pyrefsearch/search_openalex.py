@@ -42,6 +42,12 @@ def query_openalex_author_profiles(reference_query: ReferenceQuery):
                         for last_inst in author["last_known_institutions"]
                     ]
                 ),
+                ", ".join(
+                    [
+                        affiliation["institution"]["display_name"]
+                        for affiliation in author["affiliations"]
+                    ]
+                ),
                 ", ".join([topic["display_name"] for topic in author["topics"]]),
             ]
             for author in author_search_results
@@ -58,6 +64,7 @@ def query_openalex_author_profiles(reference_query: ReferenceQuery):
             "Display name",
             "Created date",
             "Last known institutions",
+            "Affiliations",
             "Topics",
         ],
     )
