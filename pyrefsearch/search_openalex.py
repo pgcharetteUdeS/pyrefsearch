@@ -41,8 +41,8 @@ def query_openalex_author_profiles_by_name(
             [
                 name[0],
                 name[1],
-                author["id"],
-                author["orcid"],
+                f'=HYPERLINK("{author["id"]}")',
+                f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else "",
                 author["works_count"],
                 author["display_name"],
                 author["created_date"],
