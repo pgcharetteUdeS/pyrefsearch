@@ -11,7 +11,7 @@ __all__ = [
 import pandas as pd
 from pyalex import Authors
 from referencequery import ReferenceQuery
-from utils import console, to_lower_no_accents_no_hyphens
+from utils import console
 
 
 def query_openalex_author_profiles_by_name(
