@@ -249,7 +249,7 @@ def write_reference_query_results_to_excel_file(
     inpadoc_patent_applications: pd.DataFrame,
     scopus_author_profiles_by_ids: pd.DataFrame,
     scopus_author_profiles_by_name: pd.DataFrame,
-    openalex_author_profiles_by_name: pd.DataFrame,
+    openalex_author_profiles_by_name: pd.DataFrame = pd.DataFrame([]),
     publications_diff: bool = False,
     publications_previous_filename: Path = Path(""),
 ) -> Path:
@@ -400,9 +400,9 @@ def write_reference_query_results_to_excel_file(
 
         else:
             # Author profile sheets
-            author_profiles_by_ids_minimal: pd.DataFrame = scopus_author_profiles_by_ids[
-                ["Nom de famille", "Prénom"]
-            ].copy()
+            author_profiles_by_ids_minimal: pd.DataFrame = (
+                scopus_author_profiles_by_ids[["Nom de famille", "Prénom"]].copy()
+            )
             author_profiles_by_ids_minimal.to_excel(
                 writer, index=False, sheet_name="Auteurs", freeze_panes=(1, 1)
             )
@@ -518,8 +518,10 @@ def write_espacenet_search_results_to_excel_file(
             sheet_name="Recherche par inventeurs",
             freeze_panes=(1, 1),
         )
+    fname: Path = reference_query.data_dir / Path(
+        f"espacenet_search_results_{time.strftime('%Y%m%d')}.xlsx"
+    )
     console.print(
-        "Résultats de la recherche dans espacenet sauvegardés dans le fichier "
-        f"'{reference_query.data_dir / Path(f"espacenet_search_results_{time.strftime('%Y%m%d')}.xlsx")}'",
+        f"Résultats de la recherche dans espacenet sauvegardés dans le fichier '{fname}'",
         soft_wrap=True,
     )
