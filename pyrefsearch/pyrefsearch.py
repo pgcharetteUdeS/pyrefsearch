@@ -23,7 +23,7 @@ import toml
 from excel_io import write_reference_query_results_to_excel_file
 from referencequery import ReferenceQuery
 from search_espacenet import query_espacenet_patents_and_applications
-from search_openalex import query_openalex_author_profiles
+from search_openalex import query_openalex_author_profiles_by_name
 from search_scopus import (
     scopus_init_api,
     query_scopus_author_profiles,
@@ -173,7 +173,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     # Fetch author profiles corresponding to user-supplied Scopus IDs, check they match
     # the user-supplied names, flag any inconsistencies in the "Erreurs" column
     console.print("[green]\n** Recherche de profils d'auteurs dans Scopus **[/green]")
-    author_profiles_by_ids: pd.DataFrame = query_scopus_author_profiles_by_id(
+    scopus_author_profiles_by_ids: pd.DataFrame = query_scopus_author_profiles_by_id(
         reference_query=reference_query
     )
 
@@ -211,10 +211,12 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         console.print("Brevets US (en instance): ", len(uspto_patent_applications))
 
         # Add patent application and published patent counts to the author profiles
-        author_profiles_by_ids["Brevets US (en instance)"] = (
+        scopus_author_profiles_by_ids["Brevets US (en instance)"] = (
             uspto_patent_application_counts_by_author
         )
-        author_profiles_by_ids["Brevets US (délivrés)"] = uspto_patent_counts_by_author
+        scopus_author_profiles_by_ids["Brevets US (délivrés)"] = (
+            uspto_patent_counts_by_author
+        )
 
     # Fetch INPADOC applications and granted patents into separate dataframes, if required
     inpadoc_patent_applications = pd.DataFrame()
@@ -227,10 +229,10 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             inpadoc_patents,
             inpadoc_patent_counts_per_author,
         ) = query_espacenet_patents_and_applications(reference_query)
-        author_profiles_by_ids["Brevets INPADOC (en instance)"] = (
+        scopus_author_profiles_by_ids["Brevets INPADOC (en instance)"] = (
             inpadoc_patent_application_counts_per_author
         )
-        author_profiles_by_ids["Brevets INPADOC (délivrés)"] = (
+        scopus_author_profiles_by_ids["Brevets INPADOC (délivrés)"] = (
             inpadoc_patent_counts_per_author
         )
         console.print("Brevets INPADOC en instance: ", len(inpadoc_patent_applications))
@@ -238,9 +240,16 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
 
     # Fetch Scopus author profiles corresponding to user-supplied names, check for
     # author names with multiple Scopus IDs ("homonyms"), load into dataframe
-    author_profiles_by_name: pd.DataFrame = query_scopus_author_profiles_by_name(
+    scopus_author_profiles_by_name: pd.DataFrame = query_scopus_author_profiles_by_name(
         reference_query=reference_query,
         homonyms_only=True,
+    )
+
+    # Fetch OpenAlex author profiles corresponding to user-supplied names
+    openalex_author_profiles_by_name: pd.DataFrame = (
+        query_openalex_author_profiles_by_name(
+            reference_query=reference_query,
+        )
     )
 
     # Write results to output Excel file
@@ -253,8 +262,9 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         uspto_patent_applications=uspto_patent_applications,
         inpadoc_patents=inpadoc_patents,
         inpadoc_patent_applications=inpadoc_patent_applications,
-        author_profiles_by_ids=author_profiles_by_ids,
-        author_profiles_by_name=author_profiles_by_name,
+        scopus_author_profiles_by_ids=scopus_author_profiles_by_ids,
+        scopus_author_profiles_by_name=scopus_author_profiles_by_name,
+        openalex_author_profiles_by_name=openalex_author_profiles_by_name,
     )
 
     # Differential Scopus publication search results relative to last month
@@ -278,8 +288,9 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
                 uspto_patent_applications=pd.DataFrame(),
                 inpadoc_patents=pd.DataFrame(),
                 inpadoc_patent_applications=pd.DataFrame(),
-                author_profiles_by_ids=author_profiles_by_ids,
-                author_profiles_by_name=author_profiles_by_name,
+                scopus_author_profiles_by_ids=scopus_author_profiles_by_ids,
+                scopus_author_profiles_by_name=scopus_author_profiles_by_name,
+                openalex_author_profiles_by_name=pd.DataFrame([]),
                 publications_diff=True,
                 publications_previous_filename=publications_previous_filename,
             )
@@ -335,9 +346,6 @@ def pyrefsearch() -> None:
             "espacenet_patent_search_results_file", ""
         ),
     )
-
-    # OpenAlex search test
-    query_openalex_author_profiles(reference_query=reference_query)
 
     # Run the query
     if toml_dict["search_type"] == "Publications":

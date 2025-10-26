@@ -1,21 +1,31 @@
 """search_openalex.py
 
-    Search OpenAlex database for author profiles and publications
+    Search OpenAlex database for author profiles by name
 
 """
 
 __all__ = [
-    "query_openalex_author_profiles",
+    "query_openalex_author_profiles_by_name",
 ]
 
 import pandas as pd
-from pathlib import Path
 from pyalex import Authors
 from referencequery import ReferenceQuery
 from utils import console, to_lower_no_accents_no_hyphens
 
 
-def query_openalex_author_profiles(reference_query: ReferenceQuery):
+def query_openalex_author_profiles_by_name(
+    reference_query: ReferenceQuery,
+) -> pd.DataFrame:
+    """
+    Fetch author profiles from OpenAlex database
+
+    Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+
+    Returns : DataFrame with author profiles
+    """
+
     console.print(
         "[green]\n** Recherche d'auteur.e.s dans la base de données OpenAlex **[/green]"
     )
@@ -53,7 +63,8 @@ def query_openalex_author_profiles(reference_query: ReferenceQuery):
             for author in author_search_results
         )
         data_rows.extend([""])
-    df = pd.DataFrame(
+
+    return pd.DataFrame(
         data_rows,
         columns=[
             "Surname",
@@ -67,14 +78,4 @@ def query_openalex_author_profiles(reference_query: ReferenceQuery):
             "Affiliations",
             "Topics",
         ],
-    )
-    openalex_filename: Path = reference_query.data_dir / Path(
-        f"{reference_query.in_excel_file.stem}"
-        f"_{reference_query.pub_year_first}-{reference_query.pub_year_last}_OpenAlex.xlsx"
-    )
-    df.to_excel(openalex_filename, index=False)
-    console.print(
-        "Résultats de la recherche d'auteur.e.s dans OpenAlex sauvegardés "
-        f"dans le fichier '{openalex_filename}'",
-        soft_wrap=True,
     )

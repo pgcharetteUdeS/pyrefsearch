@@ -247,8 +247,9 @@ def write_reference_query_results_to_excel_file(
     uspto_patent_applications: pd.DataFrame,
     inpadoc_patents: pd.DataFrame,
     inpadoc_patent_applications: pd.DataFrame,
-    author_profiles_by_ids: pd.DataFrame,
-    author_profiles_by_name: pd.DataFrame,
+    scopus_author_profiles_by_ids: pd.DataFrame,
+    scopus_author_profiles_by_name: pd.DataFrame,
+    openalex_author_profiles_by_name: pd.DataFrame,
     publications_diff: bool = False,
     publications_previous_filename: Path = Path(""),
 ) -> Path:
@@ -263,8 +264,9 @@ def write_reference_query_results_to_excel_file(
         uspto_patent_applications (pd.DataFrame): USPTO patent search results
         inpadoc_patents (pd.DataFrame): INPADOC patent search result
         inpadoc_patent_applications (pd.DataFrame): INPADOC patent search results
-        author_profiles_by_ids (pd.DataFrame): author search results by ids
-        author_profiles_by_name (pd.DataFrame): author search results by names
+        scopus_author_profiles_by_ids (pd.DataFrame): Scopus author search results by ids
+        scopus_author_profiles_by_name (pd.DataFrame): Scopus author search results by names
+        openalex_author_profiles_by_name (pd.DataFrame): OpenAlex author search results by names
         publications_diff (bool): True of this a Scopus differential request
         publications_previous_filename (Path): Path to the Excel file with results from previous month
 
@@ -287,7 +289,7 @@ def write_reference_query_results_to_excel_file(
 
             # Add "pub_type" publication counts to the author profiles
             if len(df) > 0:
-                author_profiles_by_ids[pub_type] = pub_counts
+                scopus_author_profiles_by_ids[pub_type] = pub_counts
 
     # Create results summary dataframe
     results: pd.DataFrame = _create_results_summary_df(
@@ -374,22 +376,31 @@ def write_reference_query_results_to_excel_file(
                     freeze_panes=(1, 1),
                 )
 
-            # Author profile sheets
-            col: pd.Series = author_profiles_by_ids.pop("Période active")
-            author_profiles_by_ids["Période active"] = col
-            author_profiles_by_ids.to_excel(
+            # Scopus author profile sheets
+            col: pd.Series = scopus_author_profiles_by_ids.pop("Période active")
+            scopus_author_profiles_by_ids["Période active"] = col
+            scopus_author_profiles_by_ids.to_excel(
                 writer, index=False, sheet_name="Auteurs - Profils", freeze_panes=(1, 1)
             )
-            author_profiles_by_name.to_excel(
+            scopus_author_profiles_by_name.to_excel(
                 writer,
                 index=False,
                 sheet_name="Auteurs - Homonymes",
                 freeze_panes=(1, 1),
             )
 
+            # OpenApex author profile sheet
+            if not openalex_author_profiles_by_name.empty:
+                openalex_author_profiles_by_name.to_excel(
+                    writer,
+                    index=False,
+                    sheet_name="OpenAlex",
+                    freeze_panes=(1, 1),
+                )
+
         else:
             # Author profile sheets
-            author_profiles_by_ids_minimal: pd.DataFrame = author_profiles_by_ids[
+            author_profiles_by_ids_minimal: pd.DataFrame = scopus_author_profiles_by_ids[
                 ["Nom de famille", "Prénom"]
             ].copy()
             author_profiles_by_ids_minimal.to_excel(
