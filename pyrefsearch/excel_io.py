@@ -506,7 +506,7 @@ def load_espacenet_search_results_from_excel_file(
 def write_espacenet_search_results_to_excel_file(
     reference_query: ReferenceQuery, patent_families: pd.DataFrame
 ) -> None:
-    # Write dataframe of all patent results to output Excel file
+    # Write dataframe of all patent results to an Excel file
     with pd.ExcelWriter(
         reference_query.data_dir
         / Path(f"espacenet_search_results_{time.strftime('%Y%m%d')}.xlsx")
