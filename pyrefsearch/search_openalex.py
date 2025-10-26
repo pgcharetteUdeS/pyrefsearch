@@ -12,7 +12,7 @@ import pandas as pd
 from pathlib import Path
 from pyalex import Authors
 from referencequery import ReferenceQuery
-from utils import console
+from utils import console, to_lower_no_accents_no_hyphens
 
 
 def query_openalex_author_profiles(reference_query: ReferenceQuery):
@@ -25,7 +25,7 @@ def query_openalex_author_profiles(reference_query: ReferenceQuery):
         author_search_results = Authors().search(f"{name[1]} {name[0]}").get()
         if not author_search_results:
             console.print(
-                f"ERREUR: Aucun résultat dans OpenAlex pour {name[1]} {name[0]}!"
+                f"[red]ERREUR: Aucun résultat dans OpenAlex pour {name[1]} {name[0]}![/red]"
             )
         data_rows.extend(
             [

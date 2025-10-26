@@ -13,7 +13,7 @@ in_excel_file = "Liste chercheurs-membres.xlsx"
 in_excel_file_author_sheet = "Membres"
 
 # Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)
-pub_year_first = 2020
+pub_year_first = 2025
 pub_year_last = 2025
 
 # Activer/désactiver l'extraction différentielle Scopus relativement au 1er du mois précédant,
