@@ -2,6 +2,8 @@
 
     Search OpenAlex database for author profiles by name
 
+    https://github.com/J535D165/pyalex
+
 """
 
 __all__ = [
