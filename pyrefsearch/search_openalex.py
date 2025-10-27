@@ -1,6 +1,6 @@
 """search_openalex.py
 
-    Search OpenAlex database for author profiles by name
+    Search OpenAlex database
 
     https://github.com/J535D165/pyalex
 
@@ -20,7 +20,7 @@ def query_openalex_author_profiles_by_name(
     reference_query: ReferenceQuery,
 ) -> pd.DataFrame:
     """
-    Fetch author profiles from OpenAlex database
+    Fetch author profiles from the OpenAlex database by name
 
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
