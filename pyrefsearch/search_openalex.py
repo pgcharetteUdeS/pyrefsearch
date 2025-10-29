@@ -8,14 +8,16 @@
 
 __all__ = [
     "query_openalex_author_profiles_by_name",
+    "query_openalex_publications",
+    "openalex_config",
 ]
 
+from itertools import chain
 import pandas as pd
-from pyalex import Authors, Works
+from pyalex import config, Authors, Works
 from referencequery import ReferenceQuery
 import requests
 from utils import console
-import sys
 
 
 def query_openalex_author_profiles_by_name(
@@ -130,96 +132,113 @@ def get_publication_info_from_crossref(doi) -> dict | None:
 
 
 def query_openalex_publications(reference_query: ReferenceQuery) -> pd.DataFrame:
+    # Correspondance between types in OpenAlex records and the output Excel file
+    type_map = {
+        "journal-article": "Articles",
+        "proceedings-article": "Confs",
+        "book-chapter": "Chap. de livres",
+        "preprint": "Pré-impressions",
+        "posted-content": "Pré-impressions",
+        "Other": "Autre",
+    }
+
+    # Loop though authors to fetch/process records
     publications = pd.DataFrame([])
     for openalex_id in reference_query.openalex_ids:
         if openalex_id:
-            if works := (
-                Works()
-                .filter(
-                    author={"id": openalex_id},
-                    publication_year=f"{reference_query.pub_year_first}-{reference_query.pub_year_last}",
+            works = Works().filter(
+                author={"id": openalex_id},
+                publication_year=f"{reference_query.pub_year_first}-{reference_query.pub_year_last}",
+            )
+            works_df = pd.DataFrame([])
+            for work in chain(*works.paginate(per_page=200, n_max=None)):
+                # OpenAlex record
+                title_openalex = work["title"]
+                type_openalex = work["type"]
+                date_openalex = work["publication_date"]
+                publication_name_openalex = (
+                    work["primary_location"]["source"]["display_name"]
+                    if "primary_location" in work
+                    and work["primary_location"]["source"]
+                    and "display_name" in work["primary_location"]["source"]
+                    else None
                 )
-                .get()
-            ):
-                if len(works) > 24:
-                    console.print(
-                        f"[red]Erreur dans la recherche OpenAlex pour l'identifiant {openalex_id}, "
-                        f"le nombre de résultats excède le maximum permis (25)'![/red]",
-                        soft_wrap=True,
-                    )
-                    sys.exit()
-
-                works_df = pd.DataFrame([])
-                for work in works:
-                    title_openalex = work["title"]
-                    type_openalex = work["type"]
-                    date_openalex = work["publication_date"]
-                    publication_name_openalex = (
-                        work["primary_location"]["source"]["display_name"]
-                        if "primary_location" in work
-                        and work["primary_location"]["source"]
-                        and "display_name" in work["primary_location"]["source"]
-                        else None
-                    )
-                    authors_openalex = (
-                        "; ".join(
-                            [
-                                (
-                                    author["author"]["display_name"]
-                                    if "author" in author
-                                    else ""
-                                )
-                                for author in work["authorships"]
-                            ]
-                        )
-                        if "authorships" in work
-                        else None
-                    )
-
-                    if publication_info_from_crossref := get_publication_info_from_crossref(
-                        work["doi"]
-                    ):
-                        type_crossref = publication_info_from_crossref["type"]
-                        authors_crossref = publication_info_from_crossref["authors"]
-                        publication_name_crossref = publication_info_from_crossref[
-                            "publication_name"
+                authors_openalex = (
+                    "; ".join(
+                        [
+                            (
+                                author["author"]["display_name"]
+                                if "author" in author
+                                else ""
+                            )
+                            for author in work["authorships"]
                         ]
-                        volume = publication_info_from_crossref["volume"]
-                    else:
-                        type_crossref = None
-                        authors_crossref = None
-                        publication_name_crossref = None
-                        volume = None
-                    if (
-                        publication_name_openalex is not None
-                        or publication_name_crossref is not None
-                    ):
-                        works_df = pd.concat(
-                            [
-                                works_df,
-                                pd.DataFrame(
-                                    {
-                                        "Type": [type_crossref],
-                                        "Titre": [title_openalex],
-                                        "Date": [date_openalex],
-                                        "Auteurs": authors_openalex,
-                                        "Publication": (
-                                            [publication_name_crossref]
-                                            if publication_name_crossref
-                                            else [publication_name_openalex]
-                                        ),
-                                        "Volume": [volume],
-                                        "DOI": [work["doi"]],
-                                    }
-                                ),
-                            ],
-                            ignore_index=True,
+                    )
+                    if "authorships" in work
+                    else None
+                )
+
+                # Crossref record
+                if publication_info_from_crossref := get_publication_info_from_crossref(
+                    work["doi"]
+                ):
+                    type_crossref = publication_info_from_crossref["type"]
+                    publication_name_crossref = publication_info_from_crossref[
+                        "publication_name"
+                    ]
+                    volume = publication_info_from_crossref["volume"]
+                else:
+                    type_crossref = None
+                    publication_name_crossref = None
+                    volume = None
+
+                # Store record if the publication name is available either in the OpenAlex or Crossref records
+                if (
+                    publication_name_openalex is not None
+                    or publication_name_crossref is not None
+                ):
+                    # Consolidate OpenAlex & Crossref record fields
+                    work_type: list = [
+                        type_map.get(
+                            type_crossref or (type_openalex or "Other"), "Autre"
                         )
-                if not works_df.empty:
-                    publications = pd.concat([publications, works_df])
+                    ]
+                    work_title: list = [title_openalex or title_openalex]
+                    work_publication_name: list = [
+                        publication_name_crossref or publication_name_openalex
+                    ]
+
+                    # Add the record to the dataframe for this author
+                    works_df = pd.concat(
+                        [
+                            works_df,
+                            pd.DataFrame(
+                                {
+                                    "Type": work_type,
+                                    "Titre": work_title,
+                                    "Date": [date_openalex],
+                                    "Auteurs": authors_openalex,
+                                    "Publication": work_publication_name,
+                                    "Volume": [volume],
+                                    "DOI": [work["doi"]],
+                                }
+                            ),
+                        ],
+                        ignore_index=True,
+                    )
+
+            # Add dataframe for this author to the dataframe of all p
+            if not works_df.empty:
+                publications = pd.concat([publications, works_df])
 
     publications = publications.drop_duplicates("Titre").copy()
     publications = publications.sort_values(by=["Titre"])
     publications.reset_index(drop=True, inplace=True)
 
     return publications
+
+
+def openalex_config():
+    config.email = "paul.charette@usherbrooke.ca"
+    config.max_retries = 5
+    config.retry_backoff_factor = 0.5

@@ -23,7 +23,11 @@ import toml
 from excel_io import write_reference_query_results_to_excel_file
 from referencequery import ReferenceQuery
 from search_espacenet import query_espacenet_patents_and_applications
-from search_openalex import query_openalex_author_profiles_by_name, query_openalex_publications
+from search_openalex import (
+    query_openalex_author_profiles_by_name,
+    query_openalex_publications,
+    openalex_config,
+)
 from search_scopus import (
     scopus_init_api,
     query_scopus_author_profiles,
@@ -167,6 +171,15 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         soft_wrap=True,
     )
 
+    # Fetch OpenAlex author profiles corresponding to user-supplied names
+    openalex_config()
+    openalex_author_profiles_by_name: pd.DataFrame = (
+        query_openalex_author_profiles_by_name(
+            reference_query=reference_query,
+        )
+    )
+    openalex_publications = query_openalex_publications(reference_query=reference_query)
+
     # Init Scopus API
     scopus_init_api()
 
@@ -184,14 +197,6 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     publications_all, pub_type_counts_by_author = query_scopus_publications(
         reference_query=reference_query
     )
-
-    # Fetch OpenAlex author profiles corresponding to user-supplied names
-    openalex_author_profiles_by_name: pd.DataFrame = (
-        query_openalex_author_profiles_by_name(
-            reference_query=reference_query,
-        )
-    )
-    openalex_publications = query_openalex_publications(reference_query=reference_query)
 
     # Fetch USPTO applications and granted patents into separate dataframes, if required
     uspto_patents: pd.DataFrame = pd.DataFrame()
