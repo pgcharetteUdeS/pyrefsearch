@@ -607,7 +607,6 @@ def query_scopus_publications(
     ]
 
     if not publications.empty:
-        publications = _add_scopus_cite_score_column(publications)
         publications = _add_coauthor_and_externals_columns_and_sort_by_tile_df(
             publications, reference_query
         )

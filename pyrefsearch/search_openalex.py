@@ -20,6 +20,31 @@ import requests
 from utils import console
 
 
+def _count_publications_by_type_in_df(subtypes: dict, df: pd.DataFrame) -> list:
+    """
+    Count number of publications by type in a dataframe
+
+    Args:
+        subtypes (dict): Publication subtypes
+        df (pd.DataFrame): DataFrame with publications
+
+    Returns: List of counts per publication type
+
+    """
+
+    if df.empty:
+        return [None] * len(subtypes)
+    else:
+        return [
+            (
+                len(df[df["Subtype"] == subtype])
+                if len(df[df["Subtype"] == subtype]) > 0
+                else None
+            )
+            for subtype in subtypes.values()
+        ]
+
+
 def openalex_config():
     config.email = "paul.charette@usherbrooke.ca"
     config.max_retries = 5
@@ -106,7 +131,7 @@ def get_publication_info_from_crossref(doi) -> dict | None:
     response = requests.get(
         f"https://api.crossref.org/works/{doi}",
         headers={"Accept": "application/json"},
-        timeout=10,
+        timeout=30,
     )
     if not response:
         return None
@@ -137,18 +162,31 @@ def get_publication_info_from_crossref(doi) -> dict | None:
     )
 
 
-def query_openalex_publications(reference_query: ReferenceQuery) -> pd.DataFrame:
+def query_openalex_publications(
+    reference_query: ReferenceQuery,
+) -> tuple[pd.DataFrame, list[list[int | None]]]:
+    """
+    Fetch publications for range of years in OpenAlex database for list of author IDs
+
+    Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+
+    Returns : DataFrame with publication search results (pd.DataFrame),
+              list of publication type counts by author (list)
+    """
+
     # Correspondance between types in OpenAlex records and the output Excel file
-    type_map = {
+    openalex_subtypes = {
         "journal-article": "Articles",
         "proceedings-article": "Confs",
         "book-chapter": "Chap. de livres",
         "preprint": "Pré-impressions",
         "posted-content": "Pré-impressions",
-        "Other": "Autre",
+        "Other": "Autres",
     }
 
     # Loop though authors to fetch/process records
+    pub_type_counts_by_author: list = []
     publications = pd.DataFrame([])
     for openalex_id in reference_query.openalex_ids:
         if openalex_id:
@@ -205,7 +243,7 @@ def query_openalex_publications(reference_query: ReferenceQuery) -> pd.DataFrame
                 ):
                     # Consolidate OpenAlex & Crossref record fields
                     work_type: list = [
-                        type_map.get(
+                        openalex_subtypes.get(
                             type_crossref or (type_openalex or "Other"), "Autre"
                         )
                     ]
@@ -220,7 +258,7 @@ def query_openalex_publications(reference_query: ReferenceQuery) -> pd.DataFrame
                             works_df,
                             pd.DataFrame(
                                 {
-                                    "Type": work_type,
+                                    "Subtype": work_type,
                                     "Titre": work_title,
                                     "Date": [date_openalex],
                                     "Auteurs": authors_openalex,
@@ -232,6 +270,11 @@ def query_openalex_publications(reference_query: ReferenceQuery) -> pd.DataFrame
                         ],
                         ignore_index=True,
                     )
+                    pub_type_counts_by_author.append(
+                        _count_publications_by_type_in_df(
+                            subtypes=openalex_subtypes, df=works_df
+                        )
+                    )
 
             # Add dataframe for this author to the dataframe of all p
             if not works_df.empty:
@@ -240,5 +283,8 @@ def query_openalex_publications(reference_query: ReferenceQuery) -> pd.DataFrame
     publications = publications.drop_duplicates("Titre").copy()
     publications = publications.sort_values(by=["Titre"])
     publications.reset_index(drop=True, inplace=True)
+    pub_type_counts_by_author_transpose: list = [
+        list(row) for row in zip(*pub_type_counts_by_author)
+    ]
 
-    return publications
+    return publications, pub_type_counts_by_author_transpose

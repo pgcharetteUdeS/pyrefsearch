@@ -247,6 +247,7 @@ def write_reference_query_results_to_excel_file(
     scopus_author_profiles_by_name: pd.DataFrame,
     openalex_author_profiles_by_name: pd.DataFrame = pd.DataFrame([]),
     openalex_publications: pd.DataFrame = pd.DataFrame([]),
+    openalex_pub_type_counts_by_author: list = [],
     publications_diff: bool = False,
     publications_previous_filename: Path = Path(""),
 ) -> Path:
@@ -256,7 +257,7 @@ def write_reference_query_results_to_excel_file(
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
         publications_all (pd.DataFrame): dataFrames publications found in Scopus
-        pub_type_counts_by_author (list): lists of publication type by author
+        pub_type_counts_by_author (list): lists of publication type by author from Scopus
         uspto_patents (pd.DataFrame): USPTO patent application search results
         uspto_patent_applications (pd.DataFrame): USPTO patent search results
         inpadoc_patents (pd.DataFrame): INPADOC patent search result
@@ -265,6 +266,7 @@ def write_reference_query_results_to_excel_file(
         scopus_author_profiles_by_name (pd.DataFrame): Scopus author search results by names
         openalex_author_profiles_by_name (pd.DataFrame): OpenAlex author search results by names
         openalex_publications (pd.DataFrame): OpenALEX publication search results
+        openalex_pub_type_counts_by_author (list): lists of publication type by author from OpenAlex
         publications_diff (bool): True of this a Scopus differential request
         publications_previous_filename (Path): Path to the Excel file with results from previous month
 

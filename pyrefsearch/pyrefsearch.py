@@ -178,7 +178,9 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             reference_query=reference_query,
         )
     )
-    openalex_publications = query_openalex_publications(reference_query=reference_query)
+    openalex_publications_all, openalex_pub_type_counts_by_author = (
+        query_openalex_publications(reference_query=reference_query)
+    )
 
     # Init Scopus API
     scopus_init_api()
@@ -271,7 +273,8 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         scopus_author_profiles_by_ids=scopus_author_profiles_by_ids,
         scopus_author_profiles_by_name=scopus_author_profiles_by_name,
         openalex_author_profiles_by_name=openalex_author_profiles_by_name,
-        openalex_publications=openalex_publications,
+        openalex_publications=openalex_publications_all,
+        openalex_pub_type_counts_by_author=openalex_pub_type_counts_by_author,
     )
 
     # Differential Scopus publication search results relative to last month
