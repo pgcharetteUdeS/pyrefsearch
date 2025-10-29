@@ -220,7 +220,7 @@ def query_openalex_publications(reference_query: ReferenceQuery) -> pd.DataFrame
                                     "Auteurs": authors_openalex,
                                     "Publication": work_publication_name,
                                     "Volume": [volume],
-                                    "DOI": [work["doi"]],
+                                    "DOI": [f'=HYPERLINK("{work["doi"]}")'],
                                 }
                             ),
                         ],
