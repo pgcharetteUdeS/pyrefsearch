@@ -154,15 +154,13 @@ class ReferenceQuery:
         ]
         authors: pd.DataFrame
         if all(col in input_data_full.columns for col in author_status_by_year_columns):
-            # Author information is tabulated by fiscal year (XXXX-YYYY) and status (full
-            # member or collaborator). Validate that the range of years specified
-            # in the input data covers the range of years specified in the query,
-            # filter by member status/year to remove collaborators.
             authors = input_data_full.copy()[
                 [
                     "Nom",
                     "Prénom",
                     "ID Scopus",
+                    "OpenAlex",
+                    "ORCID",
                     "Faculté / Service",
                     "Lien d'emploi UdeS",
                     "Département",
@@ -171,6 +169,12 @@ class ReferenceQuery:
                 ]
                 + author_status_by_year_columns
             ]
+            authors["OpenAlex"] = authors["OpenAlex"].apply(
+                lambda x: x.replace("https://openalex.org/", "")
+            )
+            authors["ORCID"] = authors["ORCID"].apply(
+                lambda x: x.replace("https://orcid.org/", "")
+            )
             authors["status"] = [
                 "Régulier" if "Régulier" in yearly_status else "Collaborateur"
                 for yearly_status in authors[
@@ -304,9 +308,35 @@ class ReferenceQuery:
         # Extract Scopus IDs from the input data, replace non-integer values with 0
         self.au_id_to_index: dict = {}
         self.au_ids: list[int] = []
-        if "ID Scopus" in authors:
+        if "ID Scopus" in authors.columns:
             for scopus_id in authors["ID Scopus"].values.tolist():
                 try:
                     self.au_ids.append(int(scopus_id))
                 except ValueError:
                     self.au_ids.append(0)
+
+        # Extract OpenAlex IDs from the input data, replace missing values with ""
+        if "OpenAlex" in authors.columns:
+            self.openalex_ids: list[str] = [
+                (
+                    openalex_id
+                    if openalex_id and re.search(r"^A\d{10}$", openalex_id)
+                    else ""
+                )
+                for openalex_id in authors["OpenAlex"].values.tolist()
+            ]
+
+        # Extract ORCID IDs from the input data, replace missing values with ""
+        if "ORCID" in authors.columns:
+            self.orcid_ids: list[str] = [
+                (
+                    orcid_id
+                    if orcid_id
+                    and re.search(
+                        r"^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}$",
+                        orcid_id,
+                    )
+                    else ""
+                )
+                for orcid_id in authors["ORCID"].values.tolist()
+            ]

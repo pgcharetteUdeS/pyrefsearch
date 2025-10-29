@@ -11,8 +11,9 @@ __all__ = [
 ]
 
 import pandas as pd
-from pyalex import Authors
+from pyalex import Authors, Works
 from referencequery import ReferenceQuery
+import requests
 from utils import console
 
 
@@ -81,3 +82,139 @@ def query_openalex_author_profiles_by_name(
             "Topics",
         ],
     )
+
+
+def get_publication_info_from_crossref(doi) -> dict | None:
+    """
+    Retrieves the publication name (journal name) for a given DOI using the Crossref API.
+
+    Args:
+        doi (str): The Digital Object Identifier (DOI) of the publication.
+
+    Returns:
+        str or None: The name of the publication (journal) if found, otherwise None.
+    """
+    response = requests.get(
+        f"https://api.crossref.org/works/{doi}",
+        headers={"Accept": "application/json"},
+        timeout=10,
+    )
+    if not response:
+        return None
+    data = response.json()
+    return (
+        {
+            "title": data["message"]["title"],
+            "type": data["message"]["type"],
+            "publication_name": (
+                data["message"]["container-title"][0]
+                if data["message"]["container-title"]
+                else None
+            ),
+            "authors": "; ".join(
+                [
+                    f"{author['given'] if 'given' in author else ''} "
+                    f"{author['family'] if 'family' in author else ''}"
+                    for author in data["message"]["author"]
+                ]
+            ),
+            "volume": (
+                data["message"]["volume"] if "volume" in data["message"] else None
+            ),
+            "issue": data["message"]["issue"] if "issue" in data["message"] else None,
+        }
+        if data and "message" in data
+        else None
+    )
+
+
+def query_openalex_publications(reference_query: ReferenceQuery) -> pd.DataFrame:
+    publications = pd.DataFrame([])
+    for openalex_id in reference_query.openalex_ids:
+        if openalex_id:
+            if works := (
+                Works()
+                .filter(
+                    author={"id": openalex_id},
+                    publication_year=f"{reference_query.pub_year_first}-{reference_query.pub_year_last}",
+                )
+                .get()
+            ):
+                works_df = pd.DataFrame([])
+                for work in works:
+                    title_openalex = work["title"]
+                    type_openalex = work["type"]
+                    date_openalex = work["publication_date"]
+                    publication_name_openalex = (
+                        work["primary_location"]["source"]["display_name"]
+                        if "primary_location" in work
+                        and work["primary_location"]["source"]
+                        and "display_name" in work["primary_location"]["source"]
+                        else None
+                    )
+                    authors_openalex = (
+                        "; ".join(
+                            [
+                                (
+                                    author["author"]["display_name"]
+                                    if "author" in author
+                                    else ""
+                                )
+                                for author in work["authorships"]
+                            ]
+                        )
+                        if "authorships" in work
+                        else None
+                    )
+
+                    if publication_info_from_crossref := get_publication_info_from_crossref(
+                        work["doi"]
+                    ):
+                        type_crossref = publication_info_from_crossref["type"]
+                        crossref_authors = publication_info_from_crossref["authors"]
+                        publication_name_crossref = publication_info_from_crossref[
+                            "publication_name"
+                        ]
+                        volume = publication_info_from_crossref["volume"]
+                    else:
+                        type_crossref = None
+                        crossref_authors = None
+                        publication_name_crossref = None
+                        volume = None
+                    if (
+                        publication_name_openalex is not None
+                        or publication_name_crossref is not None
+                    ):
+                        works_df = pd.concat(
+                            [
+                                works_df,
+                                pd.DataFrame(
+                                    {
+                                        "Type": (
+                                            [type_crossref]
+                                            if type_crossref
+                                            else [type_openalex]
+                                        ),
+                                        "Title": [title_openalex],
+                                        "Date": [date_openalex],
+                                        "Authors": authors_openalex,
+                                        "Publication": (
+                                            [publication_name_crossref]
+                                            if publication_name_crossref
+                                            else [publication_name_openalex]
+                                        ),
+                                        "Volume": [volume],
+                                        "DOI": [work["doi"]],
+                                    }
+                                ),
+                            ],
+                            ignore_index=True,
+                        )
+                if not works_df.empty:
+                    publications = pd.concat([publications, works_df])
+
+    publications = publications.drop_duplicates("Title").copy()
+    publications = publications.sort_values(by=["Title"])
+    publications.reset_index(drop=True, inplace=True)
+
+    return publications

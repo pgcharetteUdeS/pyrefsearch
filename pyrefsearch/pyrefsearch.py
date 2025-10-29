@@ -23,7 +23,7 @@ import toml
 from excel_io import write_reference_query_results_to_excel_file
 from referencequery import ReferenceQuery
 from search_espacenet import query_espacenet_patents_and_applications
-from search_openalex import query_openalex_author_profiles_by_name
+from search_openalex import query_openalex_author_profiles_by_name, query_openalex_publications
 from search_scopus import (
     scopus_init_api,
     query_scopus_author_profiles,
@@ -251,6 +251,8 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             reference_query=reference_query,
         )
     )
+
+    query_openalex_publications(reference_query=reference_query)
 
     # Write results to output Excel file
     console.print("[green]\n** Sauvegarde des résultats **[/green]")
