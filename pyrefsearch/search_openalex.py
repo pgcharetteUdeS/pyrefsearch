@@ -20,6 +20,12 @@ import requests
 from utils import console
 
 
+def openalex_config():
+    config.email = "paul.charette@usherbrooke.ca"
+    config.max_retries = 5
+    config.retry_backoff_factor = 0.5
+
+
 def query_openalex_author_profiles_by_name(
     reference_query: ReferenceQuery,
 ) -> pd.DataFrame:
@@ -236,9 +242,3 @@ def query_openalex_publications(reference_query: ReferenceQuery) -> pd.DataFrame
     publications.reset_index(drop=True, inplace=True)
 
     return publications
-
-
-def openalex_config():
-    config.email = "paul.charette@usherbrooke.ca"
-    config.max_retries = 5
-    config.retry_backoff_factor = 0.5
