@@ -185,6 +185,14 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         reference_query=reference_query
     )
 
+    # Fetch OpenAlex author profiles corresponding to user-supplied names
+    openalex_author_profiles_by_name: pd.DataFrame = (
+        query_openalex_author_profiles_by_name(
+            reference_query=reference_query,
+        )
+    )
+    openalex_publications = query_openalex_publications(reference_query=reference_query)
+
     # Fetch USPTO applications and granted patents into separate dataframes, if required
     uspto_patents: pd.DataFrame = pd.DataFrame()
     uspto_patent_applications: pd.DataFrame = pd.DataFrame()
@@ -245,15 +253,6 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         homonyms_only=True,
     )
 
-    # Fetch OpenAlex author profiles corresponding to user-supplied names
-    openalex_author_profiles_by_name: pd.DataFrame = (
-        query_openalex_author_profiles_by_name(
-            reference_query=reference_query,
-        )
-    )
-
-    query_openalex_publications(reference_query=reference_query)
-
     # Write results to output Excel file
     console.print("[green]\n** Sauvegarde des résultats **[/green]")
     write_reference_query_results_to_excel_file(
@@ -267,6 +266,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         scopus_author_profiles_by_ids=scopus_author_profiles_by_ids,
         scopus_author_profiles_by_name=scopus_author_profiles_by_name,
         openalex_author_profiles_by_name=openalex_author_profiles_by_name,
+        openalex_publications=openalex_publications,
     )
 
     # Differential Scopus publication search results relative to last month

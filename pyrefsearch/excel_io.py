@@ -52,9 +52,7 @@ def _export_publications_df_to_excel_sheet(
         "Collab interne+externe",
         "Auteurs",
         "Publication",
-        "CiteScore",
         "Volume",
-        "Pages",
         "DOI",
     ]
     if not df.empty:
@@ -68,9 +66,7 @@ def _export_publications_df_to_excel_sheet(
                 "Collab interne+externe": "Collab interne+externe",
                 "author_names": "Auteurs",
                 "publicationName": "Publication",
-                "CiteScore": "CiteScore",
                 "volume": "Volume",
-                "pageRange": "Pages",
                 "doi": "DOI",
             },
         ).copy()
@@ -250,6 +246,7 @@ def write_reference_query_results_to_excel_file(
     scopus_author_profiles_by_ids: pd.DataFrame,
     scopus_author_profiles_by_name: pd.DataFrame,
     openalex_author_profiles_by_name: pd.DataFrame = pd.DataFrame([]),
+    openalex_publications: pd.DataFrame = pd.DataFrame([]),
     publications_diff: bool = False,
     publications_previous_filename: Path = Path(""),
 ) -> Path:
@@ -267,6 +264,7 @@ def write_reference_query_results_to_excel_file(
         scopus_author_profiles_by_ids (pd.DataFrame): Scopus author search results by ids
         scopus_author_profiles_by_name (pd.DataFrame): Scopus author search results by names
         openalex_author_profiles_by_name (pd.DataFrame): OpenAlex author search results by names
+        openalex_publications (pd.DataFrame): OpenALEX publication search results
         publications_diff (bool): True of this a Scopus differential request
         publications_previous_filename (Path): Path to the Excel file with results from previous month
 
@@ -394,7 +392,16 @@ def write_reference_query_results_to_excel_file(
                 openalex_author_profiles_by_name.to_excel(
                     writer,
                     index=False,
-                    sheet_name="OpenAlex",
+                    sheet_name="OpenAlex - Authors",
+                    freeze_panes=(1, 1),
+                )
+
+            # OpenApex publications search results sheet
+            if not openalex_publications.empty:
+                openalex_publications.to_excel(
+                    writer,
+                    index=False,
+                    sheet_name="OpenAlex - Publications",
                     freeze_panes=(1, 1),
                 )
 

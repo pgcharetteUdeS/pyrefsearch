@@ -15,6 +15,7 @@ from pyalex import Authors, Works
 from referencequery import ReferenceQuery
 import requests
 from utils import console
+import sys
 
 
 def query_openalex_author_profiles_by_name(
@@ -113,8 +114,8 @@ def get_publication_info_from_crossref(doi) -> dict | None:
             ),
             "authors": "; ".join(
                 [
-                    f"{author['given'] if 'given' in author else ''} "
-                    f"{author['family'] if 'family' in author else ''}"
+                    f"{author['family'] if 'family' in author else ''}, "
+                    f"{author['given'] if 'given' in author else ''}"
                     for author in data["message"]["author"]
                 ]
             ),
@@ -140,6 +141,14 @@ def query_openalex_publications(reference_query: ReferenceQuery) -> pd.DataFrame
                 )
                 .get()
             ):
+                if len(works) > 24:
+                    console.print(
+                        f"[red]Erreur dans la recherche OpenAlex pour l'identifiant {openalex_id}, "
+                        f"le nombre de résultats excède le maximum permis (25)'![/red]",
+                        soft_wrap=True,
+                    )
+                    sys.exit()
+
                 works_df = pd.DataFrame([])
                 for work in works:
                     title_openalex = work["title"]
@@ -171,14 +180,14 @@ def query_openalex_publications(reference_query: ReferenceQuery) -> pd.DataFrame
                         work["doi"]
                     ):
                         type_crossref = publication_info_from_crossref["type"]
-                        crossref_authors = publication_info_from_crossref["authors"]
+                        authors_crossref = publication_info_from_crossref["authors"]
                         publication_name_crossref = publication_info_from_crossref[
                             "publication_name"
                         ]
                         volume = publication_info_from_crossref["volume"]
                     else:
                         type_crossref = None
-                        crossref_authors = None
+                        authors_crossref = None
                         publication_name_crossref = None
                         volume = None
                     if (
@@ -190,14 +199,10 @@ def query_openalex_publications(reference_query: ReferenceQuery) -> pd.DataFrame
                                 works_df,
                                 pd.DataFrame(
                                     {
-                                        "Type": (
-                                            [type_crossref]
-                                            if type_crossref
-                                            else [type_openalex]
-                                        ),
-                                        "Title": [title_openalex],
+                                        "Type": [type_crossref],
+                                        "Titre": [title_openalex],
                                         "Date": [date_openalex],
-                                        "Authors": authors_openalex,
+                                        "Auteurs": authors_openalex,
                                         "Publication": (
                                             [publication_name_crossref]
                                             if publication_name_crossref
@@ -213,8 +218,8 @@ def query_openalex_publications(reference_query: ReferenceQuery) -> pd.DataFrame
                 if not works_df.empty:
                     publications = pd.concat([publications, works_df])
 
-    publications = publications.drop_duplicates("Title").copy()
-    publications = publications.sort_values(by=["Title"])
+    publications = publications.drop_duplicates("Titre").copy()
+    publications = publications.sort_values(by=["Titre"])
     publications.reset_index(drop=True, inplace=True)
 
     return publications
