@@ -90,7 +90,7 @@ def query_openalex_author_profiles_by_name(
     )
 
 
-def get_publication_info_from_crossref(doi) -> dict | None:
+def _get_publication_info_from_crossref(doi) -> dict | None:
     """
     Retrieves the publication name (journal name) for a given DOI using the Crossref API.
 
@@ -311,7 +311,7 @@ def query_openalex_publications(
                     author_affiliations_openalex = ""
 
                 # Fetch Crossref record
-                if publication_info_from_crossref := get_publication_info_from_crossref(
+                if publication_info_from_crossref := _get_publication_info_from_crossref(
                     work["doi"]
                 ):
                     type_crossref = publication_info_from_crossref["type"]

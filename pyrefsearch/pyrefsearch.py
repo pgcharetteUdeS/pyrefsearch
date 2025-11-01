@@ -290,7 +290,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         # scopus_author_profiles_by_ids=scopus_author_profiles_by_ids,
     )
 
-    # Differential Scopus publication search results relative to last month
+    # Differential publication search results relative to last month
     """
     if reference_query.extract_search_results_diff:
         console.print(
