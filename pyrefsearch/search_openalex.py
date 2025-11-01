@@ -373,6 +373,10 @@ def query_openalex_publications(
     publications.reset_index(drop=True, inplace=True)
     publications = _add_local_author_name_and_count_columns(publications=publications)
 
+    # Sort by title (date is unreliable)
+    publications = publications.sort_values(by=["title"])
+    publications.reset_index(drop=True, inplace=True)
+
     # Reformat pub_type_counts_by_author list
     pub_type_counts_by_author_transpose: list = [
         list(row) for row in zip(*pub_type_counts_by_author)
