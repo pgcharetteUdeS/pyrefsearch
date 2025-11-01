@@ -127,7 +127,7 @@ def gen_power_shell_script_to_send_confirmation_emails(
         f.write(f"$attachments = @($logfilename)\n")
         f.write(
             '& ".\\shell_scripts\\send_email.ps1" -EmailTo '
-            f'"{reference_query.extract_scopus_diff_confirmation_emails[0]}"'
+            f'"{reference_query.extract_search_results_diff_confirmation_emails[0]}"'
             " -Subject $Subject -Body $Subject"
             " -Attachments $attachments\n\n"
         )
@@ -135,7 +135,7 @@ def gen_power_shell_script_to_send_confirmation_emails(
         # Send Excel results files to list of recipients
         f.write(
             '$recipients = "'
-            + ",".join(reference_query.extract_scopus_diff_confirmation_emails)
+            + ",".join(reference_query.extract_search_results_diff_confirmation_emails)
             + '"\n'
         )
         f.write(
@@ -171,34 +171,53 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         soft_wrap=True,
     )
 
-    # Fetch OpenAlex author profiles corresponding to user-supplied names
-    openalex_config()
-    openalex_author_profiles_by_name: pd.DataFrame = (
-        query_openalex_author_profiles_by_name(
-            reference_query=reference_query,
-        )
-    )
-    openalex_publications_all, openalex_pub_type_counts_by_author = (
-        query_openalex_publications(reference_query=reference_query)
-    )
-
-    # Init Scopus API
-    scopus_init_api()
-
-    # Fetch author profiles corresponding to user-supplied Scopus IDs, check they match
-    # the user-supplied names, flag any inconsistencies in the "Erreurs" column
-    console.print("[green]\n** Recherche de profils d'auteurs dans Scopus **[/green]")
-    scopus_author_profiles_by_ids: pd.DataFrame = query_scopus_author_profiles_by_id(
-        reference_query=reference_query
-    )
-
-    # Fetch publications by type in Scopus database, count publication types by author
-    console.print("[green]\n** Recherche de publications dans Scopus **[/green]")
+    # Search for publications either in the Scopus or OpenAlex databases
     publications_all: pd.DataFrame
     pub_type_counts_by_author: list[list[int | None]]
-    publications_all, pub_type_counts_by_author = query_scopus_publications(
-        reference_query=reference_query
-    )
+    author_profiles_by_name: pd.DataFrame
+    if reference_query.publications_search_database == "OpenAlex":
+        # Init OpenAlex API
+        openalex_config()
+
+        # Fetch author profiles corresponding to user-supplied names
+        console.print(
+            "[green]\n** Recherche de profils d'auteurs dans OpenAlex **[/green]"
+        )
+        author_profiles_by_name = query_openalex_author_profiles_by_name(
+            reference_query=reference_query,
+        )
+
+        # Fetch publications, count publication types by author
+        console.print("[green]\n** Recherche de publications dans OpenAlex **[/green]")
+        publications, pub_type_counts_by_author = query_openalex_publications(
+            reference_query=reference_query
+        )
+
+    else:
+        # Init Scopus API
+        scopus_init_api()
+
+        # Fetch author profiles corresponding to user-supplied Scopus IDs, check they match
+        # the user-supplied names, flag any inconsistencies in the "Erreurs" column
+        console.print(
+            "[green]\n** Recherche de profils d'auteurs dans Scopus **[/green]"
+        )
+        scopus_author_profiles_by_ids: pd.DataFrame = (
+            query_scopus_author_profiles_by_id(reference_query=reference_query)
+        )
+
+        # Fetch publications, count publication types by author
+        console.print("[green]\n** Recherche de publications dans Scopus **[/green]")
+        publications, pub_type_counts_by_author = query_scopus_publications(
+            reference_query=reference_query
+        )
+
+        # Fetch Scopus author profiles corresponding to user-supplied names, check for
+        # author names with multiple Scopus IDs ("homonyms"), load into dataframe
+        author_profiles_by_name = query_scopus_author_profiles_by_name(
+            reference_query=reference_query,
+            homonyms_only=True,
+        )
 
     # Fetch USPTO applications and granted patents into separate dataframes, if required
     uspto_patents: pd.DataFrame = pd.DataFrame()
@@ -226,12 +245,14 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         console.print("Brevets US (en instance): ", len(uspto_patent_applications))
 
         # Add patent application and published patent counts to the author profiles
+        """
         scopus_author_profiles_by_ids["Brevets US (en instance)"] = (
             uspto_patent_application_counts_by_author
         )
         scopus_author_profiles_by_ids["Brevets US (délivrés)"] = (
             uspto_patent_counts_by_author
         )
+        """
 
     # Fetch INPADOC applications and granted patents into separate dataframes, if required
     inpadoc_patent_applications = pd.DataFrame()
@@ -244,41 +265,34 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             inpadoc_patents,
             inpadoc_patent_counts_per_author,
         ) = query_espacenet_patents_and_applications(reference_query)
+        """
         scopus_author_profiles_by_ids["Brevets INPADOC (en instance)"] = (
             inpadoc_patent_application_counts_per_author
         )
         scopus_author_profiles_by_ids["Brevets INPADOC (délivrés)"] = (
             inpadoc_patent_counts_per_author
         )
+        """
         console.print("Brevets INPADOC en instance: ", len(inpadoc_patent_applications))
         console.print("Brevets INPADOC délivrés: ", len(inpadoc_patents))
-
-    # Fetch Scopus author profiles corresponding to user-supplied names, check for
-    # author names with multiple Scopus IDs ("homonyms"), load into dataframe
-    scopus_author_profiles_by_name: pd.DataFrame = query_scopus_author_profiles_by_name(
-        reference_query=reference_query,
-        homonyms_only=True,
-    )
 
     # Write results to output Excel file
     console.print("[green]\n** Sauvegarde des résultats **[/green]")
     write_reference_query_results_to_excel_file(
         reference_query=reference_query,
-        publications_all=publications_all,
+        publications=publications,
         pub_type_counts_by_author=pub_type_counts_by_author,
+        author_profiles_by_name=author_profiles_by_name,
         uspto_patents=uspto_patents,
         uspto_patent_applications=uspto_patent_applications,
         inpadoc_patents=inpadoc_patents,
         inpadoc_patent_applications=inpadoc_patent_applications,
-        scopus_author_profiles_by_ids=scopus_author_profiles_by_ids,
-        scopus_author_profiles_by_name=scopus_author_profiles_by_name,
-        openalex_author_profiles_by_name=openalex_author_profiles_by_name,
-        openalex_publications=openalex_publications_all,
-        openalex_pub_type_counts_by_author=openalex_pub_type_counts_by_author,
+        #scopus_author_profiles_by_ids=scopus_author_profiles_by_ids,
     )
 
     # Differential Scopus publication search results relative to last month
-    if reference_query.extract_scopus_diff:
+    """
+    if reference_query.extract_search_results_diff:
         console.print(
             "[green]\n** Recherche différentielle de publications dans Scopus"
             " relativement au 1er du mois dernier **[/green]",
@@ -309,6 +323,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             reference_query=reference_query,
             diff_results_out_excel_filename=diff_results_out_excel_filename,
         )
+    """
 
 
 def pyrefsearch() -> None:
@@ -338,15 +353,17 @@ def pyrefsearch() -> None:
     reference_query: ReferenceQuery = ReferenceQuery(
         search_type=toml_dict["search_type"],
         data_dir=str(toml_filename.parent),
+        publications_search_database=toml_dict["publications_search_database"],
         in_excel_file=toml_dict["in_excel_file"],
         in_excel_file_author_sheet=toml_dict["in_excel_file_author_sheet"],
         pub_year_first=toml_dict["pub_year_first"],
         pub_year_last=toml_dict["pub_year_last"],
-        extract_scopus_diff=toml_dict.get("extract_scopus_diff", False),
-        extract_scopus_diff_confirmation_emails=toml_dict.get(
-            "extract_scopus_diff_confirmation_emails", []
+        extract_search_results_diff=toml_dict.get("extract_search_results_diff", False),
+        extract_search_results_diff_confirmation_emails=toml_dict.get(
+            "extract_search_results_diff_confirmation_emails", []
         ),
-        publication_types=toml_dict["publication_types"],
+        publication_types_scopus=toml_dict["publication_types_scopus"],
+        publication_types_openalex=toml_dict["publication_types_openalex"],
         local_affiliations=toml_dict["local_affiliations"],
         scopus_database_refresh_days=toml_dict.get("scopus_database_refresh_days", 0),
         uspto_patent_search=toml_dict.get("uspto_patent_search", False),

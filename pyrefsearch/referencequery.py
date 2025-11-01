@@ -218,13 +218,15 @@ class ReferenceQuery:
         self,
         search_type: str,
         data_dir: str,
+        publications_search_database: str,
         in_excel_file: str,
         in_excel_file_author_sheet: str,
         pub_year_first: int,
         pub_year_last: int,
-        extract_scopus_diff: bool,
-        extract_scopus_diff_confirmation_emails: list[str],
-        publication_types: list[str],
+        extract_search_results_diff: bool,
+        extract_search_results_diff_confirmation_emails: list[str],
+        publication_types_scopus: list[str],
+        publication_types_openalex: list[str],
         local_affiliations: list[str],
         scopus_database_refresh_days: bool | int,
         uspto_patent_search: bool,
@@ -236,14 +238,22 @@ class ReferenceQuery:
         self.data_dir: Path = Path(data_dir)
         self.pub_year_first: int = pub_year_first
         self.pub_year_last: int = pub_year_last
-        self.extract_scopus_diff: bool = (
-            extract_scopus_diff if date.today().month != 1 else False
+        self.publications_search_database: str = publications_search_database
+        self.extract_search_results_diff: bool = (
+            extract_search_results_diff if date.today().month != 1 else False
         )
-        self.extract_scopus_diff_confirmation_emails: list[str] = (
-            extract_scopus_diff_confirmation_emails
+        self.extract_search_results_diff_confirmation_emails: list[str] = (
+            extract_search_results_diff_confirmation_emails
         )
-        self.publication_types: list[str] = [row[0] for row in publication_types]
-        self.publication_type_codes: list[str] = [row[1] for row in publication_types]
+        if self.publications_search_database == "Scopus":
+            self.publication_types = [row[0] for row in publication_types_scopus]
+            self.publication_type_codes = [row[1] for row in publication_types_scopus]
+        else:
+            self.publication_types = [row[0] for row in publication_types_openalex]
+            self.publication_type_codes = [row[1] for row in publication_types_openalex]
+        self.publication_type_table: dict = dict(
+            zip(self.publication_type_codes, self.publication_types)
+        )
         self.local_affiliations: list[dict] = [
             {
                 "name": to_lower_no_accents_no_hyphens(affiliation[0]),

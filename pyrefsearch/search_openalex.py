@@ -12,37 +12,13 @@ __all__ = [
     "openalex_config",
 ]
 
-from itertools import chain
+import itertools
+
 import pandas as pd
 from pyalex import config, Authors, Works
 from referencequery import ReferenceQuery
 import requests
-from utils import console
-
-
-def _count_publications_by_type_in_df(subtypes: dict, df: pd.DataFrame) -> list:
-    """
-    Count number of publications by type in a dataframe
-
-    Args:
-        subtypes (dict): Publication subtypes
-        df (pd.DataFrame): DataFrame with publications
-
-    Returns: List of counts per publication type
-
-    """
-
-    if df.empty:
-        return [None] * len(subtypes)
-    else:
-        return [
-            (
-                len(df[df["Subtype"] == subtype])
-                if len(df[df["Subtype"] == subtype]) > 0
-                else None
-            )
-            for subtype in subtypes.values()
-        ]
+from utils import console, count_publications_by_type_in_df
 
 
 def openalex_config():
@@ -62,10 +38,6 @@ def query_openalex_author_profiles_by_name(
 
     Returns : DataFrame with author profiles
     """
-
-    console.print(
-        "[green]\n** Recherche d'auteur.e.s dans la base de données OpenAlex **[/green]"
-    )
 
     data_rows: list = []
     for name in reference_query.au_names:
@@ -152,6 +124,20 @@ def get_publication_info_from_crossref(doi) -> dict | None:
                     for author in data["message"]["author"]
                 ]
             ),
+            "Affiliations": "; ".join(
+                list(
+                    itertools.chain(
+                        *[
+                            [
+                                affiliation["name"]
+                                for affiliation in authors["affiliation"]
+                                if "name" in affiliation
+                            ]
+                            for authors in data["message"]["author"]
+                        ]
+                    )
+                )
+            ),
             "volume": (
                 data["message"]["volume"] if "volume" in data["message"] else None
             ),
@@ -160,6 +146,83 @@ def get_publication_info_from_crossref(doi) -> dict | None:
         if data and "message" in data
         else None
     )
+
+
+def _add_local_author_name_and_count_columns(
+    publications: pd.DataFrame,
+) -> pd.DataFrame:
+
+    # Columns to use for removing publication duplicates
+    match_criteria_columns: list[str] = ["title", "subtype", "doi"]
+
+    # Build DataFrame with unique publication entries
+    publications_duplicate_counts = publications.value_counts(match_criteria_columns)
+    publications_without_duplicate: pd.DataFrame = pd.DataFrame(
+        publications_duplicate_counts.index.tolist()
+    )
+    publications_without_duplicate.columns = match_criteria_columns
+    publications_without_duplicate["duplicates"] = (
+        publications_duplicate_counts.values.tolist()
+    )
+    publications_without_duplicate.reset_index()
+
+    # Add column of duplicate indices
+    def find_duplicate_indices(row) -> list[int]:
+        indices: list = [
+            index
+            for index, row_all in publications.iterrows()
+            if row_all["title"] == row["title"]
+            and row_all["subtype"] == row["subtype"]
+            and row_all["doi"] == row["doi"]
+        ]
+        return indices
+
+    publications_without_duplicate["Duplicate indices"] = (
+        publications_without_duplicate.apply(find_duplicate_indices, axis=1)
+    )
+
+    # Add column of local authors
+    def list_local_authors(row) -> list[str]:
+        local_authors = [
+            publications.iloc[index]["Membre3IT"] for index in row["Duplicate indices"]
+        ]
+        return local_authors
+
+    publications_without_duplicate["Auteurs locaux"] = (
+        publications_without_duplicate.apply(list_local_authors, axis=1)
+    )
+
+    # Add local author count column (for n > 1 to indicate joint publications
+    def count_local_coauthors(row) -> int | None:
+        return len(row["Auteurs locaux"]) if len(row["Auteurs locaux"]) > 1 else None
+
+    publications_without_duplicate["Collab interne"] = (
+        publications_without_duplicate.apply(count_local_coauthors, axis=1)
+    )
+
+    # Add missing columns to the output dataframe
+    columns_missing: list[str] = [
+        item
+        for item in publications.columns.tolist()
+        if item not in match_criteria_columns
+    ]
+    for column in columns_missing:
+        publications_without_duplicate[column] = [
+            publications.iloc[row["Duplicate indices"][0]][column]
+            for _, row in publications_without_duplicate.iterrows()
+        ]
+
+    # Replace "posted-content" with "preprint" subtype
+    publications_without_duplicate.loc[
+        publications_without_duplicate["subtype"] == "posted-content", "subtype"
+    ] = "preprint"
+
+    # Drop temporary columns
+    publications_without_duplicate.drop(
+        ["duplicates", "Duplicate indices"], axis=1, inplace=True
+    )
+
+    return publications_without_duplicate
 
 
 def query_openalex_publications(
@@ -175,31 +238,23 @@ def query_openalex_publications(
               list of publication type counts by author (list)
     """
 
-    # Correspondance between types in OpenAlex records and the output Excel file
-    openalex_subtypes = {
-        "journal-article": "Articles",
-        "proceedings-article": "Confs",
-        "book-chapter": "Chap. de livres",
-        "preprint": "Pré-impressions",
-        "posted-content": "Pré-impressions",
-        "Other": "Autres",
-    }
-
     # Loop though authors to fetch/process records
     pub_type_counts_by_author: list = []
     publications = pd.DataFrame([])
-    for openalex_id in reference_query.openalex_ids:
+    for openalex_id, author_name in zip(
+        reference_query.openalex_ids, reference_query.au_names
+    ):
         if openalex_id:
             works = Works().filter(
                 author={"id": openalex_id},
                 publication_year=f"{reference_query.pub_year_first}-{reference_query.pub_year_last}",
             )
             works_df = pd.DataFrame([])
-            for work in chain(*works.paginate(per_page=200, n_max=None)):
-                # OpenAlex record
-                title_openalex = work["title"]
-                type_openalex = work["type"]
-                date_openalex = work["publication_date"]
+            for work in itertools.chain(*works.paginate(per_page=200, n_max=None)):
+                # Fetch OpenAlex record
+                title_openalex: str = work["title"]
+                type_openalex: str = work["type"]
+                date_openalex: str = work["publication_date"]
                 publication_name_openalex = (
                     work["primary_location"]["source"]["display_name"]
                     if "primary_location" in work
@@ -219,10 +274,10 @@ def query_openalex_publications(
                         ]
                     )
                     if "authorships" in work
-                    else None
+                    else []
                 )
 
-                # Crossref record
+                # Fetch Crossref record
                 if publication_info_from_crossref := get_publication_info_from_crossref(
                     work["doi"]
                 ):
@@ -242,15 +297,11 @@ def query_openalex_publications(
                     or publication_name_crossref is not None
                 ):
                     # Consolidate OpenAlex & Crossref record fields
-                    work_type: list = [
-                        openalex_subtypes.get(
-                            type_crossref or (type_openalex or "Other"), "Autre"
-                        )
-                    ]
-                    work_title: list = [title_openalex or title_openalex]
-                    work_publication_name: list = [
+                    work_type: str = type_crossref or (type_openalex or "Other")
+                    work_title: str = title_openalex or title_openalex
+                    work_publication_name: str | None = (
                         publication_name_crossref or publication_name_openalex
-                    ]
+                    )
 
                     # Add the record to the dataframe for this author
                     works_df = pd.concat(
@@ -258,31 +309,35 @@ def query_openalex_publications(
                             works_df,
                             pd.DataFrame(
                                 {
-                                    "Subtype": work_type,
-                                    "Titre": work_title,
-                                    "Date": [date_openalex],
-                                    "Auteurs": authors_openalex,
-                                    "Publication": work_publication_name,
-                                    "Volume": [volume],
-                                    "DOI": [f'=HYPERLINK("{work["doi"]}")'],
+                                    "title": [work_title],
+                                    "subtype": [work_type],
+                                    "coverDate": [date_openalex],
+                                    "Membre3IT": [f"{author_name[1]} {author_name[0]}"],
+                                    "author_names": [authors_openalex],
+                                    "publicationName": [work_publication_name],
+                                    "volume": [volume],
+                                    "doi": [f'=HYPERLINK("{work["doi"]}")'],
                                 }
                             ),
                         ],
                         ignore_index=True,
                     )
                     pub_type_counts_by_author.append(
-                        _count_publications_by_type_in_df(
-                            subtypes=openalex_subtypes, df=works_df
+                        count_publications_by_type_in_df(
+                            publication_type_codes=reference_query.publication_type_codes,
+                            df=works_df,
                         )
                     )
 
-            # Add dataframe for this author to the dataframe of all p
+            # Add the dataframe for this author to the dataframe of all p
             if not works_df.empty:
                 publications = pd.concat([publications, works_df])
 
-    publications = publications.drop_duplicates("Titre").copy()
-    publications = publications.sort_values(by=["Titre"])
+    # Remove duplicates and add local author name and count columns
     publications.reset_index(drop=True, inplace=True)
+    publications = _add_local_author_name_and_count_columns(publications=publications)
+
+    # Reformat pub_type_counts_by_author list
     pub_type_counts_by_author_transpose: list = [
         list(row) for row in zip(*pub_type_counts_by_author)
     ]

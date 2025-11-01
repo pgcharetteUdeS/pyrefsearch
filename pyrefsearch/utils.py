@@ -4,7 +4,12 @@ Various utility functions
 
 """
 
-__all__ = ["tabulate_patents_per_author", "to_lower_no_accents_no_hyphens", "console"]
+__all__ = [
+    "console",
+    "count_publications_by_type_in_df",
+    "tabulate_patents_per_author",
+    "to_lower_no_accents_no_hyphens",
+]
 
 from functools import lru_cache
 import pandas as pd
@@ -29,6 +34,33 @@ def to_lower_no_accents_no_hyphens(s: str) -> str:
     """
 
     return unidecode(s.replace("-", " ").lower().strip())
+
+
+def count_publications_by_type_in_df(
+    publication_type_codes: list, df: pd.DataFrame
+) -> list:
+    """
+    Count number of publications by type in a dataframe
+
+    Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+        df (pd.DataFrame): DataFrame with publications
+
+    Returns: List of counts per publication type
+
+    """
+
+    if df.empty:
+        return [None] * len(publication_type_codes)
+    else:
+        return [
+            (
+                len(df[df["subtype"] == pub_type])
+                if len(df[df["subtype"] == pub_type]) > 0
+                else None
+            )
+            for pub_type in publication_type_codes
+        ]
 
 
 def tabulate_patents_per_author(

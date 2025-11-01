@@ -35,7 +35,11 @@ import re
 import sys
 
 from referencequery import ReferenceQuery
-from utils import console, to_lower_no_accents_no_hyphens
+from utils import (
+    console,
+    count_publications_by_type_in_df,
+    to_lower_no_accents_no_hyphens,
+)
 
 
 def _check_author_name_correspondance(
@@ -132,33 +136,6 @@ def _check_author_name_correspondance(
         query_errors.append(query_error)
 
     return query_errors
-
-
-def _count_publications_by_type_in_df(
-    reference_query: ReferenceQuery, df: pd.DataFrame
-) -> list:
-    """
-    Count number of publications by type in a dataframe
-
-    Args:
-        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
-        df (pd.DataFrame): DataFrame with publications
-
-    Returns: List of counts per publication type
-
-    """
-
-    if df.empty:
-        return [None] * len(reference_query.publication_type_codes)
-    else:
-        return [
-            (
-                len(df[df["subtype"] == pub_type])
-                if len(df[df["subtype"] == pub_type]) > 0
-                else None
-            )
-            for pub_type in reference_query.publication_type_codes
-        ]
 
 
 def _is_internal_and_external_collab(row) -> str:
@@ -593,8 +570,9 @@ def query_scopus_publications(
 
             author_pubs = pd.DataFrame(query_results.results)
             pub_type_counts_by_author.append(
-                _count_publications_by_type_in_df(
-                    reference_query=reference_query, df=author_pubs
+                count_publications_by_type_in_df(
+                    publication_type_codes=reference_query.publication_type_codes,
+                    df=author_pubs,
                 )
             )
             publications = pd.concat([publications, author_pubs])

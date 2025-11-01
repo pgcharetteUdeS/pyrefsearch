@@ -48,8 +48,6 @@ def _export_publications_df_to_excel_sheet(
         "Date",
         "Auteurs locaux",
         "Collab interne",
-        "Collab externe",
-        "Collab interne+externe",
         "Auteurs",
         "Publication",
         "Volume",
@@ -62,8 +60,6 @@ def _export_publications_df_to_excel_sheet(
                 "title": "Titre",
                 "Auteurs locaux": "Auteurs locaux",
                 "Collab interne": "Collab interne",
-                "Collab externe": "Collab externe",
-                "Collab interne+externe": "Collab interne+externe",
                 "author_names": "Auteurs",
                 "publicationName": "Publication",
                 "volume": "Volume",
@@ -79,10 +75,10 @@ def _export_publications_df_to_excel_sheet(
 def _create_results_summary_df(
     reference_query: ReferenceQuery,
     publications_dfs_list_by_pub_type: list,
-    uspto_patent_applications: pd.DataFrame,
-    uspto_patents: pd.DataFrame,
-    inpadoc_patent_applications: pd.DataFrame,
-    inpadoc_patents: pd.DataFrame,
+    uspto_patent_applications: pd.DataFrame = pd.DataFrame([]),
+    uspto_patents: pd.DataFrame = pd.DataFrame([]),
+    inpadoc_patent_applications=pd.DataFrame([]),
+    inpadoc_patents: pd.DataFrame = pd.DataFrame([]),
 ) -> pd.DataFrame:
     """
     Create results summary dataframe
@@ -210,44 +206,17 @@ def _add_totals_formulae_to_sheet(
     worksheet[f"{col}{n + 3}"] = f"=ROUND(COUNTA({col}2:{col}{n + 1})/A{n + 3}*100, 1)"
     _center_column_by_index(worksheet=worksheet, i=column_names.index(col_name))
 
-    # Add % sum formula to column "Collab externe"
-    col_name = "Collab externe"
-    col = get_column_letter(column_names.index(col_name) + 1)
-    worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
-    worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
-    worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
-    worksheet[f"{col}{n + 2}"].alignment = Alignment(horizontal="right")
-    worksheet[f"{col}{n + 3}"] = (
-        f'=ROUND(COUNTIF({col}2:{col}{n + 1}, "X")/A{n + 3}*100, 1)'
-    )
-    _center_column_by_index(worksheet=worksheet, i=column_names.index(col_name))
-
-    # Add % sum formula to column "Collab interne+externe"
-    col_name = "Collab interne+externe"
-    col = get_column_letter(column_names.index(col_name) + 1)
-    worksheet[f"{col}1"].alignment = Alignment(wrapText=True)
-    worksheet[f"{col}{n + 2}"] = "% DU TOTAL"
-    worksheet[f"{col}{n + 2}"].border = Border(top=Side(style="thin"))
-    worksheet[f"{col}{n + 2}"].alignment = Alignment(horizontal="right")
-    worksheet[f"{col}{n + 3}"] = (
-        f'=ROUND(COUNTIF({col}2:{col}{n + 1}, "X")/A{n + 3}*100, 1)'
-    )
-    _center_column_by_index(worksheet=worksheet, i=column_names.index(col_name))
-
 
 def write_reference_query_results_to_excel_file(
     reference_query: ReferenceQuery,
-    publications_all: pd.DataFrame,
+    publications: pd.DataFrame,
     pub_type_counts_by_author: list,
+    author_profiles_by_name: pd.DataFrame,
     uspto_patents: pd.DataFrame,
     uspto_patent_applications: pd.DataFrame,
     inpadoc_patents: pd.DataFrame,
     inpadoc_patent_applications: pd.DataFrame,
-    scopus_author_profiles_by_ids: pd.DataFrame,
-    scopus_author_profiles_by_name: pd.DataFrame,
-    openalex_author_profiles_by_name: pd.DataFrame = pd.DataFrame([]),
-    openalex_publications: pd.DataFrame = pd.DataFrame([]),
-    openalex_pub_type_counts_by_author: list = [],
+    # scopus_author_profiles_by_ids: pd.DataFrame,
     publications_diff: bool = False,
     publications_previous_filename: Path = Path(""),
 ) -> Path:
@@ -256,17 +225,14 @@ def write_reference_query_results_to_excel_file(
 
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
-        publications_all (pd.DataFrame): dataFrames publications found in Scopus
+        publications (pd.DataFrame): dataFrames publications found in Scopus
         pub_type_counts_by_author (list): lists of publication type by author from Scopus
+        author_profiles_by_name (pd.DataFrame): Scopus author search results by names
         uspto_patents (pd.DataFrame): USPTO patent application search results
         uspto_patent_applications (pd.DataFrame): USPTO patent search results
         inpadoc_patents (pd.DataFrame): INPADOC patent search result
         inpadoc_patent_applications (pd.DataFrame): INPADOC patent search results
         scopus_author_profiles_by_ids (pd.DataFrame): Scopus author search results by ids
-        scopus_author_profiles_by_name (pd.DataFrame): Scopus author search results by names
-        openalex_author_profiles_by_name (pd.DataFrame): OpenAlex author search results by names
-        openalex_publications (pd.DataFrame): OpenALEX publication search results
-        openalex_pub_type_counts_by_author (list): lists of publication type by author from OpenAlex
         publications_diff (bool): True of this a Scopus differential request
         publications_previous_filename (Path): Path to the Excel file with results from previous month
 
@@ -276,20 +242,24 @@ def write_reference_query_results_to_excel_file(
 
     # Loop to parse publications by type into separate dataframes, store dfs in a list
     publications_dfs_list_by_pub_type: list[pd.DataFrame] = []
-    if not publications_all.empty:
+    if not publications.empty:
         for [pub_type, pub_code, pub_counts] in zip(
             reference_query.publication_types,
             reference_query.publication_type_codes,
             pub_type_counts_by_author,
         ):
             # Extract "pub_type" publications into a dataframe, add dataframe to list
-            df: pd.DataFrame = publications_all[publications_all["subtype"] == pub_code]
+            df: pd.DataFrame = pd.DataFrame(
+                publications[publications["subtype"] == pub_code]
+            )
             publications_dfs_list_by_pub_type.append(df)
             console.print(f"{pub_type}: {len(df)}")
 
             # Add "pub_type" publication counts to the author profiles
+            """
             if len(df) > 0:
                 scopus_author_profiles_by_ids[pub_type] = pub_counts
+            """
 
     # Create results summary dataframe
     results: pd.DataFrame = _create_results_summary_df(
@@ -337,7 +307,7 @@ def write_reference_query_results_to_excel_file(
 
         if not publications_diff:
             # Write all Scopus search result to a simgle sheet
-            publications_all.to_excel(
+            publications.to_excel(
                 writer,
                 index=False,
                 sheet_name="Scopus (résultats complets)",
@@ -376,37 +346,22 @@ def write_reference_query_results_to_excel_file(
                     freeze_panes=(1, 1),
                 )
 
-            # Scopus author profile sheets
+            # Author profile sheets
+            """
             col: pd.Series = scopus_author_profiles_by_ids.pop("Période active")
             scopus_author_profiles_by_ids["Période active"] = col
             scopus_author_profiles_by_ids.to_excel(
                 writer, index=False, sheet_name="Auteurs - Profils", freeze_panes=(1, 1)
             )
-            scopus_author_profiles_by_name.to_excel(
+            """
+            author_profiles_by_name.to_excel(
                 writer,
                 index=False,
                 sheet_name="Auteurs - Homonymes",
                 freeze_panes=(1, 1),
             )
 
-            # OpenApex author profile sheet
-            if not openalex_author_profiles_by_name.empty:
-                openalex_author_profiles_by_name.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name="OpenAlex - Authors",
-                    freeze_panes=(1, 1),
-                )
-
-            # OpenApex publications search results sheet
-            if not openalex_publications.empty:
-                openalex_publications.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name="OpenAlex - Publications",
-                    freeze_panes=(1, 1),
-                )
-
+        """
         else:
             # Author profile sheets
             author_profiles_by_ids_minimal: pd.DataFrame = (
@@ -415,6 +370,7 @@ def write_reference_query_results_to_excel_file(
             author_profiles_by_ids_minimal.to_excel(
                 writer, index=False, sheet_name="Auteurs", freeze_panes=(1, 1)
             )
+        """
 
     console.print(
         "Résultats de la recherche sauvegardés "

@@ -16,11 +16,16 @@ in_excel_file_author_sheet = "Membres"
 pub_year_first = 2025
 pub_year_last = 2025
 
+# Base de données pour la recherche de publications : "Scopus" ou "OpenAlex"
+# Valeur par défaut = "Scopus"
+publications_search_database = "Scopus"
+#publications_search_database = "OpenAlex"
+
 # Activer/désactiver l'extraction différentielle Scopus relativement au 1er du mois précédant,
 # spécification de la liste d'envois de courriels de confirmation, où la première adresse
 # email reçoit aussi le fichier log de l'exécution.
-extract_scopus_diff = false
-extract_scopus_diff_confirmation_emails = [
+extract_search_results_diff = false
+extract_search_results_diff_confirmation_emails = [
     "Paul.G.Charette@USherbrooke.ca",
     "Paul.Charette@USherbrooke.ca",
 ]
@@ -35,13 +40,18 @@ local_affiliations = [
     ["Laboratoire nanotechnologies et nanosystèmes", "60108180"]
 ]
 
+# OPENALEX : Paires de descriptifs (au choix de l'usager) et mosts clefs indiquant
+# le type de publication dans la base de données OpenAlex
+publication_types_openalex = [["Articles", "journal-article"], ["Confs", "proceedings-article"],
+    ["Chap. de livres", "book-chapter"], ["Pré-impressions", "preprint"], ["Autres", "Other"]]
+
 # SCOPUS : Paires de descriptifs (au choix de l'usager) et codes à deux lettres Scopus
 # correspondants pour la recherche par publications.
 # Codes Scopus disponibles :
 #   Article-ar / Abstract Report-ab / Book-bk / Book Chapter-ch / Conference Paper-cp /
 #   Conference Review-cr / Data Paper-dp / Editorial-ed / Erratum-er / Letter-le /
 #   Multimedia-mm / Note-no / Report-rp / Retracted-tb / Review-re / Short Survey-sh
-publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Absracts", "ab"], ["Livres", "bk"],
+publication_types_scopus = [["Articles", "ar"], ["Confs", "cp"], ["Absracts", "ab"], ["Livres", "bk"],
     ["Chap. de livres", "ch"], ["Lettres", "le"], ["Rapports", "rp"]]
 
 # SCOPUS : Intervalle de mise à jour (en nombre de jours) de la copie locale de la base de
