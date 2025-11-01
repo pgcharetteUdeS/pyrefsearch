@@ -50,11 +50,12 @@ def query_openalex_author_profiles_by_name(
             [
                 name[0],
                 name[1],
+                author["display_name"],
                 f'=HYPERLINK("{author["id"]}")',
+                author["created_date"],
+                author["updated_date"].split("T")[0],
                 f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else "",
                 author["works_count"],
-                author["display_name"],
-                author["created_date"],
                 ", ".join(
                     [
                         last_inst["display_name"]
@@ -78,11 +79,12 @@ def query_openalex_author_profiles_by_name(
         columns=[
             "Surname",
             "Given name",
+            "Display name",
             "OpenAlex profile",
+            "Date created",
+            "Date updated",
             "ORCID profile",
             "Works count",
-            "Display name",
-            "Created date",
             "Last known institutions",
             "Affiliations",
             "Topics",
