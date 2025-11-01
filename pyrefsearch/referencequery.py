@@ -225,8 +225,7 @@ class ReferenceQuery:
         pub_year_last: int,
         extract_search_results_diff: bool,
         extract_search_results_diff_confirmation_emails: list[str],
-        publication_types_scopus: list[str],
-        publication_types_openalex: list[str],
+        publication_types: list[str],
         local_affiliations: list[str],
         scopus_database_refresh_days: bool | int,
         uspto_patent_search: bool,
@@ -245,12 +244,8 @@ class ReferenceQuery:
         self.extract_search_results_diff_confirmation_emails: list[str] = (
             extract_search_results_diff_confirmation_emails
         )
-        if self.publications_search_database == "Scopus":
-            self.publication_types = [row[0] for row in publication_types_scopus]
-            self.publication_type_codes = [row[1] for row in publication_types_scopus]
-        else:
-            self.publication_types = [row[0] for row in publication_types_openalex]
-            self.publication_type_codes = [row[1] for row in publication_types_openalex]
+        self.publication_types = [row[0] for row in publication_types]
+        self.publication_type_codes = [row[1] for row in publication_types]
         self.publication_type_table: dict = dict(
             zip(self.publication_type_codes, self.publication_types)
         )
@@ -271,6 +266,18 @@ class ReferenceQuery:
         self.espacenet_patent_search_results_file: str = (
             espacenet_patent_search_results_file
         )
+
+        # Check for OpenAlex vs Scopus search parameter match
+        if self.publications_search_database == "Scopus":
+            for pub_type, pub_code in zip(
+                self.publication_types, self.publication_type_codes
+            ):
+                if pub_type == "Articles" and pub_code != "ar":
+                    console.print(
+                        "[red]ERREUR: recherche Scopus avec paramètres 'publication_types' OpenAlex![/red]",
+                        soft_wrap=True,
+                    )
+                    sys.exit()
 
         # Check search range
         if self.pub_year_first > self.pub_year_last:

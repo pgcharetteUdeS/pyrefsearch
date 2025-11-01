@@ -9,16 +9,15 @@ search_type = "Publications"
 
 # Fichier Excel d'entrée et nom du feuillet contenant les information des auteur.e.s
 # (colonnes "Nom", "Prénom", ainsi que "Scopus ID" pour les recherches de publications)
-in_excel_file = "Liste chercheurs-membres.xlsx"
+in_excel_file = "Liste chercheurs-membres - TEST - SHORT.xlsx"
 in_excel_file_author_sheet = "Membres"
 
 # Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)
 pub_year_first = 2025
 pub_year_last = 2025
 
-# Base de données pour la recherche de publications : "Scopus" ou "OpenAlex"
-# Valeur par défaut = "Scopus"
-publications_search_database = "Scopus"
+# Base de données pour la recherche de publications : "Scopus" ou "OpenAlex" (défaut)
+#publications_search_database = "Scopus"
 #publications_search_database = "OpenAlex"
 
 # Activer/désactiver l'extraction différentielle Scopus relativement au 1er du mois précédant,
@@ -42,7 +41,7 @@ local_affiliations = [
 
 # OPENALEX : Paires de descriptifs (au choix de l'usager) et mosts clefs indiquant
 # le type de publication dans la base de données OpenAlex
-publication_types_openalex = [["Articles", "journal-article"], ["Confs", "proceedings-article"],
+publication_types = [["Articles", "journal-article"], ["Confs", "proceedings-article"],
     ["Chap. de livres", "book-chapter"], ["Pré-impressions", "preprint"], ["Autres", "Other"]]
 
 # SCOPUS : Paires de descriptifs (au choix de l'usager) et codes à deux lettres Scopus
@@ -51,15 +50,15 @@ publication_types_openalex = [["Articles", "journal-article"], ["Confs", "procee
 #   Article-ar / Abstract Report-ab / Book-bk / Book Chapter-ch / Conference Paper-cp /
 #   Conference Review-cr / Data Paper-dp / Editorial-ed / Erratum-er / Letter-le /
 #   Multimedia-mm / Note-no / Report-rp / Retracted-tb / Review-re / Short Survey-sh
-publication_types_scopus = [["Articles", "ar"], ["Confs", "cp"], ["Absracts", "ab"], ["Livres", "bk"],
-    ["Chap. de livres", "ch"], ["Lettres", "le"], ["Rapports", "rp"]]
+#publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Absracts", "ab"], ["Livres", "bk"],
+#    ["Chap. de livres", "ch"], ["Lettres", "le"], ["Rapports", "rp"]]
 
 # SCOPUS : Intervalle de mise à jour (en nombre de jours) de la copie locale de la base de
 # données. Une recherche en ligne dans Scopus prend beaucoup de temps, les résultats sont
 # sauvegardés dans une base de données locale pour éviter de refaire la recherche
 # en ligne à chaque fois. Cette base de données locale est mise à jour à
 # intervalles réguliers (valeur par défaut = 0, i.e. mise à jour à chaque recherche).
-scopus_database_refresh_days = 7
+#scopus_database_refresh_days = 7
 
 # BREVETS : Activer/désactiver (true/false) la recherche de brevets USPTO et ESPACENET (INPADOC)
 # 1) La recherche de brevets dans INPADOC est préférable à l'USPTO parce que les brevets

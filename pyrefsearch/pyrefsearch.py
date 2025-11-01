@@ -287,7 +287,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         uspto_patent_applications=uspto_patent_applications,
         inpadoc_patents=inpadoc_patents,
         inpadoc_patent_applications=inpadoc_patent_applications,
-        #scopus_author_profiles_by_ids=scopus_author_profiles_by_ids,
+        # scopus_author_profiles_by_ids=scopus_author_profiles_by_ids,
     )
 
     # Differential Scopus publication search results relative to last month
@@ -353,7 +353,9 @@ def pyrefsearch() -> None:
     reference_query: ReferenceQuery = ReferenceQuery(
         search_type=toml_dict["search_type"],
         data_dir=str(toml_filename.parent),
-        publications_search_database=toml_dict["publications_search_database"],
+        publications_search_database=toml_dict.get(
+            "publications_search_database", "OpenAlex"
+        ),
         in_excel_file=toml_dict["in_excel_file"],
         in_excel_file_author_sheet=toml_dict["in_excel_file_author_sheet"],
         pub_year_first=toml_dict["pub_year_first"],
@@ -362,8 +364,7 @@ def pyrefsearch() -> None:
         extract_search_results_diff_confirmation_emails=toml_dict.get(
             "extract_search_results_diff_confirmation_emails", []
         ),
-        publication_types_scopus=toml_dict["publication_types_scopus"],
-        publication_types_openalex=toml_dict["publication_types_openalex"],
+        publication_types=toml_dict["publication_types"],
         local_affiliations=toml_dict["local_affiliations"],
         scopus_database_refresh_days=toml_dict.get("scopus_database_refresh_days", 0),
         uspto_patent_search=toml_dict.get("uspto_patent_search", False),

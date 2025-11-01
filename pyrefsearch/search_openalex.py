@@ -13,7 +13,7 @@ __all__ = [
 ]
 
 import itertools
-
+import html
 import pandas as pd
 from pyalex import config, Authors, Works
 from referencequery import ReferenceQuery
@@ -262,8 +262,8 @@ def query_openalex_publications(
                     and "display_name" in work["primary_location"]["source"]
                     else None
                 )
-                authors_openalex = (
-                    "; ".join(
+                if "authorships" in work:
+                    authors_openalex = "; ".join(
                         [
                             (
                                 author["author"]["display_name"]
@@ -273,9 +273,42 @@ def query_openalex_publications(
                             for author in work["authorships"]
                         ]
                     )
-                    if "authorships" in work
-                    else []
-                )
+                    author_institutions_openalex = "; ".join(
+                        [
+                            (
+                                ", ".join(
+                                    [
+                                        institution["display_name"]
+                                        for institution in author["institutions"]
+                                    ]
+                                )
+                                if "institutions" in author
+                                else ""
+                            )
+                            for author in work["authorships"]
+                        ]
+                    )
+                    author_affiliations_openalex = html.unescape(
+                        "; ".join(
+                            [
+                                (
+                                    ", ".join(
+                                        [
+                                            affiliations["raw_affiliation_string"]
+                                            for affiliations in author["affiliations"]
+                                        ]
+                                    )
+                                    if "affiliations" in author
+                                    else ""
+                                )
+                                for author in work["authorships"]
+                            ]
+                        )
+                    )
+                else:
+                    authors_openalex = ""
+                    author_institutions_openalex = ""
+                    author_affiliations_openalex = ""
 
                 # Fetch Crossref record
                 if publication_info_from_crossref := get_publication_info_from_crossref(
@@ -314,9 +347,12 @@ def query_openalex_publications(
                                     "coverDate": [date_openalex],
                                     "Membre3IT": [f"{author_name[1]} {author_name[0]}"],
                                     "author_names": [authors_openalex],
+                                    "institutions": [author_institutions_openalex],
+                                    "affiliations": [author_affiliations_openalex],
                                     "publicationName": [work_publication_name],
                                     "volume": [volume],
                                     "doi": [f'=HYPERLINK("{work["doi"]}")'],
+                                    "id": work["id"],
                                 }
                             ),
                         ],

@@ -100,7 +100,7 @@ def _create_results_summary_df(
 
     # Initialize 3 columns contents
     results: list = [
-        None,
+        f"Recherche dans {reference_query.publications_search_database}",
         "Nb d'auteur.e.s",
         "Année de début",
         "Année de fin",
@@ -306,11 +306,11 @@ def write_reference_query_results_to_excel_file(
                 )
 
         if not publications_diff:
-            # Write all Scopus search result to a simgle sheet
+            # Write all publication search results to a single sheet
             publications.to_excel(
                 writer,
                 index=False,
-                sheet_name="Scopus (résultats complets)",
+                sheet_name=f"Résultats complets {reference_query.publications_search_database}",
                 freeze_panes=(1, 1),
             )
 
