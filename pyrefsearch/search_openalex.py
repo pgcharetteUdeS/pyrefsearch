@@ -14,7 +14,6 @@ __all__ = [
 
 import itertools
 import html
-import numpy as np
 import pandas as pd
 from pyalex import config, Authors, Works
 from referencequery import ReferenceQuery
@@ -79,29 +78,6 @@ def _flag_matched_openalex_author_ids_and_affiliations(
     }
     author_profiles["Affl/ID"] = author_profiles.apply(set_affiliation_and_id, axis=1)
 
-    """
-    # Flag authors with local affiliation and multiple Scopus IDs
-    no_multiple_ids: bool = True
-    for _, df_group in author_profiles.groupby(["homonym"]):
-        if (
-            np.count_nonzero(
-                np.asarray(df_group["Affl/ID"].str.contains("Affl").values)
-            )
-            > 1
-        ):
-            if no_multiple_ids:
-                console.print(
-                    "[green]\n** Recherche d'homonymes parmi les auteur.e.s **[/green]"
-                )
-                no_multiple_ids = False
-
-            name: str = df_group["homonym"].iloc[0]
-            console.print(
-                f"[yellow]WARNING: l'auteur.e '{name}'"
-                " a plus d'un identifiant OpenAlex![/yellow]",
-                soft_wrap=True,
-            )
-    """
     return author_profiles
 
 
@@ -131,7 +107,6 @@ def query_openalex_author_profiles_by_name(
                 author["display_name"],
                 f'=HYPERLINK("{author["id"]}")',
                 author["created_date"],
-                author["updated_date"].split("T")[0],
                 f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else "",
                 author["works_count"],
                 [
@@ -156,9 +131,8 @@ def query_openalex_author_profiles_by_name(
             "Display name",
             "OpenAlex profile",
             "Date created",
-            "Date updated",
             "ORCID profile",
-            "Works count",
+            "Count",
             "Last known institutions",
             "Affiliations",
             "Topics",
@@ -169,24 +143,22 @@ def query_openalex_author_profiles_by_name(
         author_profiles = _flag_matched_openalex_author_ids_and_affiliations(
             reference_query=reference_query, author_profiles=author_profiles
         )
-        author_profiles.reset_index(drop=True, inplace=True)
-
-    author_profiles = author_profiles[
-        [
-            "Surname",
-            "Given name",
-            "Display name",
-            "Affl/ID",
-            "OpenAlex profile",
-            "Date created",
-            "Date updated",
-            "ORCID profile",
-            "Works count",
-            "Last known institutions",
-            "Affiliations",
-            "Topics",
+        author_profiles = author_profiles[
+            [
+                "Surname",
+                "Given name",
+                "Display name",
+                "Affl/ID",
+                "Date created",
+                "OpenAlex profile",
+                "Count",
+                "ORCID profile",
+                "Last known institutions",
+                "Affiliations",
+                "Topics",
+            ]
         ]
-    ]
+        author_profiles.reset_index(drop=True, inplace=True)
 
     return author_profiles
 
