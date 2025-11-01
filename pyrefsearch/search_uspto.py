@@ -209,7 +209,7 @@ def query_uspto_patents_and_applications(
 
     # Clean up USPTO search result dataframes
     application_ids: list[int] = []
-    patent_counts_by_author: list[int | None] = [None] * len(reference_query.au_ids)
+    patent_counts_by_author: list[int | None] = [None] * len(reference_query.scopus_ids)
     if not patents.empty:
         # Simplify lists of inventors (names + country codes) and assignees (names)
         patents["inventors"] = patents["inventors"].apply(
@@ -271,7 +271,7 @@ def query_uspto_patents_and_applications(
         # Tabulate number of patents or patent applications per author
         patent_counts_by_author = tabulate_patents_per_author(
             au_names=reference_query.au_names,
-            au_ids=reference_query.au_ids,
+            au_ids=reference_query.scopus_ids,
             patents=patents,
         )
 

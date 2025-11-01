@@ -70,7 +70,7 @@ def _check_author_name_correspondance(
     ] in enumerate(
         zip(
             reference_query.au_names,
-            reference_query.au_ids,
+            reference_query.scopus_ids,
             authors["Nom de famille"],
             authors["Prénom"],
             authors["Affiliation"],
@@ -201,7 +201,7 @@ def _add_coauthor_and_externals_columns_and_sort_by_tile_df(
     def list_local_authors(author_ids) -> list:
         co_authors_local: list[str] = [
             name[0]
-            for name, au_id in zip(reference_query.au_names, reference_query.au_ids)
+            for name, au_id in zip(reference_query.au_names, reference_query.scopus_ids)
             if any([str(au_id) in author_ids]) and au_id > 0
         ]
         return co_authors_local
@@ -305,7 +305,7 @@ def _flag_matched_scopus_author_ids_and_affiliations(
 
     # Precompute dictionary mapping Scopus IDs to their indices for constant-time lookups.
     reference_query.au_id_to_index = {
-        au_id: index for index, au_id in enumerate(reference_query.au_ids)
+        au_id: index for index, au_id in enumerate(reference_query.scopus_ids)
     }
     author_profiles["Affl/ID"] = author_profiles.apply(set_affiliation_and_id, axis=1)
 
@@ -393,7 +393,7 @@ def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.Da
         "Période active",
     ]
     for i, [name, au_id] in enumerate(
-        zip(reference_query.au_names, reference_query.au_ids)
+        zip(reference_query.au_names, reference_query.scopus_ids)
     ):
         try:
             if au_id > 0:
@@ -545,7 +545,7 @@ def query_scopus_publications(
     # Loop through list of author IDs to fetch publications, count pub types by author
     publications = pd.DataFrame()
     pub_type_counts_by_author: list = []
-    for au_id in reference_query.au_ids:
+    for au_id in reference_query.scopus_ids:
         if au_id > 0:
             query_str: str = (
                 f"AU-ID ({au_id})"

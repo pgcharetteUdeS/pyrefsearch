@@ -107,7 +107,7 @@ def _create_results_summary_df(
     ]
     values: list = [
         None,
-        len(reference_query.au_ids),
+        len(reference_query.scopus_ids),
         reference_query.pub_year_first,
         reference_query.pub_year_last,
     ]

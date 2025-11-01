@@ -324,13 +324,13 @@ class ReferenceQuery:
 
         # Extract Scopus IDs from the input data, replace non-integer values with 0
         self.au_id_to_index: dict = {}
-        self.au_ids: list[int] = []
+        self.scopus_ids: list[int] = []
         if "ID Scopus" in authors.columns:
             for scopus_id in authors["ID Scopus"].values.tolist():
                 try:
-                    self.au_ids.append(int(scopus_id))
+                    self.scopus_ids.append(int(scopus_id))
                 except ValueError:
-                    self.au_ids.append(0)
+                    self.scopus_ids.append(0)
 
         # Extract OpenAlex IDs from the input data, replace missing values with ""
         if "OpenAlex" in authors.columns:

@@ -380,12 +380,12 @@ def query_espacenet_patents_and_applications(
     # Tabulate number of patents and patent applications per author
     patent_application_counts_by_author: list = tabulate_patents_per_author(
         au_names=reference_query.au_names,
-        au_ids=reference_query.au_ids,
+        au_ids=reference_query.scopus_ids,
         patents=applications_published_in_year_range,
     )
     patent_granted_counts_by_author: list = tabulate_patents_per_author(
         au_names=reference_query.au_names,
-        au_ids=reference_query.au_ids,
+        au_ids=reference_query.scopus_ids,
         patents=patents_granted_in_year_range,
     )
 

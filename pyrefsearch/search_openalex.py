@@ -14,17 +14,95 @@ __all__ = [
 
 import itertools
 import html
+import numpy as np
 import pandas as pd
 from pyalex import config, Authors, Works
 from referencequery import ReferenceQuery
+import re
 import requests
-from utils import console, count_publications_by_type_in_df
+from utils import (
+    console,
+    count_publications_by_type_in_df,
+    to_lower_no_accents_no_hyphens,
+)
 
 
 def openalex_config():
     config.email = "paul.charette@usherbrooke.ca"
     config.max_retries = 5
     config.retry_backoff_factor = 0.5
+
+
+def _flag_matched_openalex_author_ids_and_affiliations(
+    reference_query: ReferenceQuery, author_profiles: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Flag author profiles with local affiliations and matching OpenAlex IDs between
+    input Excel file and Scopus database
+
+    Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+        author_profiles (pd.DataFrame): DataFrame with author profiles
+
+    Returns: DataFrame with local author profiles flagged
+
+    """
+
+    def set_affiliation_and_id(row) -> str | None:
+        if row["Last known institutions"] is None and row["Affiliations"] is None:
+            return None
+        last_known_institutions_match: bool = any(
+            any(
+                local_affiliation["name"] in to_lower_no_accents_no_hyphens(institution)
+                for institution in row["Last known institutions"]
+            )
+            for local_affiliation in reference_query.local_affiliations
+        )
+        au_id_index: int | None = reference_query.au_id_to_index.get(
+            re.search(r"A\d{10}", row["OpenAlex profile"]).group()
+        )
+        au_id_match: bool = au_id_index is not None and to_lower_no_accents_no_hyphens(
+            reference_query.au_names[au_id_index][0]
+        ) == to_lower_no_accents_no_hyphens(row["Surname"])
+        if last_known_institutions_match and au_id_match:
+            return "Affl. + ID"
+        elif last_known_institutions_match:
+            return "Affl."
+        elif au_id_match:
+            return "ID"
+        else:
+            return None
+
+    # Precompute dictionary mapping OpenAlex IDs to their indices for constant-time lookups.
+    reference_query.au_id_to_index = {
+        au_id: index for index, au_id in enumerate(reference_query.openalex_ids)
+    }
+    author_profiles["Affl/ID"] = author_profiles.apply(set_affiliation_and_id, axis=1)
+
+    """
+    # Flag authors with local affiliation and multiple Scopus IDs
+    no_multiple_ids: bool = True
+    for _, df_group in author_profiles.groupby(["homonym"]):
+        if (
+            np.count_nonzero(
+                np.asarray(df_group["Affl/ID"].str.contains("Affl").values)
+            )
+            > 1
+        ):
+            if no_multiple_ids:
+                console.print(
+                    "[green]\n** Recherche d'homonymes parmi les auteur.e.s **[/green]"
+                )
+                no_multiple_ids = False
+
+            name: str = df_group["homonym"].iloc[0]
+            console.print(
+                f"[yellow]WARNING: l'auteur.e '{name}'"
+                " a plus d'un identifiant OpenAlex![/yellow]",
+                soft_wrap=True,
+            )
+    """
+    return author_profiles
 
 
 def query_openalex_author_profiles_by_name(
@@ -56,25 +134,21 @@ def query_openalex_author_profiles_by_name(
                 author["updated_date"].split("T")[0],
                 f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else "",
                 author["works_count"],
-                ", ".join(
-                    [
-                        last_inst["display_name"]
-                        for last_inst in author["last_known_institutions"]
-                    ]
-                ),
-                ", ".join(
-                    [
-                        affiliation["institution"]["display_name"]
-                        for affiliation in author["affiliations"]
-                    ]
-                ),
-                ", ".join([topic["display_name"] for topic in author["topics"]]),
+                [
+                    last_inst["display_name"]
+                    for last_inst in author["last_known_institutions"]
+                ],
+                [
+                    affiliation["institution"]["display_name"]
+                    for affiliation in author["affiliations"]
+                ],
+                [topic["display_name"] for topic in author["topics"]],
             ]
             for author in author_search_results
         )
         data_rows.extend([""])
 
-    return pd.DataFrame(
+    author_profiles: pd.DataFrame = pd.DataFrame(
         data_rows,
         columns=[
             "Surname",
@@ -90,6 +164,31 @@ def query_openalex_author_profiles_by_name(
             "Topics",
         ],
     )
+
+    if not author_profiles.empty:
+        author_profiles = _flag_matched_openalex_author_ids_and_affiliations(
+            reference_query=reference_query, author_profiles=author_profiles
+        )
+        author_profiles.reset_index(drop=True, inplace=True)
+
+    author_profiles = author_profiles[
+        [
+            "Surname",
+            "Given name",
+            "Display name",
+            "Affl/ID",
+            "OpenAlex profile",
+            "Date created",
+            "Date updated",
+            "ORCID profile",
+            "Works count",
+            "Last known institutions",
+            "Affiliations",
+            "Topics",
+        ]
+    ]
+
+    return author_profiles
 
 
 def _get_publication_info_from_crossref(doi) -> dict | None:
@@ -119,25 +218,21 @@ def _get_publication_info_from_crossref(doi) -> dict | None:
                 if data["message"]["container-title"]
                 else None
             ),
-            "authors": "; ".join(
-                [
-                    f"{author['family'] if 'family' in author else ''}, "
-                    f"{author['given'] if 'given' in author else ''}"
-                    for author in data["message"]["author"]
-                ]
-            ),
-            "Affiliations": "; ".join(
-                list(
-                    itertools.chain(
-                        *[
-                            [
-                                affiliation["name"]
-                                for affiliation in authors["affiliation"]
-                                if "name" in affiliation
-                            ]
-                            for authors in data["message"]["author"]
+            "authors": [
+                f"{author['family'] if 'family' in author else ''}, "
+                f"{author['given'] if 'given' in author else ''}"
+                for author in data["message"]["author"]
+            ],
+            "Affiliations": list(
+                itertools.chain(
+                    *[
+                        [
+                            affiliation["name"]
+                            for affiliation in authors["affiliation"]
+                            if "name" in affiliation
                         ]
-                    )
+                        for authors in data["message"]["author"]
+                    ]
                 )
             ),
             "volume": (
@@ -265,52 +360,36 @@ def query_openalex_publications(
                     else None
                 )
                 if "authorships" in work:
-                    authors_openalex = "; ".join(
-                        [
-                            (
-                                author["author"]["display_name"]
-                                if "author" in author
-                                else ""
-                            )
-                            for author in work["authorships"]
-                        ]
-                    )
-                    author_institutions_openalex = "; ".join(
-                        [
-                            (
-                                ", ".join(
-                                    [
-                                        institution["display_name"]
-                                        for institution in author["institutions"]
-                                    ]
-                                )
-                                if "institutions" in author
-                                else ""
-                            )
-                            for author in work["authorships"]
-                        ]
-                    )
-                    author_affiliations_openalex = html.unescape(
-                        "; ".join(
+                    authors_openalex = [
+                        author["author"]["display_name"] if "author" in author else ""
+                        for author in work["authorships"]
+                    ]
+                    author_institutions_openalex = [
+                        (
                             [
-                                (
-                                    ", ".join(
-                                        [
-                                            affiliations["raw_affiliation_string"]
-                                            for affiliations in author["affiliations"]
-                                        ]
-                                    )
-                                    if "affiliations" in author
-                                    else ""
-                                )
-                                for author in work["authorships"]
+                                institution["display_name"]
+                                for institution in author["institutions"]
                             ]
+                            if "institutions" in author
+                            else []
                         )
-                    )
+                        for author in work["authorships"]
+                    ]
+                    author_affiliations_openalex = [
+                        (
+                            [
+                                html.unescape(affiliations["raw_affiliation_string"])
+                                for affiliations in author["affiliations"]
+                            ]
+                            if "affiliations" in author
+                            else []
+                        )
+                        for author in work["authorships"]
+                    ]
                 else:
-                    authors_openalex = ""
-                    author_institutions_openalex = ""
-                    author_affiliations_openalex = ""
+                    authors_openalex = []
+                    author_institutions_openalex = []
+                    author_affiliations_openalex = []
 
                 # Fetch Crossref record
                 if publication_info_from_crossref := _get_publication_info_from_crossref(
