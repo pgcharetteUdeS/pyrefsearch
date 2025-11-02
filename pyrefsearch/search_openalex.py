@@ -25,6 +25,7 @@ from utils import (
     count_publications_by_type_in_df,
     to_lower_no_accents_no_hyphens,
 )
+import sys
 
 
 def config_openalex():
@@ -51,25 +52,45 @@ def query_author_profiles_by_id_openalex(
     for [name, openalex_id] in zip(
         reference_query.au_names, reference_query.openalex_ids
     ):
-        author = Authors()[openalex_id]
-        if not author:
-            console.print(
-                f"[red]ERREUR: Aucun résultat dans OpenAlex pour l'identifiant '{openalex_id}'![/red]"
-            )
-        data_rows.append(
-            [
-                name[0],
-                name[1],
-                author["display_name"],
-                f'=HYPERLINK("{author["id"]}")',
-                f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else "",
-                author["works_count"],
+        if openalex_id:
+            try:
+                author = Authors()[openalex_id]
+                data_rows.append(
+                    [
+                        name[0],
+                        name[1],
+                        author["display_name"],
+                        f'=HYPERLINK("https://openalex.org/{openalex_id}")',
+                        f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else None,
+                        author["works_count"],
+                        [
+                            last_inst["display_name"]
+                            for last_inst in author["last_known_institutions"]
+                        ],
+                    ]
+                )
+            except Exception as e:
+                console.print(
+                    f"[red]Erreur dans la recherche OpenAlex pour l'auteur '{name[1]} {name[0]}'"
+                    f" avec l'identifiant {openalex_id} - '{e}'![/red]",
+                    soft_wrap=True,
+                )
+                sys.exit()
+        else:
+            data_rows.append(
                 [
-                    last_inst["display_name"]
-                    for last_inst in author["last_known_institutions"]
-                ],
-            ]
-        )
+                    name[0],
+                    name[1],
+                    None,
+                    None,
+                    None,
+                    None,
+                ]
+            )
+            console.print(
+                f"[red]ERREUR: L'auteur {name[1]} {name[0]} n'a pas d'identifiant OpenAlex![/red]",
+                soft_wrap=True,
+            )
 
     author_profiles: pd.DataFrame = pd.DataFrame(
         data_rows,
@@ -115,9 +136,11 @@ def _flag_matched_openalex_author_ids_and_affiliations(
             )
             for local_affiliation in reference_query.local_affiliations
         )
-        au_id_index: int | None = reference_query.au_id_to_index.get(
-            re.search(r"A\d{10}", row["OpenAlex profile"]).group()
-        )
+        match = re.search(r"A\d{10}", row["OpenAlex profile"])
+        if match:
+            au_id_index = reference_query.au_id_to_index.get(match.group())
+        else:
+            au_id_index = None
         au_id_match: bool = au_id_index is not None and to_lower_no_accents_no_hyphens(
             reference_query.au_names[au_id_index][0]
         ) == to_lower_no_accents_no_hyphens(row["Surname"])
