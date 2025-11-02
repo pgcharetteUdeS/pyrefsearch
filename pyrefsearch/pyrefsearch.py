@@ -185,8 +185,8 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         console.print(
             "[green]\n** Recherche de profils d'auteurs dans OpenAlex **[/green]"
         )
-        author_profiles: pd.DataFrame = (
-            query_author_profiles_by_id_openalex(reference_query=reference_query)
+        author_profiles = query_author_profiles_by_id_openalex(
+            reference_query=reference_query
         )
 
         # Fetch publications, count publication types by author
@@ -197,9 +197,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
 
         # Fetch OpenAlex author profiles corresponding to user-supplied names, check for
         # author names with multiple Scopus IDs ("homonyms")
-        console.print(
-            "[green]\n** Recherche d'homonymes dans OpenAlex **[/green]"
-        )
+        console.print("[green]\n** Recherche d'homonymes dans OpenAlex **[/green]")
         author_homonyms = query_author_homonyms_openalex(
             reference_query=reference_query,
         )
@@ -213,8 +211,8 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         console.print(
             "[green]\n** Recherche de profils d'auteurs dans Scopus **[/green]"
         )
-        author_profiles: pd.DataFrame = (
-            query_author_profiles_by_id_scopus(reference_query=reference_query)
+        author_profiles: pd.DataFrame = query_author_profiles_by_id_scopus(
+            reference_query=reference_query
         )
 
         # Fetch publications, count publication types by author
