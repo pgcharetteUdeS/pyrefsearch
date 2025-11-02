@@ -211,12 +211,12 @@ def write_reference_query_results_to_excel_file(
     reference_query: ReferenceQuery,
     publications: pd.DataFrame,
     pub_type_counts_by_author: list,
-    author_profiles_by_name: pd.DataFrame,
+    author_profiles: pd.DataFrame,
+    author_homonyms: pd.DataFrame,
     uspto_patents: pd.DataFrame,
     uspto_patent_applications: pd.DataFrame,
     inpadoc_patents: pd.DataFrame,
     inpadoc_patent_applications: pd.DataFrame,
-    # scopus_author_profiles_by_ids: pd.DataFrame,
     publications_diff: bool = False,
     publications_previous_filename: Path = Path(""),
 ) -> Path:
@@ -227,12 +227,12 @@ def write_reference_query_results_to_excel_file(
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
         publications (pd.DataFrame): dataFrames publications found in Scopus
         pub_type_counts_by_author (list): lists of publication type by author from Scopus
-        author_profiles_by_name (pd.DataFrame): Scopus author search results by names
+        author_profiles (pd.DataFrame): Scopus author search results by ids
+        author_homonyms (pd.DataFrame): Scopus author search results by names
         uspto_patents (pd.DataFrame): USPTO patent application search results
         uspto_patent_applications (pd.DataFrame): USPTO patent search results
         inpadoc_patents (pd.DataFrame): INPADOC patent search result
         inpadoc_patent_applications (pd.DataFrame): INPADOC patent search results
-        scopus_author_profiles_by_ids (pd.DataFrame): Scopus author search results by ids
         publications_diff (bool): True of this a Scopus differential request
         publications_previous_filename (Path): Path to the Excel file with results from previous month
 
@@ -350,11 +350,11 @@ def write_reference_query_results_to_excel_file(
             """
             col: pd.Series = scopus_author_profiles_by_ids.pop("Période active")
             scopus_author_profiles_by_ids["Période active"] = col
-            scopus_author_profiles_by_ids.to_excel(
+            """
+            author_profiles.to_excel(
                 writer, index=False, sheet_name="Auteurs - Profils", freeze_panes=(1, 1)
             )
-            """
-            author_profiles_by_name.to_excel(
+            author_homonyms.to_excel(
                 writer,
                 index=False,
                 sheet_name="Auteurs - Homonymes",

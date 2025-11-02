@@ -7,9 +7,10 @@
 """
 
 __all__ = [
-    "query_openalex_author_profiles_by_name",
-    "query_openalex_publications",
-    "openalex_config",
+    "query_author_homonyms_openalex",
+    "query_author_profiles_by_id_openalex",
+    "query_publications_openalex",
+    "config_openalex",
 ]
 
 import itertools
@@ -26,10 +27,67 @@ from utils import (
 )
 
 
-def openalex_config():
+def config_openalex():
     config.email = "paul.charette@usherbrooke.ca"
     config.max_retries = 5
     config.retry_backoff_factor = 0.5
+
+
+def query_author_profiles_by_id_openalex(
+    reference_query: ReferenceQuery,
+) -> pd.DataFrame:
+    """
+
+    Fetch author profiles from their IDs in the OpenAlex database
+
+    Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object
+
+    Returns: DataFrame with author profiles
+
+    """
+
+    data_rows: list = []
+    for [name, openalex_id] in zip(
+        reference_query.au_names, reference_query.openalex_ids
+    ):
+        author = Authors()[openalex_id]
+        if not author:
+            console.print(
+                f"[red]ERREUR: Aucun résultat dans OpenAlex pour l'identifiant '{openalex_id}'![/red]"
+            )
+        data_rows.append(
+            [
+                name[0],
+                name[1],
+                author["display_name"],
+                f'=HYPERLINK("{author["id"]}")',
+                f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else "",
+                author["works_count"],
+                [
+                    last_inst["display_name"]
+                    for last_inst in author["last_known_institutions"]
+                ],
+            ]
+        )
+
+    author_profiles: pd.DataFrame = pd.DataFrame(
+        data_rows,
+        columns=[
+            "Nom de famille",
+            "Prénom",
+            "OpenAlex - display_name",
+            "Profil OpenAlex",
+            "Profil ORCID",
+            "Publications",
+            "Institutions",
+        ],
+    )
+
+    # Check for errors
+    author_profiles.drop("OpenAlex - display_name", axis=1, inplace=True)
+
+    return author_profiles
 
 
 def _flag_matched_openalex_author_ids_and_affiliations(
@@ -72,16 +130,20 @@ def _flag_matched_openalex_author_ids_and_affiliations(
         else:
             return None
 
-    # Precompute dictionary mapping OpenAlex IDs to their indices for constant-time lookups.
+    # Add the "Affl/ID" to the input dataframe
     reference_query.au_id_to_index = {
         au_id: index for index, au_id in enumerate(reference_query.openalex_ids)
     }
     author_profiles["Affl/ID"] = author_profiles.apply(set_affiliation_and_id, axis=1)
 
+    # Reposition the "Affl/ID" column
+    affl_id_column = author_profiles.pop("Affl/ID")
+    author_profiles.insert(3, "Affl/ID", affl_id_column)
+
     return author_profiles
 
 
-def query_openalex_author_profiles_by_name(
+def query_author_homonyms_openalex(
     reference_query: ReferenceQuery,
 ) -> pd.DataFrame:
     """
@@ -123,6 +185,7 @@ def query_openalex_author_profiles_by_name(
         )
         data_rows.extend([""])
 
+    # Build dataframe from data
     author_profiles: pd.DataFrame = pd.DataFrame(
         data_rows,
         columns=[
@@ -139,26 +202,10 @@ def query_openalex_author_profiles_by_name(
         ],
     )
 
-    if not author_profiles.empty:
-        author_profiles = _flag_matched_openalex_author_ids_and_affiliations(
-            reference_query=reference_query, author_profiles=author_profiles
-        )
-        author_profiles = author_profiles[
-            [
-                "Surname",
-                "Given name",
-                "Display name",
-                "Affl/ID",
-                "Date created",
-                "OpenAlex profile",
-                "Count",
-                "ORCID profile",
-                "Last known institutions",
-                "Affiliations",
-                "Topics",
-            ]
-        ]
-        author_profiles.reset_index(drop=True, inplace=True)
+    # Add "Affl/ID" column
+    author_profiles = _flag_matched_openalex_author_ids_and_affiliations(
+        reference_query=reference_query, author_profiles=author_profiles
+    )
 
     return author_profiles
 
@@ -294,7 +341,7 @@ def _add_local_author_name_and_count_columns(
     return publications_without_duplicate
 
 
-def query_openalex_publications(
+def query_publications_openalex(
     reference_query: ReferenceQuery,
 ) -> tuple[pd.DataFrame, list[list[int | None]]]:
     """

@@ -11,11 +11,11 @@
 """
 
 __all__ = [
-    "scopus_init_api",
-    "query_scopus_author_profiles",
-    "query_scopus_author_profiles_by_id",
-    "query_scopus_author_profiles_by_name",
-    "query_scopus_publications",
+    "config_scopus",
+    "query_scopus_author_profiles_legacy",
+    "query_author_profiles_by_id_scopus",
+    "query_author_homonyms_scopus",
+    "query_publications_scopus",
 ]
 
 import datetime
@@ -371,7 +371,7 @@ def _reindex_author_profiles_df(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.DataFrame:
+def query_author_profiles_by_id_scopus(reference_query: ReferenceQuery) -> pd.DataFrame:
     """
 
     Fetch author profiles from their IDs in the Scopus database
@@ -450,7 +450,7 @@ def query_scopus_author_profiles_by_id(reference_query: ReferenceQuery) -> pd.Da
     return author_profiles_by_ids
 
 
-def query_scopus_author_profiles_by_name(
+def query_author_homonyms_scopus(
     reference_query: ReferenceQuery,
     homonyms_only: bool = True,
 ) -> pd.DataFrame:
@@ -519,7 +519,7 @@ def query_scopus_author_profiles_by_name(
     return author_profiles_all
 
 
-def query_scopus_publications(
+def query_publications_scopus(
     reference_query: ReferenceQuery,
 ) -> tuple[pd.DataFrame, list[list[int | None]]]:
     """
@@ -592,7 +592,7 @@ def query_scopus_publications(
     return publications, pub_type_counts_by_author_transpose
 
 
-def query_scopus_author_profiles(reference_query: ReferenceQuery) -> None:
+def query_scopus_author_profiles_legacy(reference_query: ReferenceQuery) -> None:
     """
     Query Scopus for a list of author profiles by name
 
@@ -609,9 +609,9 @@ def query_scopus_author_profiles(reference_query: ReferenceQuery) -> None:
     )
 
     # Init Scopus API
-    scopus_init_api()
+    config_scopus()
 
-    author_profiles_by_name: pd.DataFrame = query_scopus_author_profiles_by_name(
+    author_profiles_by_name: pd.DataFrame = query_author_homonyms_scopus(
         reference_query=reference_query,
         homonyms_only=False,
     )
@@ -630,7 +630,7 @@ def query_scopus_author_profiles(reference_query: ReferenceQuery) -> None:
     )
 
 
-def scopus_init_api() -> None:
+def config_scopus() -> None:
     """
     Initialize Scopus API
 

@@ -24,16 +24,17 @@ from excel_io import write_reference_query_results_to_excel_file
 from referencequery import ReferenceQuery
 from search_espacenet import query_espacenet_patents_and_applications
 from search_openalex import (
-    query_openalex_author_profiles_by_name,
-    query_openalex_publications,
-    openalex_config,
+    query_author_profiles_by_id_openalex,
+    query_author_homonyms_openalex,
+    query_publications_openalex,
+    config_openalex,
 )
 from search_scopus import (
-    scopus_init_api,
-    query_scopus_author_profiles,
-    query_scopus_author_profiles_by_id,
-    query_scopus_author_profiles_by_name,
-    query_scopus_publications,
+    config_scopus,
+    query_scopus_author_profiles_legacy,
+    query_author_profiles_by_id_scopus,
+    query_author_homonyms_scopus,
+    query_publications_scopus,
 )
 from search_uspto import query_uspto_patents_and_applications
 from utils import console
@@ -174,47 +175,57 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     # Search for publications either in the Scopus or OpenAlex databases
     publications_all: pd.DataFrame
     pub_type_counts_by_author: list[list[int | None]]
-    author_profiles_by_name: pd.DataFrame
+    author_homonyms: pd.DataFrame
     if reference_query.publications_search_database == "OpenAlex":
         # Init OpenAlex API
-        openalex_config()
+        config_openalex()
 
-        # Fetch author profiles corresponding to user-supplied names
+        # Fetch author profiles corresponding to user-supplied Scopus IDs, check they match
+        # the user-supplied names, flag any inconsistencies in the "Erreurs" column
         console.print(
             "[green]\n** Recherche de profils d'auteurs dans OpenAlex **[/green]"
         )
-        author_profiles_by_name = query_openalex_author_profiles_by_name(
-            reference_query=reference_query,
+        author_profiles: pd.DataFrame = (
+            query_author_profiles_by_id_openalex(reference_query=reference_query)
         )
 
         # Fetch publications, count publication types by author
         console.print("[green]\n** Recherche de publications dans OpenAlex **[/green]")
-        publications, pub_type_counts_by_author = query_openalex_publications(
+        publications, pub_type_counts_by_author = query_publications_openalex(
             reference_query=reference_query
+        )
+
+        # Fetch OpenAlex author profiles corresponding to user-supplied names, check for
+        # author names with multiple Scopus IDs ("homonyms")
+        console.print(
+            "[green]\n** Recherche d'homonymes dans OpenAlex **[/green]"
+        )
+        author_homonyms = query_author_homonyms_openalex(
+            reference_query=reference_query,
         )
 
     else:
         # Init Scopus API
-        scopus_init_api()
+        config_scopus()
 
         # Fetch author profiles corresponding to user-supplied Scopus IDs, check they match
         # the user-supplied names, flag any inconsistencies in the "Erreurs" column
         console.print(
             "[green]\n** Recherche de profils d'auteurs dans Scopus **[/green]"
         )
-        scopus_author_profiles_by_ids: pd.DataFrame = (
-            query_scopus_author_profiles_by_id(reference_query=reference_query)
+        author_profiles: pd.DataFrame = (
+            query_author_profiles_by_id_scopus(reference_query=reference_query)
         )
 
         # Fetch publications, count publication types by author
         console.print("[green]\n** Recherche de publications dans Scopus **[/green]")
-        publications, pub_type_counts_by_author = query_scopus_publications(
+        publications, pub_type_counts_by_author = query_publications_scopus(
             reference_query=reference_query
         )
 
         # Fetch Scopus author profiles corresponding to user-supplied names, check for
         # author names with multiple Scopus IDs ("homonyms"), load into dataframe
-        author_profiles_by_name = query_scopus_author_profiles_by_name(
+        author_homonyms = query_author_homonyms_scopus(
             reference_query=reference_query,
             homonyms_only=True,
         )
@@ -282,12 +293,12 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         reference_query=reference_query,
         publications=publications,
         pub_type_counts_by_author=pub_type_counts_by_author,
-        author_profiles_by_name=author_profiles_by_name,
+        author_profiles=author_profiles,
+        author_homonyms=author_homonyms,
         uspto_patents=uspto_patents,
         uspto_patent_applications=uspto_patent_applications,
         inpadoc_patents=inpadoc_patents,
         inpadoc_patent_applications=inpadoc_patent_applications,
-        # scopus_author_profiles_by_ids=scopus_author_profiles_by_ids,
     )
 
     # Differential publication search results relative to last month
@@ -379,7 +390,7 @@ def pyrefsearch() -> None:
     if toml_dict["search_type"] == "Publications":
         query_publications_and_patents(reference_query=reference_query)
     elif toml_dict["search_type"] == "Profils":
-        query_scopus_author_profiles(reference_query=reference_query)
+        query_scopus_author_profiles_legacy(reference_query=reference_query)
     else:
         console.print(
             f"[red]ERREUR: '{toml_dict['search_type']}' est un type de recherche invalide, "
