@@ -43,28 +43,20 @@ def _export_publications_df_to_excel_sheet(
 
     """
 
-    column_names: list[str] = [
-        "Titre",
-        "Date",
-        "Auteurs locaux",
-        "Collab interne",
-        "Auteurs",
-        "Publication",
-        "Volume",
-        "DOI",
-    ]
+    columns: dict = {
+        "title": "Titre",
+        "coverDate": "Date",
+        "Auteurs locaux": "Auteurs locaux",
+        "Collab interne": "Collab interne",
+        "author_names": "Auteurs",
+        "publicationName": "Publication",
+        "volume": "Volume",
+        "doi": "DOI",
+    }
+    column_names: list[str] = list(columns.values())
     if not df.empty:
         df_copy: pd.DataFrame = df.rename(
-            columns={
-                "coverDate": "Date",
-                "title": "Titre",
-                "Auteurs locaux": "Auteurs locaux",
-                "Collab interne": "Collab interne",
-                "author_names": "Auteurs",
-                "publicationName": "Publication",
-                "volume": "Volume",
-                "doi": "DOI",
-            },
+            columns=columns,
         ).copy()
         df_copy[column_names].to_excel(
             writer, index=False, sheet_name=sheet_name, freeze_panes=(1, 1)
@@ -225,10 +217,10 @@ def write_reference_query_results_to_excel_file(
 
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
-        publications (pd.DataFrame): dataFrames publications found in Scopus
-        pub_type_counts_by_author (list): lists of publication type by author from Scopus
-        author_profiles (pd.DataFrame): Scopus author search results by ids
-        author_homonyms (pd.DataFrame): Scopus author search results by names
+        publications (pd.DataFrame): Publications search results
+        pub_type_counts_by_author (list): lists of publication type by author
+        author_profiles (pd.DataFrame): Author search results by ids
+        author_homonyms (pd.DataFrame): Author search results by names
         uspto_patents (pd.DataFrame): USPTO patent application search results
         uspto_patent_applications (pd.DataFrame): USPTO patent search results
         inpadoc_patents (pd.DataFrame): INPADOC patent search result
@@ -258,7 +250,7 @@ def write_reference_query_results_to_excel_file(
             # Add "pub_type" publication counts to the author profiles
             """
             if len(df) > 0:
-                scopus_author_profiles_by_ids[pub_type] = pub_counts
+                author_profiles[pub_type] = pub_counts
             """
 
     # Create results summary dataframe
@@ -347,10 +339,6 @@ def write_reference_query_results_to_excel_file(
                 )
 
             # Author profile sheets
-            """
-            col: pd.Series = scopus_author_profiles_by_ids.pop("Période active")
-            scopus_author_profiles_by_ids["Période active"] = col
-            """
             author_profiles.to_excel(
                 writer, index=False, sheet_name="Auteurs - Profils", freeze_panes=(1, 1)
             )
@@ -361,16 +349,14 @@ def write_reference_query_results_to_excel_file(
                 freeze_panes=(1, 1),
             )
 
-        """
         else:
-            # Author profile sheets
-            author_profiles_by_ids_minimal: pd.DataFrame = (
-                scopus_author_profiles_by_ids[["Nom de famille", "Prénom"]].copy()
-            )
+            # Minimalistic author profiles sheet
+            author_profiles_by_ids_minimal: pd.DataFrame = author_profiles[
+                ["Nom de famille", "Prénom"]
+            ].copy()
             author_profiles_by_ids_minimal.to_excel(
                 writer, index=False, sheet_name="Auteurs", freeze_panes=(1, 1)
             )
-        """
 
     console.print(
         "Résultats de la recherche sauvegardés "

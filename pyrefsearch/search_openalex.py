@@ -25,7 +25,6 @@ from utils import (
     count_publications_by_type_in_df,
     to_lower_no_accents_no_hyphens,
 )
-import sys
 
 
 def config_openalex():
@@ -59,6 +58,7 @@ def query_author_profiles_by_id_openalex(
                     [
                         name[0],
                         name[1],
+                        "",
                         author["display_name"],
                         f'=HYPERLINK("https://openalex.org/{openalex_id}")',
                         f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else None,
@@ -70,17 +70,28 @@ def query_author_profiles_by_id_openalex(
                     ]
                 )
             except Exception as e:
+                data_rows.append(
+                    [
+                        name[0],
+                        name[1],
+                        "ID",
+                        None,
+                        f"{openalex_id}",
+                        None,
+                        None,
+                    ]
+                )
                 console.print(
-                    f"[red]Erreur dans la recherche OpenAlex pour l'auteur '{name[1]} {name[0]}'"
-                    f" avec l'identifiant {openalex_id} - '{e}'![/red]",
+                    f"[red]Erreur dans la recherche OpenAlex pour l'auteur '{name[1]} {name[0]}': "
+                    f"l'identifiant {openalex_id} est incorrect - '{e}'![/red]",
                     soft_wrap=True,
                 )
-                sys.exit()
         else:
             data_rows.append(
                 [
                     name[0],
                     name[1],
+                    "ID",
                     None,
                     None,
                     None,
@@ -88,7 +99,7 @@ def query_author_profiles_by_id_openalex(
                 ]
             )
             console.print(
-                f"[red]ERREUR: L'auteur {name[1]} {name[0]} n'a pas d'identifiant OpenAlex![/red]",
+                f"[red]ERREUR: L'auteur '{name[1]} {name[0]}' n'a pas d'identifiant OpenAlex![/red]",
                 soft_wrap=True,
             )
 
@@ -97,6 +108,7 @@ def query_author_profiles_by_id_openalex(
         columns=[
             "Nom de famille",
             "Prénom",
+            "Erreurs",
             "OpenAlex - display_name",
             "Profil OpenAlex",
             "Profil ORCID",

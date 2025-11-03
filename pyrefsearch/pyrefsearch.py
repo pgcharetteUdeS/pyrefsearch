@@ -211,7 +211,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         console.print(
             "[green]\n** Recherche de profils d'auteurs dans Scopus **[/green]"
         )
-        author_profiles: pd.DataFrame = query_author_profiles_by_id_scopus(
+        author_profiles = query_author_profiles_by_id_scopus(
             reference_query=reference_query
         )
 
