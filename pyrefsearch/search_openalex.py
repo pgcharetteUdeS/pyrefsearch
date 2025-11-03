@@ -395,12 +395,12 @@ def query_publications_openalex(
     for openalex_id, author_name in zip(
         reference_query.openalex_ids, reference_query.au_names
     ):
+        works_df = pd.DataFrame([])
         if openalex_id:
             works = Works().filter(
                 author={"id": openalex_id},
                 publication_year=f"{reference_query.pub_year_first}-{reference_query.pub_year_last}",
             )
-            works_df = pd.DataFrame([])
             for work in itertools.chain(*works.paginate(per_page=200, n_max=None)):
                 # Fetch OpenAlex record
                 title_openalex: str = work["title"]
@@ -493,16 +493,18 @@ def query_publications_openalex(
                         ],
                         ignore_index=True,
                     )
-                    pub_type_counts_by_author.append(
-                        count_publications_by_type_in_df(
-                            publication_type_codes=reference_query.publication_type_codes,
-                            df=works_df,
-                        )
-                    )
 
-            # Add the dataframe for this author to the dataframe of all p
-            if not works_df.empty:
-                publications = pd.concat([publications, works_df])
+        # Add the dataframe for this author to the dataframe of all publications
+        if not works_df.empty:
+            publications = pd.concat([publications, works_df])
+
+        # Update the author publications counts by type
+        pub_type_counts_by_author.append(
+            count_publications_by_type_in_df(
+                publication_type_codes=reference_query.publication_type_codes,
+                df=works_df,
+            )
+        )
 
     # Remove duplicates and add local author name and count columns
     publications.reset_index(drop=True, inplace=True)

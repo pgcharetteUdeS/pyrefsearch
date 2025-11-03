@@ -41,7 +41,7 @@ from utils import console
 from version import __version__
 
 
-def differential_scopus_search_results(
+def differential_search_results(
     reference_query: ReferenceQuery, publications_current: pd.DataFrame
 ) -> tuple[pd.DataFrame, Path]:
     """
@@ -74,7 +74,8 @@ def differential_scopus_search_results(
     )
     with pd.ExcelFile(publications_previous_filename) as reader:
         publications_previous = pd.read_excel(
-            reader, sheet_name="Scopus (résultats complets)"
+            reader,
+            sheet_name=f"{reference_query.publications_search_database} (résultats complets)",
         )
 
     # Publications in publications_current that do not appear in publications_previous
@@ -254,14 +255,10 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         console.print("Brevets US (en instance): ", len(uspto_patent_applications))
 
         # Add patent application and published patent counts to the author profiles
-        """
-        scopus_author_profiles_by_ids["Brevets US (en instance)"] = (
+        author_profiles["Brevets US (en instance)"] = (
             uspto_patent_application_counts_by_author
         )
-        scopus_author_profiles_by_ids["Brevets US (délivrés)"] = (
-            uspto_patent_counts_by_author
-        )
-        """
+        author_profiles["Brevets US (délivrés)"] = uspto_patent_counts_by_author
 
     # Fetch INPADOC applications and granted patents into separate dataframes, if required
     inpadoc_patent_applications = pd.DataFrame()
@@ -274,14 +271,10 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             inpadoc_patents,
             inpadoc_patent_counts_per_author,
         ) = query_espacenet_patents_and_applications(reference_query)
-        """
-        scopus_author_profiles_by_ids["Brevets INPADOC (en instance)"] = (
+        author_profiles["Brevets INPADOC (en instance)"] = (
             inpadoc_patent_application_counts_per_author
         )
-        scopus_author_profiles_by_ids["Brevets INPADOC (délivrés)"] = (
-            inpadoc_patent_counts_per_author
-        )
-        """
+        author_profiles["Brevets INPADOC (délivrés)"] = inpadoc_patent_counts_per_author
         console.print("Brevets INPADOC en instance: ", len(inpadoc_patent_applications))
         console.print("Brevets INPADOC délivrés: ", len(inpadoc_patents))
 
@@ -300,30 +293,26 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     )
 
     # Differential publication search results relative to last month
-    """
     if reference_query.extract_search_results_diff:
         console.print(
             "[green]\n** Recherche différentielle de publications dans Scopus"
             " relativement au 1er du mois dernier **[/green]",
             soft_wrap=True,
         )
-        publications_diff, publications_previous_filename = (
-            differential_scopus_search_results(
-                reference_query=reference_query, publications_current=publications_all
-            )
+        publications_diff, publications_previous_filename = differential_search_results(
+            reference_query=reference_query, publications_current=publications
         )
         diff_results_out_excel_filename: Path = (
             write_reference_query_results_to_excel_file(
                 reference_query=reference_query,
-                publications_all=publications_diff,
+                publications=publications_diff,
                 pub_type_counts_by_author=pub_type_counts_by_author,
+                author_profiles=author_profiles,
+                author_homonyms=author_homonyms,
                 uspto_patents=pd.DataFrame(),
                 uspto_patent_applications=pd.DataFrame(),
                 inpadoc_patents=pd.DataFrame(),
                 inpadoc_patent_applications=pd.DataFrame(),
-                scopus_author_profiles_by_ids=scopus_author_profiles_by_ids,
-                scopus_author_profiles_by_name=scopus_author_profiles_by_name,
-                openalex_author_profiles_by_name=pd.DataFrame([]),
                 publications_diff=True,
                 publications_previous_filename=publications_previous_filename,
             )
@@ -332,7 +321,6 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             reference_query=reference_query,
             diff_results_out_excel_filename=diff_results_out_excel_filename,
         )
-    """
 
 
 def pyrefsearch() -> None:

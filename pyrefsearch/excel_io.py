@@ -248,10 +248,8 @@ def write_reference_query_results_to_excel_file(
             console.print(f"{pub_type}: {len(df)}")
 
             # Add "pub_type" publication counts to the author profiles
-            """
             if len(df) > 0:
                 author_profiles[pub_type] = pub_counts
-            """
 
     # Create results summary dataframe
     results: pd.DataFrame = _create_results_summary_df(
@@ -302,11 +300,11 @@ def write_reference_query_results_to_excel_file(
             publications.to_excel(
                 writer,
                 index=False,
-                sheet_name=f"Résultats complets {reference_query.publications_search_database}",
+                sheet_name=f"{reference_query.publications_search_database} (résultats complets)",
                 freeze_panes=(1, 1),
             )
 
-            # USPTO search result sheets
+            #  Write USPTO search result sheets, if required
             if not uspto_patent_applications.empty:
                 uspto_patent_applications.to_excel(
                     writer,
@@ -322,7 +320,7 @@ def write_reference_query_results_to_excel_file(
                     freeze_panes=(1, 1),
                 )
 
-            # INPADOC search result sheets
+            #  Write INPADOC search result sheets, if required
             if not inpadoc_patent_applications.empty:
                 inpadoc_patent_applications.to_excel(
                     writer,
