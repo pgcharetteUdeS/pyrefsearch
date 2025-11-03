@@ -396,10 +396,15 @@ def query_publications_openalex(
         reference_query.openalex_ids, reference_query.au_names
     ):
         works_df = pd.DataFrame([])
+        date_filter = {
+            "from_publication_date": reference_query.date_start.strftime("%Y-%m-%d"),
+            "to_publication_date": reference_query.date_end.strftime("%Y-%m-%d"),
+        }
         if openalex_id:
             works = Works().filter(
                 author={"id": openalex_id},
-                publication_year=f"{reference_query.pub_year_first}-{reference_query.pub_year_last}",
+                from_publication_date=reference_query.date_start.strftime("%Y-%m-%d"),
+                to_publication_date=reference_query.date_end.strftime("%Y-%m-%d"),
             )
             for work in itertools.chain(*works.paginate(per_page=200, n_max=None)):
                 # Fetch OpenAlex record

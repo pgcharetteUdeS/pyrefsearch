@@ -43,8 +43,8 @@ def _query_uspto(
 
     def build_uspto_patent_query_string(field_code: str) -> str:
         s: str = (
-            f'@{field_code}>="{reference_query.pub_year_first}0101"'
-            f'<="{reference_query.pub_year_last}1231" AND ('
+            f'@{field_code}>="{reference_query.year_start}0101"'
+            f'<="{reference_query.year_end}1231" AND ('
         )
         s += inventor_query_str(reference_query.au_names[0])
         for name in reference_query.au_names[1:]:

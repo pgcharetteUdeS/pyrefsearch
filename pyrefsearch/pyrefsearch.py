@@ -1,6 +1,6 @@
 """pyrefsearch.py
 
-    For a list of author names and range of years supplied in an Excel file, query:
+    For a list of author names and range of dates supplied in an Excel file, query:
     - references (publications in OpenAlex or Scopus, patents in the INPADOC and USPTO databases)
       OR
     - author profiles (OpenAlex or Scopus database), and write the results to an output Excel file.
@@ -59,9 +59,9 @@ def differential_search_results(
     # Load publications search results from the previous month (publications_previous)
     first_of_last_month = (date.today() - relativedelta(months=1)).replace(day=1)
     year_range: str = (
-        f"{reference_query.pub_year_first-1}-{reference_query.pub_year_last-1}"
+        f"{reference_query.year_start - 1}-{reference_query.year_end - 1}"
         if date.today().month == 1
-        else f"{reference_query.pub_year_first}-{reference_query.pub_year_last}"
+        else f"{reference_query.year_start}-{reference_query.year_end}"
     )
     stem = reference_query.out_excel_file.stem
     publications_previous_filename = reference_query.out_excel_file.with_stem(
@@ -157,7 +157,6 @@ def gen_power_shell_script_to_send_confirmation_emails(
 def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     """
     Search for publications in OpenAlex/Scopus and patents in the USPTO & INPADOC databases
-    for a list of authors over a range of years
 
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
@@ -169,7 +168,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     # Console banner
     console.print(
         "[green]\n** Période de recherche : "
-        f"{reference_query.pub_year_first}-{reference_query.pub_year_last} **[/green]",
+        f"{reference_query.date_start}-{reference_query.date_end} **[/green]",
         soft_wrap=True,
     )
 
@@ -355,8 +354,8 @@ def pyrefsearch() -> None:
         ),
         in_excel_file=toml_dict["in_excel_file"],
         in_excel_file_author_sheet=toml_dict["in_excel_file_author_sheet"],
-        pub_year_first=toml_dict["pub_year_first"],
-        pub_year_last=toml_dict["pub_year_last"],
+        date_start=toml_dict["date_start"],
+        date_end=toml_dict["date_end"],
         extract_search_results_diff=toml_dict.get("extract_search_results_diff", False),
         extract_search_results_diff_confirmation_emails=toml_dict.get(
             "extract_search_results_diff_confirmation_emails", []

@@ -13,9 +13,9 @@ search_type = "Publications"
 in_excel_file = "Liste chercheurs-membres.xlsx"
 in_excel_file_author_sheet = "Membres"
 
-# Gamme d'années pour la recherche de publications (ignoré pour la recherche de profils)
-pub_year_first = 2024
-pub_year_last = 2025
+# Période temporelle de recherche
+date_start = 2024-05-01
+date_end = 2025-04-30
 
 # Base de données pour la recherche de publications : "Scopus" ou "OpenAlex" (défaut)
 #publications_search_database = "Scopus"

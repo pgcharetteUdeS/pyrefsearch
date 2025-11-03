@@ -315,8 +315,8 @@ def query_espacenet_patents_and_applications(
         Example search string:
           '(in=("charette" prox/distance<1 "paul") OR in=("hunter" prox/distance<1 "ian")) AND pd within "1990,2020"'
 
-        Because granted patents don't come up in espacenet search by year, must search
-        for patents by author name and then filter by year in post.
+        Because granted patents don't come up in espacenet search by date, must search
+        for patents by author name and then filter by date in post.
 
     """
 
@@ -362,18 +362,24 @@ def query_espacenet_patents_and_applications(
     )
 
     # Extract patent application and granted patent by date, add columns to dataframe
-    applications_published_in_year_range: pd.DataFrame = patent_families[
-        (patent_families["Date de dépôt"] >= f"{reference_query.pub_year_first}-01-01")
-        & (patent_families["Date de dépôt"] <= f"{reference_query.pub_year_last}-12-31")
+    applications_published_in_date_range: pd.DataFrame = patent_families[
+        (
+            patent_families["Date de dépôt"]
+            >= f"{reference_query.date_start.strftime('%Y-%m-%d')}"
+        )
+        & (
+            patent_families["Date de dépôt"]
+            <= f"{reference_query.date_end.strftime('%Y-%m-%d')}"
+        )
     ]
-    patents_granted_in_year_range: pd.DataFrame = patent_families[
+    patents_granted_in_date_range: pd.DataFrame = patent_families[
         (
             patent_families["Date de délivrance"]
-            >= f"{reference_query.pub_year_first}-01-01"
+            >= f"{reference_query.date_start.strftime('%Y-%m-%d')}"
         )
         & (
             patent_families["Date de délivrance"]
-            <= f"{reference_query.pub_year_last}-12-31"
+            <= f"{reference_query.date_end.strftime('%Y-%m-%d')}"
         )
     ]
 
@@ -381,18 +387,18 @@ def query_espacenet_patents_and_applications(
     patent_application_counts_by_author: list = tabulate_patents_per_author(
         au_names=reference_query.au_names,
         au_ids=reference_query.scopus_ids,
-        patents=applications_published_in_year_range,
+        patents=applications_published_in_date_range,
     )
     patent_granted_counts_by_author: list = tabulate_patents_per_author(
         au_names=reference_query.au_names,
         au_ids=reference_query.scopus_ids,
-        patents=patents_granted_in_year_range,
+        patents=patents_granted_in_date_range,
     )
 
     # Return dataframe for espacenet patent applications and granted patents
     return (
-        applications_published_in_year_range,
+        applications_published_in_date_range,
         patent_application_counts_by_author,
-        patents_granted_in_year_range,
+        patents_granted_in_date_range,
         patent_granted_counts_by_author,
     )

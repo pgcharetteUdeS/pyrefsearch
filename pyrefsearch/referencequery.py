@@ -111,7 +111,7 @@ class ReferenceQuery:
 
         stats_filename: Path = self.data_dir / Path(
             f"{self.in_excel_file.stem}"
-            f"_{self.pub_year_first}-{self.pub_year_last}_stats.txt"
+            f"_{self.date_start.strftime("%Y%m%d")}-{self.date_end.strftime("%Y%m%d")}_stats.txt"
         )
         with open(stats_filename, "w") as f:
             f.write(
@@ -150,7 +150,7 @@ class ReferenceQuery:
     def extract_authors_from_df(self, input_data_full: pd.DataFrame) -> pd.DataFrame:
         author_status_by_year_columns: list[str] = [
             f"{year}-{year + 1}"
-            for year in range(self.pub_year_first, self.pub_year_last + 1)
+            for year in range(self.year_start, self.year_end + 1)
         ]
         authors: pd.DataFrame
         if all(col in input_data_full.columns for col in author_status_by_year_columns):
@@ -185,7 +185,7 @@ class ReferenceQuery:
             if authors.empty:
                 console.print(
                     f"[red]Aucun membre régulier du 3IT n'a été trouvé dans le fichier '{self.in_excel_file}'[/red]"
-                    f"[red] pour la période de recherche [{self.pub_year_first}-{self.pub_year_last}][/red]",
+                    f"[red] pour la période de recherche [{self.year_start}-{self.year_end}][/red]",
                     soft_wrap=True,
                 )
                 sys.exit()
@@ -206,7 +206,7 @@ class ReferenceQuery:
 
         else:
             console.print(
-                f"[red]L'intervalle de recherche [{self.pub_year_first}-{self.pub_year_last}] [/red]"
+                f"[red]L'intervalle de recherche [{self.year_start}-{self.year_end}] [/red]"
                 f"[red]dépasse l'étendue des données dans le fichier '{self.in_excel_file}'![/red]",
                 soft_wrap=True,
             )
@@ -221,8 +221,8 @@ class ReferenceQuery:
         publications_search_database: str,
         in_excel_file: str,
         in_excel_file_author_sheet: str,
-        pub_year_first: int,
-        pub_year_last: int,
+        date_start: date,
+        date_end: date,
         extract_search_results_diff: bool,
         extract_search_results_diff_confirmation_emails: list[str],
         publication_types: list[str],
@@ -235,8 +235,10 @@ class ReferenceQuery:
     ):
         self.search_type = search_type
         self.data_dir: Path = Path(data_dir)
-        self.pub_year_first: int = pub_year_first
-        self.pub_year_last: int = pub_year_last
+        self.date_start: date = date_start
+        self.year_start: int = date_start.year
+        self.date_end: date = date_end
+        self.year_end: int = date_end.year
         self.publications_search_database: str = publications_search_database
         self.extract_search_results_diff: bool = (
             extract_search_results_diff if date.today().month != 1 else False
@@ -280,10 +282,10 @@ class ReferenceQuery:
                     sys.exit()
 
         # Check search range
-        if self.pub_year_first > self.pub_year_last:
+        if self.date_start > self.date_end:
             console.print(
-                f"[red]ERREUR: L'année de début de recherche ({self.pub_year_first}) "
-                f"doit être antérieure à l'année de fin de recherche ({self.pub_year_last})![/red]",
+                f"[red]ERREUR: La date de début de recherche ({self.date_start}) "
+                f"doit être antérieure à la date de fin de recherche ({self.date_end})![/red]",
                 soft_wrap=True,
             )
             sys.exit()
@@ -293,8 +295,8 @@ class ReferenceQuery:
         self.out_excel_file: Path = data_dir / (
             Path(
                 f"{self.in_excel_file.stem}"
-                f"_{self.pub_year_first}-{self.pub_year_last}"
-                f"_publications_{str(date.today())}{self.in_excel_file.suffix}"
+                f"_{self.date_start.strftime("%Y%m%d")}-{self.date_end.strftime("%Y%m%d")}"
+                f"_publications_{str(date.today().strftime("%Y%m%d"))}{self.in_excel_file.suffix}"
             )
             if self.search_type == "Publications"
             else Path(

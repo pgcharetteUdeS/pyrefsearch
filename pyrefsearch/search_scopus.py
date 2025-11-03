@@ -549,8 +549,8 @@ def query_publications_scopus(
         if au_id > 0:
             query_str: str = (
                 f"AU-ID ({au_id})"
-                f" AND PUBYEAR > {reference_query.pub_year_first - 1}"
-                f" AND PUBYEAR < {reference_query.pub_year_last + 1}"
+                f" AND PUBYEAR > {reference_query.year_start - 1}"
+                f" AND PUBYEAR < {reference_query.year_end + 1}"
                 f" AND ({pub_types_search_string})"
             )
             try:

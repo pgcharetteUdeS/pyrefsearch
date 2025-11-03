@@ -94,14 +94,14 @@ def _create_results_summary_df(
     results: list = [
         f"Recherche dans {reference_query.publications_search_database}",
         "Nb d'auteur.e.s",
-        "Année de début",
-        "Année de fin",
+        "Date de début",
+        "Date de fin",
     ]
     values: list = [
         None,
         len(reference_query.au_names),
-        reference_query.pub_year_first,
-        reference_query.pub_year_last,
+        reference_query.date_start,
+        reference_query.date_end,
     ]
     co_authors: list = ["Conjointes", None, None, None]
 
@@ -252,7 +252,7 @@ def write_reference_query_results_to_excel_file(
                 author_profiles[pub_type] = pub_counts
 
     # Create results summary dataframe
-    results: pd.DataFrame = _create_results_summary_df(
+    results_df: pd.DataFrame = _create_results_summary_df(
         reference_query=reference_query,
         publications_dfs_list_by_pub_type=publications_dfs_list_by_pub_type,
         uspto_patent_applications=uspto_patent_applications,
@@ -272,7 +272,7 @@ def write_reference_query_results_to_excel_file(
     )
     with pd.ExcelWriter(out_excel_filename) as writer:
         # Results (first) sheet
-        results.to_excel(writer, index=False, header=False, sheet_name="Résultats")
+        results_df.to_excel(writer, index=False, header=False, sheet_name="Résultats")
 
         # Write publications search results dataframes to separate sheets by publication type
         for df, pub_type in zip(
