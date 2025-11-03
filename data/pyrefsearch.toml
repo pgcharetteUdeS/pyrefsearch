@@ -9,8 +9,8 @@ search_type = "Publications"
 
 # Fichier Excel d'entrée et nom du feuillet contenant les information des auteur.e.s
 # (colonnes "Nom", "Prénom", ainsi que "Scopus ID" pour les recherches de publications)
-#in_excel_file = "Liste chercheurs-membres - TEST - SHORT.xlsx"
-in_excel_file = "Liste chercheurs-membres.xlsx"
+in_excel_file = "Liste chercheurs-membres - TEST - SHORT.xlsx"
+#in_excel_file = "Liste chercheurs-membres.xlsx"
 in_excel_file_author_sheet = "Membres"
 
 # Période temporelle de recherche

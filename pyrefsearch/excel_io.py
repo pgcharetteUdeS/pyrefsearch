@@ -93,17 +93,25 @@ def _create_results_summary_df(
     # Initialize 3 columns contents
     results: list = [
         f"Recherche dans {reference_query.publications_search_database}",
+        "",
         "Nb d'auteur.e.s",
+        "",
         "Date de début",
         "Date de fin",
+        "",
+        "",
     ]
     values: list = [
         None,
+        None,
         len(reference_query.au_names),
+        None,
         reference_query.date_start,
         reference_query.date_end,
+        None,
+        "Nb total",
     ]
-    co_authors: list = ["Conjointes", None, None, None]
+    co_authors: list = [None, None, None, None, None, None, None, "Conjointes"]
 
     # Publications search results
     results += reference_query.publication_types
