@@ -184,7 +184,7 @@ class ReferenceQuery:
             if authors.empty:
                 console.print(
                     f"[red]Aucun membre régulier du 3IT n'a été trouvé dans le fichier '{self.in_excel_file}'[/red]"
-                    f"[red] pour la période de recherche [{self.year_start}-{self.year_end}][/red]",
+                    f"[red] pour la période de recherche [{self.year_start} au {self.year_end}][/red]",
                     soft_wrap=True,
                 )
                 sys.exit()

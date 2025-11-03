@@ -168,7 +168,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     # Console banner
     console.print(
         "[green]\n** Période de recherche : "
-        f"{reference_query.date_start}-{reference_query.date_end} **[/green]",
+        f"{reference_query.date_start} au {reference_query.date_end} **[/green]",
         soft_wrap=True,
     )
 
