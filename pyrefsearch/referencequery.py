@@ -111,7 +111,7 @@ class ReferenceQuery:
 
         stats_filename: Path = self.data_dir / Path(
             f"{self.in_excel_file.stem}"
-            f"_{self.date_start.strftime("%Y%m%d")}-{self.date_end.strftime("%Y%m%d")}_stats.txt"
+            f"_{self.date_start.strftime('%Y%m%d')}-{self.date_end.strftime('%Y%m%d')}_stats.txt"
         )
         with open(stats_filename, "w") as f:
             f.write(
@@ -149,8 +149,7 @@ class ReferenceQuery:
 
     def extract_authors_from_df(self, input_data_full: pd.DataFrame) -> pd.DataFrame:
         author_status_by_year_columns: list[str] = [
-            f"{year}-{year + 1}"
-            for year in range(self.year_start, self.year_end + 1)
+            f"{year}-{year + 1}" for year in range(self.year_start, self.year_end + 1)
         ]
         authors: pd.DataFrame
         if all(col in input_data_full.columns for col in author_status_by_year_columns):
@@ -295,8 +294,8 @@ class ReferenceQuery:
         self.out_excel_file: Path = data_dir / (
             Path(
                 f"{self.in_excel_file.stem}"
-                f"_{self.date_start.strftime("%Y%m%d")}-{self.date_end.strftime("%Y%m%d")}"
-                f"_publications_{str(date.today().strftime("%Y%m%d"))}{self.in_excel_file.suffix}"
+                f"_{self.date_start.strftime('%Y%m%d')}-{self.date_end.strftime('%Y%m%d')}"
+                f"_publications_{str(date.today().strftime('%Y%m%d'))}{self.in_excel_file.suffix}"
             )
             if self.search_type == "Publications"
             else Path(

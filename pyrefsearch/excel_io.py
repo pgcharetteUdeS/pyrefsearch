@@ -111,7 +111,9 @@ def _create_results_summary_df(
         None,
         "Nb total",
     ]
-    co_authors: list = [None, None, None, None, None, None, None, "Conjointes"]
+    co_authors: list = [None] * (len(values) - 1) + ["Nb conjointes"]
+    formulae: list = [None] * (len(values) - 1) + ["% conjointes"]
+    formulae_offset: int = len(formulae)
 
     # Publications search results
     results += reference_query.publication_types
@@ -123,9 +125,18 @@ def _create_results_summary_df(
             None if df.empty else len(df[df["Collab interne"] > 1])
             for df in publications_dfs_list_by_pub_type
         ]
+        formulae += [
+            (
+                None
+                if df.empty
+                else f"=ROUND(C{i+formulae_offset+1}/B{i+formulae_offset+1}*100, 1)"
+            )
+            for i, df in enumerate(publications_dfs_list_by_pub_type)
+        ]
     else:
         values += [None] * len(reference_query.publication_types)
         co_authors += [None] * len(reference_query.publication_types)
+        formulae += [None] * len(reference_query.publication_types)
 
     # USPTO search results
     if not uspto_patents.empty or not uspto_patent_applications.empty:
@@ -145,6 +156,19 @@ def _create_results_summary_df(
             for _, row in uspto_patents.iterrows()
         )
         co_authors += [uspto_joint_patent_applications_count, uspto_joint_patents_count]
+        formulae_offset = len(formulae)
+        formulae += [
+            (
+                None
+                if uspto_joint_patent_applications_count == 0
+                else f"=ROUND(C{formulae_offset+1}/B{formulae_offset+1}*100, 1)"
+            ),
+            (
+                None
+                if uspto_joint_patents_count == 0
+                else f"=ROUND(C{formulae_offset + 2}/B{formulae_offset + 2}*100, 1)"
+            ),
+        ]
 
     # INPADOC search results
     if not inpadoc_patents.empty or not inpadoc_patent_applications.empty:
@@ -153,19 +177,35 @@ def _create_results_summary_df(
             len(inpadoc_patent_applications),
             len(inpadoc_patents),
         ]
-        inpadoc_patent_applications_count: int = sum(
+        inpadoc_patent_applications_joint_count: int = sum(
             row["Nb co-inventeurs locaux"] is not None
             and row["Nb co-inventeurs locaux"] > 1
             for _, row in inpadoc_patent_applications.iterrows()
         )
-        inpadoc_patents_count: int = sum(
+        inpadoc_patents_joint_count: int = sum(
             row["Nb co-inventeurs locaux"] is not None
             and row["Nb co-inventeurs locaux"] > 1
             for _, row in inpadoc_patents.iterrows()
         )
-        co_authors += [inpadoc_patent_applications_count, inpadoc_patents_count]
+        co_authors += [
+            inpadoc_patent_applications_joint_count,
+            inpadoc_patents_joint_count,
+        ]
+        formulae_offset = len(formulae)
+        formulae += [
+            (
+                None
+                if len(inpadoc_patent_applications) == 0
+                else f"=ROUND(C{formulae_offset+1}/B{formulae_offset+1}*100, 1)"
+            ),
+            (
+                None
+                if len(inpadoc_patents) == 0
+                else f"=ROUND(C{formulae_offset + 2}/B{formulae_offset + 2}*100, 1)"
+            ),
+        ]
 
-    return pd.DataFrame([results, values, co_authors]).T
+    return pd.DataFrame([results, values, co_authors, formulae]).T
 
 
 def _center_column_by_index(worksheet: Worksheet, i: int):
