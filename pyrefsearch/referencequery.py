@@ -222,7 +222,6 @@ class ReferenceQuery:
         in_excel_file_author_sheet: str,
         date_start: date,
         date_end: date,
-        extract_search_results_diff: bool,
         extract_search_results_diff_confirmation_emails: list[str],
         publication_types: list[str],
         local_affiliations: list[str],
@@ -239,9 +238,6 @@ class ReferenceQuery:
         self.date_end: date = date_end
         self.year_end: int = date_end.year
         self.publications_search_database: str = publications_search_database
-        self.extract_search_results_diff: bool = (
-            extract_search_results_diff if date.today().month != 1 else False
-        )
         self.extract_search_results_diff_confirmation_emails: list[str] = (
             extract_search_results_diff_confirmation_emails
         )
@@ -293,9 +289,9 @@ class ReferenceQuery:
         self.in_excel_file: Path = self.data_dir / Path(in_excel_file)
         self.out_excel_file: Path = data_dir / (
             Path(
-                f"{self.in_excel_file.stem}"
-                f"_{self.date_start.strftime('%Y%m%d')}-{self.date_end.strftime('%Y%m%d')}"
-                f"_publications_{str(date.today().strftime('%Y%m%d'))}{self.in_excel_file.suffix}"
+                f"{self.in_excel_file.stem}_publications_"
+                f"{self.date_start.strftime('%Y%m%d')}-{self.date_end.strftime('%Y%m%d')}"
+                ".xlsx"
             )
             if self.search_type == "Publications"
             else Path(

@@ -257,7 +257,6 @@ def write_reference_query_results_to_excel_file(
     uspto_patent_applications: pd.DataFrame,
     inpadoc_patents: pd.DataFrame,
     inpadoc_patent_applications: pd.DataFrame,
-    publications_diff: bool = False,
     publications_previous_filename: Path = Path(""),
 ) -> Path:
     """
@@ -273,7 +272,6 @@ def write_reference_query_results_to_excel_file(
         uspto_patent_applications (pd.DataFrame): USPTO patent search results
         inpadoc_patents (pd.DataFrame): INPADOC patent search result
         inpadoc_patent_applications (pd.DataFrame): INPADOC patent search results
-        publications_diff (bool): True of this a publications differential request
         publications_previous_filename (Path): Path to the Excel file with results from previous month
 
     Returns (Path): Excel output filename
@@ -310,15 +308,7 @@ def write_reference_query_results_to_excel_file(
     )
 
     # Write dataframes in separate sheets to the output Excel file
-    out_excel_filename: Path = (
-        reference_query.out_excel_file.with_stem(
-            f"{reference_query.out_excel_file.stem}_DIFF_"
-            f"{publications_previous_filename.stem[-len('YYYY-MM-DD'):]}"
-        )
-        if publications_diff
-        else reference_query.out_excel_file
-    )
-    with pd.ExcelWriter(out_excel_filename) as writer:
+    with pd.ExcelWriter(reference_query.out_excel_file) as writer:
         # Results (first) sheet
         results_df.to_excel(writer, index=False, header=False, sheet_name="Résultats")
 
@@ -343,78 +333,62 @@ def write_reference_query_results_to_excel_file(
                     i=column_names.index("Auteurs locaux"),
                 )
 
-        if not publications_diff:
-            # Write all publication search results to a single sheet
-            publications.to_excel(
+        # Write all publication search results to a single sheet
+        publications.to_excel(
+            writer,
+            index=False,
+            sheet_name=f"{reference_query.publications_search_database} (résultats complets)",
+            freeze_panes=(1, 1),
+        )
+
+        #  Write USPTO search result sheets, if required
+        if not uspto_patent_applications.empty:
+            uspto_patent_applications.to_excel(
                 writer,
                 index=False,
-                sheet_name=f"{reference_query.publications_search_database} (résultats complets)",
+                sheet_name="Brevets US (en instance)",
+                freeze_panes=(1, 1),
+            )
+        if not uspto_patents.empty:
+            uspto_patents.to_excel(
+                writer,
+                index=False,
+                sheet_name="Brevets US (délivrés)",
                 freeze_panes=(1, 1),
             )
 
-            #  Write USPTO search result sheets, if required
-            if not uspto_patent_applications.empty:
-                uspto_patent_applications.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name="Brevets US (en instance)",
-                    freeze_panes=(1, 1),
-                )
-            if not uspto_patents.empty:
-                uspto_patents.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name="Brevets US (délivrés)",
-                    freeze_panes=(1, 1),
-                )
-
-            #  Write INPADOC search result sheets, if required
-            if not inpadoc_patent_applications.empty:
-                inpadoc_patent_applications.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name="Brevets INPADOC (en instance)",
-                    freeze_panes=(1, 1),
-                )
-            if not inpadoc_patents.empty:
-                inpadoc_patents.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name="Brevets INPADOC (délivrés)",
-                    freeze_panes=(1, 1),
-                )
-
-            # Author profile sheets
-            author_profiles.to_excel(
-                writer, index=False, sheet_name="Auteurs - Profils", freeze_panes=(1, 1)
-            )
-            author_homonyms.to_excel(
+        #  Write INPADOC search result sheets, if required
+        if not inpadoc_patent_applications.empty:
+            inpadoc_patent_applications.to_excel(
                 writer,
                 index=False,
-                sheet_name="Auteurs - Homonymes",
+                sheet_name="Brevets INPADOC (en instance)",
+                freeze_panes=(1, 1),
+            )
+        if not inpadoc_patents.empty:
+            inpadoc_patents.to_excel(
+                writer,
+                index=False,
+                sheet_name="Brevets INPADOC (délivrés)",
                 freeze_panes=(1, 1),
             )
 
-        else:
-            # Minimalistic author profiles sheet
-            author_profiles_by_ids_minimal: pd.DataFrame = author_profiles[
-                ["Nom de famille", "Prénom"]
-            ].copy()
-            author_profiles_by_ids_minimal.to_excel(
-                writer, index=False, sheet_name="Auteurs", freeze_panes=(1, 1)
-            )
-
-    console.print(
-        "Résultats de la recherche sauvegardés "
-        f"dans le fichier '{out_excel_filename}'",
-        soft_wrap=True,
-    )
+        # Author profile sheets
+        author_profiles.to_excel(
+            writer, index=False, sheet_name="Auteurs - Profils", freeze_panes=(1, 1)
+        )
+        author_homonyms.to_excel(
+            writer,
+            index=False,
+            sheet_name="Auteurs - Homonymes",
+            freeze_panes=(1, 1),
+        )
 
     # Attempt to adjust column widths in the output Excel file to reasonable values.
     # The solution is a hack because the auto_size/bestFit properties in
     # openpyxl.worksheet.dimensions.ColumnDimension() don't seem to work and the actual
     # column width sizing in Excel is system-dependant and a bit of a black box.
-    workbook = load_workbook(out_excel_filename)
+    workbook = load_workbook(reference_query.out_excel_file)
     col_width_max: int = 100
     for sheet_name in workbook.sheetnames:
         for i, col in enumerate(workbook[sheet_name].columns):
@@ -424,10 +398,16 @@ def write_reference_query_results_to_excel_file(
             workbook[sheet_name].column_dimensions[col[0].column_letter].width = max(
                 min(col_width_max, col_width), col_width_min
             )
-    workbook.save(out_excel_filename)
+    workbook.save(reference_query.out_excel_file)
+
+    console.print(
+        "Résultats de la recherche sauvegardés "
+        f"dans le fichier '{reference_query.out_excel_file}'",
+        soft_wrap=True,
+    )
 
     # Return Excel output filename
-    return out_excel_filename
+    return reference_query.out_excel_file
 
 
 def load_espacenet_search_results_from_excel_file(

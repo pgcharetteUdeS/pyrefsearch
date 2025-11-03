@@ -58,7 +58,7 @@ def differential_search_results(
 
     # Load publications search results from the previous month (publications_previous)
     first_of_last_month = (date.today() - relativedelta(months=1)).replace(day=1)
-    year_range: str = (
+    date_range: str = (
         f"{reference_query.year_start - 1}-{reference_query.year_end - 1}"
         if date.today().month == 1
         else f"{reference_query.year_start}-{reference_query.year_end}"
@@ -66,7 +66,7 @@ def differential_search_results(
     stem = reference_query.out_excel_file.stem
     publications_previous_filename = reference_query.out_excel_file.with_stem(
         f"{stem[:-len('_YYYY-YYYY_publications_YYYY-MM-DD')]}"
-        f"_{year_range}_publications_{first_of_last_month}"
+        f"_{date_range}_publications_{first_of_last_month}"
     )
     console.print(
         f"Fichier de référence: '{publications_previous_filename}'",
@@ -110,9 +110,9 @@ def gen_power_shell_script_to_send_confirmation_emails(
 
     """
 
-    date_from: str = str(diff_results_out_excel_filename.stem)[-len("YYYY-MM-YY") :]
+    date_from: str = str(diff_results_out_excel_filename.stem)[-len("YYYYMMYY") :]
     date_to: str = str(diff_results_out_excel_filename.stem)[
-        -len("YYYY-MM-YY_DIFF_YYYY-MM-YY") : -len("_DIFF_YYYY-MM-YY")
+        -len("YYYYMMYY_DIFF_YYYYMMYY") : -len("_DIFF_YYYYMMYY")
     ]
 
     with open("shell_scripts\\pyrefsearch_send_email_confirmation.ps1", "w") as f:
@@ -291,36 +291,6 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         inpadoc_patent_applications=inpadoc_patent_applications,
     )
 
-    # Differential publication search results relative to last month
-    if reference_query.extract_search_results_diff:
-        console.print(
-            f"[green]\n** Recherche différentielle de publications dans {reference_query.publications_search_database}"
-            " relativement au 1er du mois dernier **[/green]",
-            soft_wrap=True,
-        )
-        publications_diff, publications_previous_filename = differential_search_results(
-            reference_query=reference_query, publications_current=publications
-        )
-        diff_results_out_excel_filename: Path = (
-            write_reference_query_results_to_excel_file(
-                reference_query=reference_query,
-                publications=publications_diff,
-                pub_type_counts_by_author=pub_type_counts_by_author,
-                author_profiles=author_profiles,
-                author_homonyms=author_homonyms,
-                uspto_patents=pd.DataFrame(),
-                uspto_patent_applications=pd.DataFrame(),
-                inpadoc_patents=pd.DataFrame(),
-                inpadoc_patent_applications=pd.DataFrame(),
-                publications_diff=True,
-                publications_previous_filename=publications_previous_filename,
-            )
-        )
-        gen_power_shell_script_to_send_confirmation_emails(
-            reference_query=reference_query,
-            diff_results_out_excel_filename=diff_results_out_excel_filename,
-        )
-
 
 def pyrefsearch() -> None:
     # Console info starting messages
@@ -345,6 +315,19 @@ def pyrefsearch() -> None:
     toml_filename: Path = Path(args.toml_filename)
     toml_dict: dict = toml.load(toml_filename)
 
+    # If publication difference request, override the start/stop dates
+    extract_search_results_diff_override: bool = toml_dict.get(
+        "extract_search_results_diff_override", False
+    )
+    date_start: date
+    date_end: date
+    if extract_search_results_diff_override:
+        date_end = date.today()
+        date_start = date_end - relativedelta(months=1)
+    else:
+        date_start = toml_dict["date_start"]
+        date_end = toml_dict["date_end"]
+
     # Define ReferenceQuery Class object containing the query parameters
     reference_query: ReferenceQuery = ReferenceQuery(
         search_type=toml_dict["search_type"],
@@ -354,9 +337,8 @@ def pyrefsearch() -> None:
         ),
         in_excel_file=toml_dict["in_excel_file"],
         in_excel_file_author_sheet=toml_dict["in_excel_file_author_sheet"],
-        date_start=toml_dict["date_start"],
-        date_end=toml_dict["date_end"],
-        extract_search_results_diff=toml_dict.get("extract_search_results_diff", False),
+        date_start=date_start,
+        date_end=date_end,
         extract_search_results_diff_confirmation_emails=toml_dict.get(
             "extract_search_results_diff_confirmation_emails", []
         ),

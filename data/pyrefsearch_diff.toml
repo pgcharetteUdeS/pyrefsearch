@@ -17,7 +17,7 @@ pub_year_last = 2025
 # Activer/désactiver l'extraction différentielle Scopus relativement au 1er du mois précédant,
 # spécification de la liste d'envois de courriels de confirmation, où la première adresse
 # email reçoit aussi le fichier log de l'exécution.
-extract_search_results_diff = true
+extract_search_results_diff_override = true
 extract_search_results_diff_confirmation_emails = [
     "Paul.Charette@USherbrooke.ca",
     "pgcharette@gmail.com",
