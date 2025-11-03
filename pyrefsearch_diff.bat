@@ -18,7 +18,7 @@ GOTO run_search
 set PYTHONDIR="C:\Program Files\Python\Python312"
 GOTO run_search
 
-:: Run the Scopus differential search
+:: Run the publications differential search
 :run_search
 set EMAIL_POWERSHELL_SCRIPT="shell_scripts\pyrefsearch_send_email_confirmation.ps1"
 if exist  %EMAIL_POWERSHELL_SCRIPT% del /F  %EMAIL_POWERSHELL_SCRIPT%

@@ -1,9 +1,9 @@
 """pyrefsearch.py
 
     For a list of author names and range of years supplied in an Excel file, query:
-    - references (publications in Scopus, patents in the INPADOC and USPTO databases)
+    - references (publications in OpenAlex or Scopus, patents in the INPADOC and USPTO databases)
       OR
-    - author profiles (Scopus database), and write the results to an output Excel file.
+    - author profiles (OpenAlex or Scopus database), and write the results to an output Excel file.
 
     All execution parameters specified in the file "data/pyrefsearch.toml"
 
@@ -56,7 +56,7 @@ def differential_search_results(
 
     """
 
-    # Load Scopus search results from the previous month (publications_previous)
+    # Load publications search results from the previous month (publications_previous)
     first_of_last_month = (date.today() - relativedelta(months=1)).replace(day=1)
     year_range: str = (
         f"{reference_query.pub_year_first-1}-{reference_query.pub_year_last-1}"
@@ -112,15 +112,15 @@ def gen_power_shell_script_to_send_confirmation_emails(
 
     date_from: str = str(diff_results_out_excel_filename.stem)[-len("YYYY-MM-YY") :]
     date_to: str = str(diff_results_out_excel_filename.stem)[
-        -len("YYYY-MM-YY_SCOPUS_DIFF_YYYY-MM-YY") : -len("_SCOPUS_DIFF_YYYY-MM-YY")
+        -len("YYYY-MM-YY_DIFF_YYYY-MM-YY") : -len("_DIFF_YYYY-MM-YY")
     ]
 
     with open("shell_scripts\\pyrefsearch_send_email_confirmation.ps1", "w") as f:
         f.write("# Script to send confirmation emails to a list of recipients\n")
         f.write("# NB: the script is generated automatically by pyrefsearch.py\n\n")
         f.write(
-            '$Subject = "Recherche de publications dans Scopus pour les membres '
-            f'réguliers du 3IT du {date_from} au {date_to}"\n'
+            f'$Subject = "Recherche de publications dans {reference_query.publications_search_database}'
+            f' pour les membres réguliers du 3IT du {date_from} au {date_to}"\n'
         )
         f.write("$currentDirectory = (Get-Location).Path\n\n")
 
@@ -156,7 +156,7 @@ def gen_power_shell_script_to_send_confirmation_emails(
 
 def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     """
-    Search for publications in Scopus and patents in the USPTO & INPADOC databases
+    Search for publications in OpenAlex/Scopus and patents in the USPTO & INPADOC databases
     for a list of authors over a range of years
 
     Args:
@@ -181,7 +181,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         # Init OpenAlex API
         config_openalex()
 
-        # Fetch author profiles corresponding to user-supplied Scopus IDs, check they match
+        # Fetch author profiles corresponding to user-supplied OpenAlex IDs, check they match
         # the user-supplied names, flag any inconsistencies in the "Erreurs" column
         console.print(
             "[green]\n** Recherche de profils d'auteurs dans OpenAlex **[/green]"
@@ -197,7 +197,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         )
 
         # Fetch OpenAlex author profiles corresponding to user-supplied names, check for
-        # author names with multiple Scopus IDs ("homonyms")
+        # author names with multiple OpenAlex IDs ("homonyms")
         console.print("[green]\n** Recherche d'homonymes dans OpenAlex **[/green]")
         author_homonyms = query_author_homonyms_openalex(
             reference_query=reference_query,
@@ -295,7 +295,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     # Differential publication search results relative to last month
     if reference_query.extract_search_results_diff:
         console.print(
-            "[green]\n** Recherche différentielle de publications dans Scopus"
+            f"[green]\n** Recherche différentielle de publications dans {reference_query.publications_search_database}"
             " relativement au 1er du mois dernier **[/green]",
             soft_wrap=True,
         )

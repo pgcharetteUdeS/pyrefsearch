@@ -99,7 +99,7 @@ def _create_results_summary_df(
     ]
     values: list = [
         None,
-        len(reference_query.scopus_ids),
+        len(reference_query.au_names),
         reference_query.pub_year_first,
         reference_query.pub_year_last,
     ]
@@ -225,7 +225,7 @@ def write_reference_query_results_to_excel_file(
         uspto_patent_applications (pd.DataFrame): USPTO patent search results
         inpadoc_patents (pd.DataFrame): INPADOC patent search result
         inpadoc_patent_applications (pd.DataFrame): INPADOC patent search results
-        publications_diff (bool): True of this a Scopus differential request
+        publications_diff (bool): True of this a publications differential request
         publications_previous_filename (Path): Path to the Excel file with results from previous month
 
     Returns (Path): Excel output filename
@@ -264,7 +264,7 @@ def write_reference_query_results_to_excel_file(
     # Write dataframes in separate sheets to the output Excel file
     out_excel_filename: Path = (
         reference_query.out_excel_file.with_stem(
-            f"{reference_query.out_excel_file.stem}_SCOPUS_DIFF_"
+            f"{reference_query.out_excel_file.stem}_DIFF_"
             f"{publications_previous_filename.stem[-len('YYYY-MM-DD'):]}"
         )
         if publications_diff
@@ -274,7 +274,7 @@ def write_reference_query_results_to_excel_file(
         # Results (first) sheet
         results.to_excel(writer, index=False, header=False, sheet_name="Résultats")
 
-        # Write Scopus search results dataframes to separate sheets by publication type
+        # Write publications search results dataframes to separate sheets by publication type
         for df, pub_type in zip(
             publications_dfs_list_by_pub_type, reference_query.publication_types
         ):
