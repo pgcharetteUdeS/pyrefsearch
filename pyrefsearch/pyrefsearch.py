@@ -315,26 +315,58 @@ def pyrefsearch() -> None:
     toml_filename: Path = Path(args.toml_filename)
     toml_dict: dict = toml.load(toml_filename)
 
-    # If publication difference request, override the start/stop dates
+    # Load search type
+    search_type: str = toml_dict.get("search_type", "Publications")
+
+    # Assign the correct search codes depending on the database used
+    publications_search_database: str = toml_dict.get(
+        "publications_search_database", "OpenAlex"
+    )
+    publication_types: list[str]
+    if publications_search_database == "Scopus":
+        publication_types = toml_dict["publication_types_scopus"]
+    else:
+        publication_types = toml_dict["publication_types_openalex"]
+
+    # If this a differential search, make sure OpenALex is used, else exit
     extract_search_results_diff_override: bool = toml_dict.get(
         "extract_search_results_diff_override", False
     )
+    if (
+        extract_search_results_diff_override and publications_search_database != "OpenAlex"
+    ):
+        console.print(
+            "[red]ERREUR: OpenAlex doit être utilisé pour la recherche différentielle![/red]",
+            soft_wrap=True,
+        )
+        sys.exit(0)
+
+    # Determine search period dates
     date_start: date
     date_end: date
     if extract_search_results_diff_override:
         date_end = date.today()
         date_start = date_end - relativedelta(months=1)
+    elif publications_search_database == "Scopus":
+        date_start_scopus: date = toml_dict["date_start"]
+        date_end_scopus: date = toml_dict["date_end"]
+        date_start = date_start_scopus.replace(month=1, day=1)
+        date_end = date_end_scopus.replace(month=12, day=31)
+        if date_start_scopus != date_start or date_end_scopus != date_end:
+            console.print(
+                "[yellow]WARNING: 'La période de recherche dans Scopus"
+                " ne peut être spécifiée qu'en années'[/yellow]",
+                soft_wrap=True,
+            )
     else:
         date_start = toml_dict["date_start"]
         date_end = toml_dict["date_end"]
 
     # Define ReferenceQuery Class object containing the query parameters
     reference_query: ReferenceQuery = ReferenceQuery(
-        search_type=toml_dict["search_type"],
+        search_type=search_type,
         data_dir=str(toml_filename.parent),
-        publications_search_database=toml_dict.get(
-            "publications_search_database", "OpenAlex"
-        ),
+        publications_search_database=publications_search_database,
         in_excel_file=toml_dict["in_excel_file"],
         in_excel_file_author_sheet=toml_dict["in_excel_file_author_sheet"],
         date_start=date_start,
@@ -342,7 +374,7 @@ def pyrefsearch() -> None:
         extract_search_results_diff_confirmation_emails=toml_dict.get(
             "extract_search_results_diff_confirmation_emails", []
         ),
-        publication_types=toml_dict["publication_types"],
+        publication_types=publication_types,
         local_affiliations=toml_dict["local_affiliations"],
         scopus_database_refresh_days=toml_dict.get("scopus_database_refresh_days", 0),
         uspto_patent_search=toml_dict.get("uspto_patent_search", False),
@@ -354,7 +386,7 @@ def pyrefsearch() -> None:
     )
 
     # Run the query
-    if toml_dict["search_type"] == "Publications":
+    if search_type == "Publications":
         query_publications_and_patents(reference_query=reference_query)
     elif toml_dict["search_type"] == "Profils":
         query_scopus_author_profiles_legacy(reference_query=reference_query)

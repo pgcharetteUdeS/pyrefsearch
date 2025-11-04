@@ -1,14 +1,4 @@
-# Type de recherche
-#   - "Publications" : recherche de publications & brevets par identifiant Scopus
-#   - "Profils"      : recherche de profils d'auteurs par noms, pour une éventuelle
-#                      recherche de publications par identifiants Scopus
-# NB: Tous les fichiers spécifiés sont lus/écrits dans le même répertoire que ce fichier .toml
-#
-#search_type = "Profils"
-search_type = "Publications"
-
 # Fichier Excel d'entrée et nom du feuillet contenant les information des auteur.e.s
-# (colonnes "Nom", "Prénom", ainsi que "Scopus ID" pour les recherches de publications)
 #in_excel_file = "Liste chercheurs-membres - TEST - SHORT.xlsx"
 in_excel_file = "Liste chercheurs-membres.xlsx"
 in_excel_file_author_sheet = "Membres"
@@ -18,7 +8,6 @@ date_start = 2024-05-01
 date_end = 2025-04-30
 
 # Base de données pour la recherche de publications : "Scopus" ou "OpenAlex" (défaut)
-#publications_search_database = "Scopus"
 publications_search_database = "OpenAlex"
 
 # Noms d'institutions/affiliations considérées commme "locales" avec leurs identifiants Scopus,
@@ -33,24 +22,8 @@ local_affiliations = [
 
 # OPENALEX : Paires de descriptifs (au choix de l'usager) et mosts clefs indiquant
 # le type de publication dans la base de données OpenAlex
-publication_types = [["Articles", "journal-article"], ["Confs", "proceedings-article"],
+publication_types_openalex = [["Articles", "journal-article"], ["Confs", "proceedings-article"],
     ["Chap. de livres", "book-chapter"], ["Pré-impressions", "preprint"], ["Autres", "Other"]]
-
-# SCOPUS : Paires de descriptifs (au choix de l'usager) et codes à deux lettres Scopus
-# correspondants pour la recherche par publications.
-# Codes Scopus disponibles :
-#   Article-ar / Abstract Report-ab / Book-bk / Book Chapter-ch / Conference Paper-cp /
-#   Conference Review-cr / Data Paper-dp / Editorial-ed / Erratum-er / Letter-le /
-#   Multimedia-mm / Note-no / Report-rp / Retracted-tb / Review-re / Short Survey-sh
-#publication_types = [["Articles", "ar"], ["Confs", "cp"], ["Absracts", "ab"], ["Livres", "bk"],
-#    ["Chap. de livres", "ch"], ["Lettres", "le"], ["Rapports", "rp"]]
-
-# SCOPUS : Intervalle de mise à jour (en nombre de jours) de la copie locale de la base de
-# données. Une recherche en ligne dans Scopus prend beaucoup de temps, les résultats sont
-# sauvegardés dans une base de données locale pour éviter de refaire la recherche
-# en ligne à chaque fois. Cette base de données locale est mise à jour à
-# intervalles réguliers (valeur par défaut = 0, i.e. mise à jour à chaque recherche).
-scopus_database_refresh_days = 0
 
 # BREVETS : Activer/désactiver (true/false) la recherche de brevets USPTO et ESPACENET (INPADOC)
 # 1) La recherche de brevets dans INPADOC est préférable à l'USPTO parce que les brevets
