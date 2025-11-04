@@ -384,13 +384,14 @@ def _consolidate_subtypes(reference_query: ReferenceQuery, work_type: str) -> st
     Returns : correct subtype
     """
 
-    work_type = "journal-article" if work_type == "article" else work_type
+    work_type = "other" if work_type == "article" else work_type
     work_type = (
         "preprint" if work_type in {"posted-content", "journal-preprint"} else work_type
     )
     if work_type not in reference_query.publication_type_codes:
         console.print(
-            f"[red]ERREUR: unknown subtype '{work_type}' in publications database search![/red]",
+            f"[red]ERREUR: unknown subtype '{work_type}' in publications database search, "
+            "add the subtype to search_openalex._consolidate_subtypes()![/red]",
             soft_wrap=True,
         )
         sys.exit()
