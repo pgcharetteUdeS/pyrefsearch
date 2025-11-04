@@ -1,11 +1,3 @@
-# Type de recherche
-#   - "Publications" : recherche de publications & brevets par identifiant Scopus
-#   - "Profils"      : recherche de profils d'auteurs par noms, pour une éventuelle
-#                      recherche de publications par identifiants Scopus
-# NB: Tous les fichiers spécifiés sont lus/écrits dans le même répertoire que ce fichier .toml
-#
-search_type = "Publications"
-
 # Fichier Excel d'entrée et nom du feuillet contenant les information des auteur.e.s
 in_excel_file = "Liste chercheurs-membres.xlsx"
 in_excel_file_author_sheet = "Membres"
@@ -22,11 +14,11 @@ extract_search_results_diff_confirmation_emails = [
 # Noms d'institutions/affiliations considérées commme "locales" avec leurs identifiants Scopus,
 # pour valider les profils d'auteurs dans les recherches
 local_affiliations = [
-    ["Université de Sherbrooke", "60011832"],
-    ["3IT", "60190927"],
-    ["Institut interdisciplinaire d'innovation technologique", "60190927"],
-    ["LN2", "60108180"],
-    ["Laboratoire nanotechnologies et nanosystèmes", "60108180"]
+    ["Université de Sherbrooke", ""],
+    ["3IT", ""],
+    ["Institut interdisciplinaire d'innovation technologique", ""],
+    ["LN2", ""],
+    ["Laboratoire nanotechnologies et nanosystèmes", ""]
 ]
 
 # OPENALEX : Paires de descriptifs (au choix de l'usager) et mosts clefs indiquant
