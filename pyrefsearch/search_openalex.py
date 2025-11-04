@@ -374,29 +374,35 @@ def _add_local_author_name_and_count_columns(
 
 def _consolidate_subtypes(reference_query: ReferenceQuery, work_type: str) -> str:
     """
-    Consolidate subtypes to the set specified by the publication_types_openalex
-    parameter in the input .toml file
+    Constrain subtypes to the set specified by the publication_types_openalex parameter
+    in the input .toml file
 
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
         work_type (str): publications type to consolidate, if not in input set
 
-    Returns : correct subtype
+    Returns : consolidated subtype
     """
 
-    work_type = "other" if work_type == "article" else work_type
-    work_type = (
-        "preprint" if work_type in {"posted-content", "journal-preprint"} else work_type
-    )
-    if work_type not in reference_query.publication_type_codes:
-        console.print(
-            f"[red]ERREUR: unknown subtype '{work_type}' in publications database search, "
-            "add the subtype to search_openalex._consolidate_subtypes()![/red]",
-            soft_wrap=True,
-        )
-        sys.exit()
+    subtypes = {
+        "article": "other",
+        "journal-article": "journal-article",
+        "proceedings-article": "proceedings-article",
+        "book-chapter": "book-chapter",
+        "preprint": "preprint",
+        "posted-content": "preprint",
+        "journal-preprint": "preprint",
+        "other": "other",
+    }
 
-    return work_type
+    if work_type in subtypes:
+        return subtypes[work_type]
+    console.print(
+        f"[red]WARNING: subtype '{work_type}' inconnu dans la recherche de publications, "
+        "ajouter ce subtype à la fonction search_openalex._consolidate_subtypes()![/red]",
+        soft_wrap=True,
+    )
+    return "other"
 
 
 def query_publications_openalex(
