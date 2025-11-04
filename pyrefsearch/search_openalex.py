@@ -282,7 +282,7 @@ def _get_publication_info_from_crossref(doi) -> dict | None:
                 itertools.chain(
                     *[
                         [
-                            affiliation["name"]
+                            html.unescape(affiliation["name"])
                             for affiliation in authors["affiliation"]
                             if "name" in affiliation
                         ]
@@ -405,6 +405,19 @@ def _consolidate_subtypes(reference_query: ReferenceQuery, work_type: str) -> st
     return "other"
 
 
+def _check_3it_affiliation(authorships: list) -> bool:
+    return any(
+        any(
+            "institut" in html.unescape(raw_affiliation_string).lower()
+            and "interdisciplinaire" in html.unescape(raw_affiliation_string).lower()
+            and "innovation" in html.unescape(raw_affiliation_string).lower()
+            and "technologique" in html.unescape(raw_affiliation_string).lower()
+            for raw_affiliation_string in author["raw_affiliation_strings"]
+        )
+        for author in authorships
+    )
+
+
 def query_publications_openalex(
     reference_query: ReferenceQuery,
 ) -> tuple[pd.DataFrame, list[list[int | None]]]:
@@ -497,7 +510,7 @@ def query_publications_openalex(
                     or publication_name_crossref is not None
                 ):
                     # Consolidate OpenAlex & Crossref record fields
-                    work_type: str = type_crossref or (type_openalex or "Other")
+                    work_type: str = type_crossref or (type_openalex or "other")
                     work_title: str = title_openalex or title_openalex
                     work_publication_name: str | None = (
                         publication_name_crossref or publication_name_openalex
@@ -518,6 +531,15 @@ def query_publications_openalex(
                                     "subtype": [work_type],
                                     "coverDate": [date_openalex],
                                     "Membre3IT": [f"{author_name[1]} {author_name[0]}"],
+                                    "Affiliation 3IT": [
+                                        (
+                                            "X"
+                                            if _check_3it_affiliation(
+                                                work["authorships"]
+                                            )
+                                            else None
+                                        )
+                                    ],
                                     "author_names": [authors_openalex],
                                     "institutions": [author_institutions_openalex],
                                     "affiliations": [author_affiliations_openalex],

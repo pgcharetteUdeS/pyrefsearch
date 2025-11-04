@@ -48,6 +48,7 @@ def _export_publications_df_to_excel_sheet(
         "coverDate": "Date",
         "Auteurs locaux": "Auteurs locaux",
         "Collab interne": "Collab interne",
+        "Affiliation 3IT": "Affiliation 3IT",
         "author_names": "Auteurs",
         "publicationName": "Publication",
         "volume": "Volume",
