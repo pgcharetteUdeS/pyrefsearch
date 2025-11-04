@@ -377,7 +377,6 @@ def _consolidate_subtypes(work_type: str) -> str:
     in the input .toml file
 
     Args:
-        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
         work_type (str): publications type to consolidate, if not in input set
 
     Returns : consolidated subtype
@@ -416,8 +415,8 @@ def _check_3it_affiliation(authorships: list) -> bool:
                 for raw_affiliation_string in author["raw_affiliation_strings"]
             )
             or (
-                "institute" in html.unescape(raw_affiliation_string).lower()
-                and "interdisciplinary" in html.unescape(raw_affiliation_string).lower()
+                "interdisciplinary" in html.unescape(raw_affiliation_string).lower()
+                and "institute" in html.unescape(raw_affiliation_string).lower()
                 and "technological" in html.unescape(raw_affiliation_string).lower()
                 and "innovation" in html.unescape(raw_affiliation_string).lower()
                 for raw_affiliation_string in author["raw_affiliation_strings"]
