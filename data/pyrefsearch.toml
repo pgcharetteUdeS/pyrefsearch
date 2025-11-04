@@ -7,17 +7,17 @@ in_excel_file_author_sheet = "Membres"
 date_start = 2024-05-01
 date_end = 2025-04-30
 
-# Base de données pour la recherche de publications : "Scopus" ou "OpenAlex" (défaut)
+# Base de données pour la recherche de publications : "OpenAlex" (défaut) ou "Scopus"
 publications_search_database = "OpenAlex"
 
-# Noms d'institutions/affiliations considérées commme "locales" avec leurs identifiants Scopus,
-# pour valider les profils d'auteurs dans les recherches
+# Noms d'institutions/affiliations considérées commme "locales" avec leurs identifiants
+# OpenAlex ou Scopus, pour valider les profils d'auteurs dans les recherches
 local_affiliations = [
-    ["Université de Sherbrooke", "60011832"],
-    ["3IT", "60190927"],
-    ["Institut interdisciplinaire d'innovation technologique", "60190927"],
-    ["LN2", "60108180"],
-    ["Laboratoire nanotechnologies et nanosystèmes", "60108180"]
+    ["Université de Sherbrooke", "I135117807"],
+    ["3IT", ""],
+    ["Institut interdisciplinaire d'innovation technologique", ""],
+    ["LN2", "I4387155352"],
+    ["Laboratoire nanotechnologies et nanosystèmes", "I4387155352"]
 ]
 
 # OPENALEX : Paires de descriptifs (au choix de l'usager) et mosts clefs indiquant
