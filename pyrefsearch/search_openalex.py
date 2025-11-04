@@ -20,6 +20,7 @@ from pyalex import config, Authors, Works
 from referencequery import ReferenceQuery
 import re
 import requests
+import sys
 from utils import (
     console,
     count_publications_by_type_in_df,
@@ -363,17 +364,38 @@ def _add_local_author_name_and_count_columns(
             for _, row in publications_without_duplicate.iterrows()
         ]
 
-    # Replace "posted-content" with "preprint" subtype
-    publications_without_duplicate.loc[
-        publications_without_duplicate["subtype"] == "posted-content", "subtype"
-    ] = "preprint"
-
     # Drop temporary columns
     publications_without_duplicate.drop(
         ["duplicates", "Duplicate indices"], axis=1, inplace=True
     )
 
     return publications_without_duplicate
+
+
+def _consolidate_subtypes(reference_query: ReferenceQuery, work_type: str) -> str:
+    """
+    Consolidate subtypes to the set specified by the publication_types_openalex
+    parameter in the input .toml file
+
+    Args:
+        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+        work_type (str): publications type to consolidate, if not in input set
+
+    Returns : correct subtype
+    """
+
+    work_type = "journal-article" if work_type == "article" else work_type
+    work_type = (
+        "preprint" if work_type in {"posted-content", "journal-preprint"} else work_type
+    )
+    if work_type not in reference_query.publication_type_codes:
+        console.print(
+            f"[red]ERREUR: unknown subtype '{work_type}' in publications database search![/red]",
+            soft_wrap=True,
+        )
+        sys.exit()
+
+    return work_type
 
 
 def query_publications_openalex(
@@ -472,6 +494,11 @@ def query_publications_openalex(
                     work_title: str = title_openalex or title_openalex
                     work_publication_name: str | None = (
                         publication_name_crossref or publication_name_openalex
+                    )
+
+                    # Consolidate subtypes to the set specified by the user
+                    work_type = _consolidate_subtypes(
+                        reference_query=reference_query, work_type=work_type
                     )
 
                     # Add the record to the dataframe for this author

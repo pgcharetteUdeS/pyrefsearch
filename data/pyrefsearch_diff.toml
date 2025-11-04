@@ -11,16 +11,15 @@ extract_search_results_diff_confirmation_emails = [
     "pgcharette@gmail.com",
 ]
 
-# Noms d'institutions/affiliations considérées commme "locales" avec leurs identifiants Scopus,
-# pour valider les profils d'auteurs dans les recherches
+# Noms d'institutions/affiliations considérées commme "locales" avec leurs identifiants
+# OpenAlex ou Scopus, pour valider les profils d'auteurs dans les recherches
 local_affiliations = [
-    ["Université de Sherbrooke", ""],
+    ["Université de Sherbrooke", "I135117807"],
     ["3IT", ""],
     ["Institut interdisciplinaire d'innovation technologique", ""],
-    ["LN2", ""],
-    ["Laboratoire nanotechnologies et nanosystèmes", ""]
+    ["LN2", "I4387155352"],
+    ["Laboratoire nanotechnologies et nanosystèmes", "I4387155352"]
 ]
-
 # OPENALEX : Paires de descriptifs (au choix de l'usager) et mosts clefs indiquant
 # le type de publication dans la base de données OpenAlex
 publication_types = [["Articles", "journal-article"], ["Confs", "proceedings-article"],
