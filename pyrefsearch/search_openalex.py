@@ -1,8 +1,8 @@
 """search_openalex.py
 
-    Search OpenAlex database
+Search OpenAlex database
 
-    https://github.com/J535D165/pyalex
+https://github.com/J535D165/pyalex
 
 """
 
@@ -20,7 +20,6 @@ from pyalex import config, Authors, Works
 from referencequery import ReferenceQuery
 import re
 import requests
-import sys
 from utils import (
     console,
     count_publications_by_type_in_df,
@@ -372,7 +371,7 @@ def _add_local_author_name_and_count_columns(
     return publications_without_duplicate
 
 
-def _consolidate_subtypes(reference_query: ReferenceQuery, work_type: str) -> str:
+def _consolidate_subtypes(work_type: str) -> str:
     """
     Constrain subtypes to the set specified by the publication_types_openalex parameter
     in the input .toml file
@@ -408,11 +407,21 @@ def _consolidate_subtypes(reference_query: ReferenceQuery, work_type: str) -> st
 def _check_3it_affiliation(authorships: list) -> bool:
     return any(
         any(
-            "institut" in html.unescape(raw_affiliation_string).lower()
-            and "interdisciplinaire" in html.unescape(raw_affiliation_string).lower()
-            and "innovation" in html.unescape(raw_affiliation_string).lower()
-            and "technologique" in html.unescape(raw_affiliation_string).lower()
-            for raw_affiliation_string in author["raw_affiliation_strings"]
+            (
+                "institut" in html.unescape(raw_affiliation_string).lower()
+                and "interdisciplinaire"
+                in html.unescape(raw_affiliation_string).lower()
+                and "innovation" in html.unescape(raw_affiliation_string).lower()
+                and "technologique" in html.unescape(raw_affiliation_string).lower()
+                for raw_affiliation_string in author["raw_affiliation_strings"]
+            )
+            or (
+                "institute" in html.unescape(raw_affiliation_string).lower()
+                and "interdisciplinary" in html.unescape(raw_affiliation_string).lower()
+                and "technological" in html.unescape(raw_affiliation_string).lower()
+                and "innovation" in html.unescape(raw_affiliation_string).lower()
+                for raw_affiliation_string in author["raw_affiliation_strings"]
+            )
         )
         for author in authorships
     )
@@ -517,9 +526,7 @@ def query_publications_openalex(
                     )
 
                     # Consolidate subtypes to the set specified by the user
-                    work_type = _consolidate_subtypes(
-                        reference_query=reference_query, work_type=work_type
-                    )
+                    work_type = _consolidate_subtypes(work_type=work_type)
 
                     # Add the record to the dataframe for this author
                     works_df = pd.concat(
