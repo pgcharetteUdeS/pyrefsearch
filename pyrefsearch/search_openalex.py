@@ -23,6 +23,7 @@ import requests
 from utils import (
     console,
     count_publications_by_type_in_df,
+    remove_middle_initial,
     to_lower_no_accents_no_hyphens,
 )
 
@@ -31,6 +32,54 @@ def config_openalex():
     config.email = "paul.charette@usherbrooke.ca"
     config.max_retries = 5
     config.retry_backoff_factor = 0.5
+
+
+def _check_author_name_and_affiliation_correspondance(
+    reference_query: ReferenceQuery, author: Authors, name: list[str]
+) -> str:
+
+    e: str = ""
+
+    # Check name
+    if remove_middle_initial(
+        to_lower_no_accents_no_hyphens(author["display_name"])
+    ) != remove_middle_initial(
+        to_lower_no_accents_no_hyphens(f"{name[1]} {name[0]}")
+    ) and all(
+        to_lower_no_accents_no_hyphens(alt_name)
+        == to_lower_no_accents_no_hyphens(f"{name[1]} {name[0]}")
+        for alt_name in author["display_name_alternatives"]
+    ):
+        e += "NAME"
+        console.print(
+            f"[yellow]WARNING: le nom de l'auteur.e '{name[1]} {name[0]}' "
+            f"ne correspond pas au nom dans OpenAlex '{author['display_name']}'!",
+            soft_wrap=True,
+        )
+
+    # Check affiliation
+    if not any(
+        any(
+            to_lower_no_accents_no_hyphens(local_affiliation["name"])
+            in to_lower_no_accents_no_hyphens(last_inst["institution"]["display_name"])
+            for local_affiliation in reference_query.local_affiliations
+        )
+        for last_inst in author["affiliations"]
+    ):
+        e = f"{e} Affl" if e else "Affl"
+        affiliations: str = ", ".join(
+            [
+                affiliation["institution"]["display_name"]
+                for affiliation in author["affiliations"]
+            ]
+        )
+        console.print(
+            f"[yellow]WARNING: l'affiliation de l'auteur.e '{name[1]} {name[0]}' "
+            f"est non-locale, affiliations selon OpenAlex: '{affiliations}'!",
+            soft_wrap=True,
+        )
+
+    return e
 
 
 def query_author_profiles_by_id_openalex(
@@ -58,7 +107,9 @@ def query_author_profiles_by_id_openalex(
                     [
                         name[0],
                         name[1],
-                        "",
+                        _check_author_name_and_affiliation_correspondance(
+                            reference_query=reference_query, author=author, name=name
+                        ),
                         author["display_name"],
                         f'=HYPERLINK("https://openalex.org/{openalex_id}")',
                         f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else None,

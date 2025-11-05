@@ -7,12 +7,14 @@ Various utility functions
 __all__ = [
     "console",
     "count_publications_by_type_in_df",
+    "remove_middle_initial",
     "tabulate_patents_per_author",
     "to_lower_no_accents_no_hyphens",
 ]
 
 from functools import lru_cache
 import pandas as pd
+import re
 from rich.console import Console
 from unidecode import unidecode
 
@@ -33,7 +35,13 @@ def to_lower_no_accents_no_hyphens(s: str) -> str:
 
     """
 
-    return unidecode(s.replace("-", " ").lower().strip())
+    return unidecode(s.lower().strip()).replace("-", " ").replace("ç", "c")
+
+
+def remove_middle_initial(full_name):
+    # Matches a space, followed by a single uppercase letter (optionally followed by a period),
+    # and then another space. This targets middle initials.
+    return re.sub(r"\s[A-Za-z]\.?\s", " ", full_name)
 
 
 def count_publications_by_type_in_df(
