@@ -300,7 +300,7 @@ def pyrefsearch() -> None:
         f".{str(sys.version_info.micro)}"
     )
     console.print(
-        f"{Path(__file__).stem} {__version__} " f"(running python {python_version})"
+        f"{Path(__file__).stem} {__version__} " f"(running python {python_version})\n"
     )
 
     # Load command line arguments

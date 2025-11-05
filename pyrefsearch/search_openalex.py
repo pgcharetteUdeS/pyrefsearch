@@ -622,13 +622,23 @@ def query_publications_openalex(
             )
         )
 
-    # Remove duplicates and add local author name and count columns
-    publications.reset_index(drop=True, inplace=True)
-    publications = _add_local_author_name_and_count_columns(publications=publications)
+    # Check for no publications found!
+    if publications.empty:
+        console.print(
+            "[red]ERREUR: aucune publication trouvée dans OpenAlex pour la période du "
+            f"{reference_query.date_start} au {reference_query.date_end}![/red]",
+            soft_wrap=True,
+        )
+    else:
+        # Remove duplicates and add local author name and count columns
+        publications.reset_index(drop=True, inplace=True)
+        publications = _add_local_author_name_and_count_columns(
+            publications=publications
+        )
 
-    # Sort by title (date is unreliable)
-    publications = publications.sort_values(by=["title"])
-    publications.reset_index(drop=True, inplace=True)
+        # Sort by title (date is unreliable)
+        publications = publications.sort_values(by=["title"])
+        publications.reset_index(drop=True, inplace=True)
 
     # Reformat pub_type_counts_by_author list
     pub_type_counts_by_author_transpose: list = [
