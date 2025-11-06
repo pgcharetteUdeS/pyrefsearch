@@ -1,4 +1,4 @@
-::@echo off
+@echo off
 
 echo Running pyrefsearch.py...
 
@@ -15,7 +15,7 @@ if "%COMPUTERNAME%" == "FGEN-004012" GOTO running_FGEN_004012
 set PYTHONDIR="C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312"
 GOTO run_search
 :running_FGEN_004012
-set PYTHONDIR="C:\Users\%USERNAME%\AppData\Roaming\Python\Python312"
+set PYTHONDIR="C:\Program Files\Python\Python312"
 GOTO run_search
 
 :: Run the publications differential search
@@ -43,4 +43,3 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File shell_scripts\send_email
 GOTO end
 
 :end
-pause
