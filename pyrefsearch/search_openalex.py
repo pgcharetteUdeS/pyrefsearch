@@ -279,7 +279,6 @@ def query_author_homonyms_openalex(
                 name[1],
                 author["display_name"],
                 f'=HYPERLINK("{author["id"]}")',
-                author["created_date"],
                 f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else "",
                 author["works_count"],
                 (
@@ -298,7 +297,11 @@ def query_author_homonyms_openalex(
                     if author["affiliations"]
                     else None
                 ),
-                [topic["display_name"] for topic in author["topics"]],
+                (
+                    [topic["display_name"] for topic in author["topics"]]
+                    if author["topics"]
+                    else None
+                ),
             ]
             for author in author_search_results
         )
@@ -312,9 +315,8 @@ def query_author_homonyms_openalex(
             "Given name",
             "Display name",
             "OpenAlex profile",
-            "Date created",
             "ORCID profile",
-            "Count",
+            "Pub count",
             "Last known institutions",
             "Affiliations",
             "Topics",
