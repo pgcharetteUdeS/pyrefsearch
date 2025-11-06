@@ -282,14 +282,22 @@ def query_author_homonyms_openalex(
                 author["created_date"],
                 f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else "",
                 author["works_count"],
-                [
-                    last_inst["display_name"]
-                    for last_inst in author["last_known_institutions"]
-                ],
-                [
-                    affiliation["institution"]["display_name"]
-                    for affiliation in author["affiliations"]
-                ],
+                (
+                    [
+                        last_inst["display_name"]
+                        for last_inst in author["last_known_institutions"]
+                    ]
+                    if author["last_known_institutions"]
+                    else None
+                ),
+                (
+                    [
+                        affiliation["institution"]["display_name"]
+                        for affiliation in author["affiliations"]
+                    ]
+                    if author["affiliations"]
+                    else None
+                ),
                 [topic["display_name"] for topic in author["topics"]],
             ]
             for author in author_search_results
