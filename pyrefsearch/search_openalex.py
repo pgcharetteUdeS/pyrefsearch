@@ -17,6 +17,7 @@ import itertools
 import html
 import pandas as pd
 from pyalex import config, Authors, Works
+
 from referencequery import ReferenceQuery
 import re
 import requests
@@ -214,43 +215,46 @@ def _flag_matched_openalex_author_ids_and_affiliations(
 
     """
 
-    def set_affiliation_and_id(row) -> str | None:
-        if row["Last known institutions"] is None and row["Affiliations"] is None:
-            return None
-        last_known_institutions_match: bool = any(
+    def set_affiliation_and_id_column(row) -> str | None:
+        affiliation_match: bool = any(
             (
                 any(
                     local_affiliation["name"]
-                    in to_lower_no_accents_no_hyphens(institution)
-                    for institution in row["Last known institutions"]
+                    in to_lower_no_accents_no_hyphens(affiliation)
+                    for affiliation in row["Affiliations"]
                 )
-                if row["Last known institutions"]
+                if row["Affiliations"]
                 else False
             )
             for local_affiliation in reference_query.local_affiliations
         )
-        match = re.search(r"A\d{10}", row["OpenAlex profile"])
-        if match:
-            au_id_index = reference_query.au_id_to_index.get(match.group())
+        if row["OpenAlex profile"]:
+            match = re.search(r"A\d{10}", row["OpenAlex profile"])
+            if match:
+                au_id_index = reference_query.au_id_to_index.get(match.group())
+            else:
+                au_id_index = None
         else:
             au_id_index = None
         au_id_match: bool = au_id_index is not None and to_lower_no_accents_no_hyphens(
             reference_query.au_names[au_id_index][0]
         ) == to_lower_no_accents_no_hyphens(row["Surname"])
-        if last_known_institutions_match and au_id_match:
+        if affiliation_match and au_id_match:
             return "Affl. + ID"
-        elif last_known_institutions_match:
+        elif affiliation_match:
             return "Affl."
         elif au_id_match:
             return "ID"
         else:
             return None
 
-    # Add the "Affl/ID" to the input dataframe
+    # Add the "Affl/ID" column to the input dataframe
     reference_query.au_id_to_index = {
         au_id: index for index, au_id in enumerate(reference_query.openalex_ids)
     }
-    author_profiles["Affl/ID"] = author_profiles.apply(set_affiliation_and_id, axis=1)
+    author_profiles["Affl/ID"] = author_profiles.apply(
+        set_affiliation_and_id_column, axis=1
+    )
 
     # Reposition the "Affl/ID" column
     affl_id_column = author_profiles.pop("Affl/ID")
