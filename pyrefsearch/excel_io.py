@@ -272,7 +272,6 @@ def write_reference_query_results_to_excel_file(
         uspto_patent_applications (pd.DataFrame): USPTO patent search results
         inpadoc_patents (pd.DataFrame): INPADOC patent search result
         inpadoc_patent_applications (pd.DataFrame): INPADOC patent search results
-        publications_previous_filename (Path): Path to the Excel file with results from previous month
 
     """
 
@@ -330,14 +329,6 @@ def write_reference_query_results_to_excel_file(
                     worksheet=writer.sheets[pub_type],
                     i=column_names.index("Auteurs locaux"),
                 )
-
-        # Write all publication search results to a single sheet
-        publications.to_excel(
-            writer,
-            index=False,
-            sheet_name=f"{reference_query.publications_search_database} (résultats complets)",
-            freeze_panes=(1, 1),
-        )
 
         #  Write USPTO search result sheets, if required
         if not uspto_patent_applications.empty:
