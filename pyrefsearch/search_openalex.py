@@ -69,7 +69,7 @@ def _check_author_name_and_affiliation_correspondance(
         for affiliation in author["affiliations"]
     ):
         e = f"{e} Affl" if e else "Affl"
-        if affiliations := ", ".join(
+        if affiliations := "; ".join(
             [
                 affiliation["institution"]["display_name"]
                 for affiliation in author["affiliations"]
@@ -218,9 +218,14 @@ def _flag_matched_openalex_author_ids_and_affiliations(
         if row["Last known institutions"] is None and row["Affiliations"] is None:
             return None
         last_known_institutions_match: bool = any(
-            any(
-                local_affiliation["name"] in to_lower_no_accents_no_hyphens(institution)
-                for institution in row["Last known institutions"]
+            (
+                any(
+                    local_affiliation["name"]
+                    in to_lower_no_accents_no_hyphens(institution)
+                    for institution in row["Last known institutions"]
+                )
+                if row["Last known institutions"]
+                else False
             )
             for local_affiliation in reference_query.local_affiliations
         )
@@ -317,7 +322,7 @@ def query_author_homonyms_openalex(
             "OpenAlex profile",
             "ORCID profile",
             "Pub count",
-            "Last known institutions",
+            "Institutions",
             "Affiliations",
             "Topics",
         ],
