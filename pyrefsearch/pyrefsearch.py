@@ -1,13 +1,11 @@
 """pyrefsearch.py
 
-    For a list of author names and range of dates supplied in an Excel file, query:
-    - references (publications in OpenAlex or Scopus, patents in the INPADOC and USPTO databases)
-      OR
-    - author profiles (OpenAlex or Scopus database), and write the results to an output Excel file.
+For a list of author names and range of dates supplied in an Excel file, publications in OpenAlex or Scopus,
+patents in the INPADOC and USPTO databases.
 
-    All execution parameters specified in the file "data/pyrefsearch.toml"
+All execution parameters specified in the file "data/pyrefsearch.toml"
 
-    Project on gitHub: https://github.com/pgcharetteUdeS/pyRefSearchUdeS
+Project on gitHub: https://github.com/pgcharetteUdeS/pyRefSearchUdeS
 
 """
 
@@ -41,62 +39,8 @@ from utils import console
 from version import __version__
 
 
-def differential_search_results(
-    reference_query: ReferenceQuery, publications_current: pd.DataFrame
-) -> tuple[pd.DataFrame, Path]:
-    """
-    Return publications in publications_current that do not appear in publications_previous
-
-    Args:
-        reference_query (ReferenceQuery): Reference query
-        publications_current (pd.DataFrame): dataframe of current publications
-
-    Returns:
-        publications_diff (pd.DataFrame), publications_previous_filename (Path)
-
-    """
-
-    # Load publications search results from the previous month (publications_previous)
-    first_of_last_month = (date.today() - relativedelta(months=1)).replace(day=1)
-    date_range: str = (
-        f"{reference_query.year_start - 1}-{reference_query.year_end - 1}"
-        if date.today().month == 1
-        else f"{reference_query.year_start}-{reference_query.year_end}"
-    )
-    stem = reference_query.out_excel_file.stem
-    publications_previous_filename = reference_query.out_excel_file.with_stem(
-        f"{stem[:-len('_YYYY-YYYY_publications_YYYY-MM-DD')]}"
-        f"_{date_range}_publications_{first_of_last_month}"
-    )
-    console.print(
-        f"Fichier de référence: '{publications_previous_filename}'",
-        soft_wrap=True,
-    )
-    with pd.ExcelFile(publications_previous_filename) as reader:
-        publications_previous = pd.read_excel(
-            reader,
-            sheet_name=f"{reference_query.publications_search_database} (résultats complets)",
-        )
-
-    # Publications in publications_current that do not appear in publications_previous
-    publications_diff = publications_previous.merge(
-        publications_current,
-        on=["title"],
-        how="right",
-        suffixes=("_left", None),
-        indicator=True,
-    )
-    publications_diff = publications_diff[publications_diff["_merge"] == "right_only"]
-    publications_diff = publications_diff.loc[
-        :, ~publications_diff.columns.str.endswith("_left")
-    ]
-    publications_diff.drop("_merge", axis=1, inplace=True)
-
-    return publications_diff, publications_previous_filename
-
-
 def gen_power_shell_script_to_send_confirmation_emails(
-    reference_query: ReferenceQuery, diff_results_out_excel_filename: Path
+    reference_query: ReferenceQuery,
 ) -> None:
     """
     Generate a Windows PowerShell script ("pyrefsearch_send_email_confirmation.ps1")
@@ -104,32 +48,26 @@ def gen_power_shell_script_to_send_confirmation_emails(
 
     Args:
         reference_query (ReferenceQuery): Reference query object
-        diff_results_out_excel_filename (Path): Path to the output Excel file
 
     Returns: None
 
     """
-
-    date_from: str = str(diff_results_out_excel_filename.stem)[-len("YYYYMMYY") :]
-    date_to: str = str(diff_results_out_excel_filename.stem)[
-        -len("YYYYMMYY_DIFF_YYYYMMYY") : -len("_DIFF_YYYYMMYY")
-    ]
 
     with open("shell_scripts\\pyrefsearch_send_email_confirmation.ps1", "w") as f:
         f.write("# Script to send confirmation emails to a list of recipients\n")
         f.write("# NB: the script is generated automatically by pyrefsearch.py\n\n")
         f.write(
             f'$Subject = "Recherche de publications dans {reference_query.publications_search_database}'
-            f' pour les membres réguliers du 3IT du {date_from} au {date_to}"\n'
+            f' pour les membres réguliers du 3IT du {reference_query.date_start} au {reference_query.date_end}"\n'
         )
         f.write("$currentDirectory = (Get-Location).Path\n\n")
 
         # Send logfile to Paul.Charette@Usehrbrooke.ca
-        f.write('$logfilename = $currentDirectory + "\\pyrefsearch.log"\n')
+        f.write('$logfilename = $currentDirectory + "\\pyrefsearch_last_month.log"\n')
         f.write(f"$attachments = @($logfilename)\n")
         f.write(
             '& ".\\shell_scripts\\send_email.ps1" -EmailTo '
-            f'"{reference_query.extract_search_results_diff_confirmation_emails[0]}"'
+            f'"{reference_query.previous_month_publications_search_confirmation_emails[0]}"'
             " -Subject $Subject -Body $Subject"
             " -Attachments $attachments\n\n"
         )
@@ -137,16 +75,15 @@ def gen_power_shell_script_to_send_confirmation_emails(
         # Send Excel results files to list of recipients
         f.write(
             '$recipients = "'
-            + ",".join(reference_query.extract_search_results_diff_confirmation_emails)
+            + ",".join(
+                reference_query.previous_month_publications_search_confirmation_emails
+            )
             + '"\n'
         )
         f.write(
-            f'$resultsfilename_current = $currentDirectory + "\\{str(reference_query.out_excel_file)}"\n'
+            f'$resultsfilename = $currentDirectory + "\\{str(reference_query.out_excel_file)}"\n'
         )
-        f.write(
-            f'$resultsfilename_diff = $currentDirectory + "\\{str(diff_results_out_excel_filename)}"\n'
-        )
-        f.write(f"$attachments = @($resultsfilename_diff, $resultsfilename_current)\n")
+        f.write(f"$attachments = @($resultsfilename)\n")
         f.write(
             '& ".\\shell_scripts\\send_email.ps1" -EmailTo $recipients'
             " -Subject $Subject -Body $Subject"
@@ -291,6 +228,12 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         inpadoc_patent_applications=inpadoc_patent_applications,
     )
 
+    # Write Windows Power Shell script to send confirmation emails in case of previous onth search
+    if reference_query.previous_month_publications_search:
+        gen_power_shell_script_to_send_confirmation_emails(
+            reference_query=reference_query
+        )
+
 
 def pyrefsearch() -> None:
     # Console info starting messages
@@ -328,15 +271,16 @@ def pyrefsearch() -> None:
     else:
         publication_types = toml_dict["publication_types_openalex"]
 
-    # If this a differential search, make sure OpenALex is used, else exit
-    extract_search_results_diff_override: bool = toml_dict.get(
-        "extract_search_results_diff_override", False
+    # If this a search for the previous, make sure OpenALex is used, else exit
+    previous_month_publications_search: bool = toml_dict.get(
+        "previous_month_publications_search", False
     )
     if (
-        extract_search_results_diff_override and publications_search_database != "OpenAlex"
+        previous_month_publications_search
+        and publications_search_database != "OpenAlex"
     ):
         console.print(
-            "[red]ERREUR: OpenAlex doit être utilisé pour la recherche différentielle![/red]",
+            "[red]ERREUR: OpenAlex doit être utilisé pour la recherche du mois précédant![/red]",
             soft_wrap=True,
         )
         sys.exit(0)
@@ -344,7 +288,7 @@ def pyrefsearch() -> None:
     # Determine search period dates
     date_start: date
     date_end: date
-    if extract_search_results_diff_override:
+    if previous_month_publications_search:
         date_end = date.today()
         date_start = date_end - relativedelta(months=1)
     elif publications_search_database == "Scopus":
@@ -371,8 +315,9 @@ def pyrefsearch() -> None:
         in_excel_file_author_sheet=toml_dict["in_excel_file_author_sheet"],
         date_start=date_start,
         date_end=date_end,
-        extract_search_results_diff_confirmation_emails=toml_dict.get(
-            "extract_search_results_diff_confirmation_emails", []
+        previous_month_publications_search=previous_month_publications_search,
+        previous_month_publications_search_confirmation_emails=toml_dict.get(
+            "previous_month_publications_search_confirmation_emails", []
         ),
         publication_types=publication_types,
         local_affiliations=toml_dict["local_affiliations"],

@@ -222,7 +222,8 @@ class ReferenceQuery:
         in_excel_file_author_sheet: str,
         date_start: date,
         date_end: date,
-        extract_search_results_diff_confirmation_emails: list[str],
+        previous_month_publications_search: bool,
+        previous_month_publications_search_confirmation_emails: list[str],
         publication_types: list[str],
         local_affiliations: list[str],
         scopus_database_refresh_days: bool | int,
@@ -233,13 +234,16 @@ class ReferenceQuery:
     ):
         self.search_type = search_type
         self.data_dir: Path = Path(data_dir)
+        self.publications_search_database: str = publications_search_database
         self.date_start: date = date_start
         self.year_start: int = date_start.year
         self.date_end: date = date_end
         self.year_end: int = date_end.year
-        self.publications_search_database: str = publications_search_database
-        self.extract_search_results_diff_confirmation_emails: list[str] = (
-            extract_search_results_diff_confirmation_emails
+        self.previous_month_publications_search: bool = (
+            previous_month_publications_search
+        )
+        self.previous_month_publications_search_confirmation_emails: list[str] = (
+            previous_month_publications_search_confirmation_emails
         )
         self.publication_types = [row[0] for row in publication_types]
         self.publication_type_codes = [row[1] for row in publication_types]

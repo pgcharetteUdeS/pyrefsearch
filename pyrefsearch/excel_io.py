@@ -258,8 +258,7 @@ def write_reference_query_results_to_excel_file(
     uspto_patent_applications: pd.DataFrame,
     inpadoc_patents: pd.DataFrame,
     inpadoc_patent_applications: pd.DataFrame,
-    publications_previous_filename: Path = Path(""),
-) -> Path:
+) -> None:
     """
     Write publications search results to the output Excel file
 
@@ -274,8 +273,6 @@ def write_reference_query_results_to_excel_file(
         inpadoc_patents (pd.DataFrame): INPADOC patent search result
         inpadoc_patent_applications (pd.DataFrame): INPADOC patent search results
         publications_previous_filename (Path): Path to the Excel file with results from previous month
-
-    Returns (Path): Excel output filename
 
     """
 
@@ -402,13 +399,11 @@ def write_reference_query_results_to_excel_file(
     workbook.save(reference_query.out_excel_file)
 
     console.print(
-        "Résultats de la recherche sauvegardés "
-        f"dans le fichier '{reference_query.out_excel_file}'",
+        "Résultats de la recherche sauvegardés dans le fichier '{reference_query.out_excel_file}'",
         soft_wrap=True,
     )
 
-    # Return Excel output filename
-    return reference_query.out_excel_file
+    return None
 
 
 def load_espacenet_search_results_from_excel_file(
