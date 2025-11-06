@@ -109,13 +109,17 @@ def query_author_profiles_by_id_openalex(
                     [
                         name[0],
                         name[1],
+                        f'=HYPERLINK("https://openalex.org/{openalex_id}")',
+                        f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else None,
                         _check_author_name_and_affiliation_correspondance(
                             reference_query=reference_query, author=author, name=name
                         ),
                         author["display_name"],
-                        f'=HYPERLINK("https://openalex.org/{openalex_id}")',
-                        f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else None,
                         author["works_count"],
+                        [
+                            institution["display_name"]
+                            for institution in author["last_known_institutions"]
+                        ],
                         [
                             affiliation["institution"]["display_name"]
                             for affiliation in author["affiliations"]
@@ -127,16 +131,18 @@ def query_author_profiles_by_id_openalex(
                     [
                         name[0],
                         name[1],
+                        f"{openalex_id}",
+                        None,
                         "ID",
                         None,
-                        f"{openalex_id}",
+                        None,
                         None,
                         None,
                     ]
                 )
                 console.print(
                     f"[red]Erreur - l'identifiant OpenAlex {openalex_id} pour l'auteur "
-                    f"'{name[1]} {name[0]}'est invalide ({e})![/red]",
+                    f"'{name[1]} {name[0]}' est invalide ({e})![/red]",
                     soft_wrap=True,
                 )
         else:
@@ -144,6 +150,8 @@ def query_author_profiles_by_id_openalex(
                 [
                     name[0],
                     name[1],
+                    None,
+                    None,
                     "ID",
                     None,
                     None,
@@ -161,11 +169,12 @@ def query_author_profiles_by_id_openalex(
         columns=[
             "Nom de famille",
             "Prénom",
-            "Erreurs",
-            "OpenAlex - display_name",
             "Profil OpenAlex",
             "Profil ORCID",
-            "Publications",
+            "Erreurs",
+            "OpenAlex - display_name",
+            "Nombre de publies",
+            "Institutions",
             "Affiliations",
         ],
     )
