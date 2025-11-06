@@ -61,10 +61,12 @@ def _check_author_name_and_affiliation_correspondance(
     if not any(
         any(
             to_lower_no_accents_no_hyphens(local_affiliation["name"])
-            in to_lower_no_accents_no_hyphens(last_inst["institution"]["display_name"])
+            in to_lower_no_accents_no_hyphens(
+                affiliation["institution"]["display_name"]
+            )
             for local_affiliation in reference_query.local_affiliations
         )
-        for last_inst in author["affiliations"]
+        for affiliation in author["affiliations"]
     ):
         e = f"{e} Affl" if e else "Affl"
         affiliations: str = ", ".join(
@@ -74,8 +76,8 @@ def _check_author_name_and_affiliation_correspondance(
             ]
         )
         console.print(
-            f"[yellow]WARNING: l'affiliation de l'auteur.e '{name[1]} {name[0]}' "
-            f"est non-locale, affiliations selon OpenAlex: '{affiliations}'!",
+            f"[yellow]WARNING - l'affiliation de l'auteur.e '{name[1]} {name[0]}' "
+            f"est non-locale: '{affiliations}'!",
             soft_wrap=True,
         )
 
@@ -115,8 +117,8 @@ def query_author_profiles_by_id_openalex(
                         f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else None,
                         author["works_count"],
                         [
-                            last_inst["display_name"]
-                            for last_inst in author["last_known_institutions"]
+                            affiliation["institution"]["display_name"]
+                            for affiliation in author["affiliations"]
                         ],
                     ]
                 )
@@ -133,8 +135,8 @@ def query_author_profiles_by_id_openalex(
                     ]
                 )
                 console.print(
-                    f"[red]Erreur dans la recherche OpenAlex pour l'auteur '{name[1]} {name[0]}': "
-                    f"l'identifiant {openalex_id} est incorrect - '{e}'![/red]",
+                    f"[red]Erreur - l'identifiant OpenAlex {openalex_id} pour l'auteur "
+                    f"'{name[1]} {name[0]}'est invalide ({e})![/red]",
                     soft_wrap=True,
                 )
         else:
@@ -150,7 +152,7 @@ def query_author_profiles_by_id_openalex(
                 ]
             )
             console.print(
-                f"[red]ERREUR: L'auteur '{name[1]} {name[0]}' n'a pas d'identifiant OpenAlex![/red]",
+                f"[red]ERREUR - L'auteur '{name[1]} {name[0]}' n'a pas d'identifiant OpenAlex![/red]",
                 soft_wrap=True,
             )
 
@@ -164,7 +166,7 @@ def query_author_profiles_by_id_openalex(
             "Profil OpenAlex",
             "Profil ORCID",
             "Publications",
-            "Institutions",
+            "Affiliations",
         ],
     )
 
@@ -246,7 +248,7 @@ def query_author_homonyms_openalex(
         author_search_results = Authors().search(f"{name[1]} {name[0]}").get()
         if not author_search_results:
             console.print(
-                f"[red]ERREUR: Aucun résultat dans OpenAlex pour {name[1]} {name[0]}![/red]"
+                f"[red]ERREUR - Aucun résultat dans OpenAlex pour {name[1]} {name[0]}![/red]"
             )
         data_rows.extend(
             [
@@ -625,7 +627,7 @@ def query_publications_openalex(
     # Check for no publications found!
     if publications.empty:
         console.print(
-            "[red]ERREUR: aucune publication trouvée dans OpenAlex pour la période du "
+            "[red]ERREUR - aucune publication trouvée dans OpenAlex pour la période du "
             f"{reference_query.date_start} au {reference_query.date_end}![/red]",
             soft_wrap=True,
         )
