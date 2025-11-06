@@ -1,4 +1,4 @@
-@echo off
+::@echo off
 
 echo Running pyrefsearch.py...
 
@@ -11,10 +11,10 @@ cd %WORKINGDIR%
 copy "C:\Users\%USERNAME%\USherbrooke\3IT - Gestion Centrale - Documents\General\Membres\Liste chercheurs-membres.xlsx" data
 
 :: Set python.exe path (Paul's FGEN-004012 laptop, versus others)
-if %COMPUTERNAME% == "FGEN-004012" GOTO running_FGEN-004012
+if "%COMPUTERNAME%" == "FGEN-004012" GOTO running_FGEN_004012
 set PYTHONDIR="C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312"
 GOTO run_search
-:running_FGEN-004012
+:running_FGEN_004012
 set PYTHONDIR="C:\Users\%USERNAME%\AppData\Roaming\Python\Python312"
 GOTO run_search
 
@@ -43,3 +43,4 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File shell_scripts\send_email
 GOTO end
 
 :end
+pause
