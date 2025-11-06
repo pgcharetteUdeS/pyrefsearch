@@ -83,7 +83,7 @@ def _check_author_name_and_affiliation_correspondance(
         else:
             console.print(
                 f"[yellow]WARNING - l'auteur.e '{name[1]} {name[0]}' "
-                f"n'a pas d'affiliation and OpenAlex!",
+                f"n'a pas d'affiliation dans OpenAlex!",
                 soft_wrap=True,
             )
 
@@ -127,7 +127,7 @@ def query_author_profiles_by_id_openalex(
                                 institution["display_name"]
                                 for institution in author["last_known_institutions"]
                             ]
-                            if "last_known_institutions" in author
+                            if author["last_known_institutions"]
                             else None
                         ),
                         (
@@ -135,7 +135,7 @@ def query_author_profiles_by_id_openalex(
                                 affiliation["institution"]["display_name"]
                                 for affiliation in author["affiliations"]
                             ]
-                            if "affiliations" in author
+                            if author["affiliations"]
                             else None
                         ),
                     ]
@@ -174,7 +174,7 @@ def query_author_profiles_by_id_openalex(
                 ]
             )
             console.print(
-                f"[red]ERREUR - L'auteur '{name[1]} {name[0]}' n'a pas d'identifiant OpenAlex![/red]",
+                f"[red]ERREUR - L'auteur.e '{name[1]} {name[0]}' n'a pas d'identifiant OpenAlex![/red]",
                 soft_wrap=True,
             )
 
