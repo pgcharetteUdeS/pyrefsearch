@@ -11,11 +11,11 @@ cd %WORKINGDIR%
 copy "C:\Users\%USERNAME%\USherbrooke\3IT - Gestion Centrale - Documents\General\Membres\Liste chercheurs-membres.xlsx" data
 
 :: Set python.exe path (Paul's 3IT-CHAP-W022 laptop, versus others)
-if %COMPUTERNAME% == 3IT-CHAP-W022 GOTO running_3IT_CHAP_W022
+if %COMPUTERNAME% == FGEN-004012 GOTO running_FGEN-004012
 set PYTHONDIR="C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312"
 GOTO run_search
-:running_3IT_CHAP_W022
-set PYTHONDIR="C:\Program Files\Python\Python312"
+:running_FGEN-004012
+set PYTHONDIR="C:\Users\%USERNAME%\AppData\Roaming\Programs\Python\Python312"
 GOTO run_search
 
 :: Run the publications differential search
