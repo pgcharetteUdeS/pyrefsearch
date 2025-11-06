@@ -69,17 +69,23 @@ def _check_author_name_and_affiliation_correspondance(
         for affiliation in author["affiliations"]
     ):
         e = f"{e} Affl" if e else "Affl"
-        affiliations: str = ", ".join(
+        if affiliations := ", ".join(
             [
                 affiliation["institution"]["display_name"]
                 for affiliation in author["affiliations"]
             ]
-        )
-        console.print(
-            f"[yellow]WARNING - l'affiliation de l'auteur.e '{name[1]} {name[0]}' "
-            f"est non-locale: '{affiliations}'!",
-            soft_wrap=True,
-        )
+        ):
+            console.print(
+                f"[yellow]WARNING - l'affiliation de l'auteur.e '{name[1]} {name[0]}' "
+                f"est non-locale: '{affiliations}'!",
+                soft_wrap=True,
+            )
+        else:
+            console.print(
+                f"[yellow]WARNING - l'auteur.e '{name[1]} {name[0]}' "
+                f"n'a pas d'affiliation and OpenAlex!",
+                soft_wrap=True,
+            )
 
     return e
 
@@ -116,14 +122,22 @@ def query_author_profiles_by_id_openalex(
                         ),
                         author["display_name"],
                         author["works_count"],
-                        [
-                            institution["display_name"]
-                            for institution in author["last_known_institutions"]
-                        ],
-                        [
-                            affiliation["institution"]["display_name"]
-                            for affiliation in author["affiliations"]
-                        ],
+                        (
+                            [
+                                institution["display_name"]
+                                for institution in author["last_known_institutions"]
+                            ]
+                            if "last_known_institutions" in author
+                            else None
+                        ),
+                        (
+                            [
+                                affiliation["institution"]["display_name"]
+                                for affiliation in author["affiliations"]
+                            ]
+                            if "affiliations" in author
+                            else None
+                        ),
                     ]
                 )
             except Exception as e:
