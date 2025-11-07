@@ -13,7 +13,7 @@ import re
 import sys
 import warnings
 
-from utils import console, to_lower_no_accents_no_hyphens
+from utils import Colors, console, to_lower_no_accents_no_hyphens
 
 
 class ReferenceQuery:
@@ -25,7 +25,7 @@ class ReferenceQuery:
         # Check that input Excel file exists and can be read from
         if not self.in_excel_file.is_file():
             console.print(
-                f"[red]Le fichier '{self.in_excel_file}' n'existe pas![/red]",
+                f"{Colors.RED}Le fichier '{self.in_excel_file}' n'existe pas!{Colors.RESET}",
                 soft_wrap=True,
             )
             sys.exit()
@@ -35,8 +35,8 @@ class ReferenceQuery:
                     pass
             except IOError:
                 console.print(
-                    f"[red]Impossible d'ouvrir le fichier '{self.in_excel_file}', [/red]"
-                    "[red]le fermer s'il est ouvert dans Excel![/red]",
+                    f"{Colors.RED}Impossible d'ouvrir le fichier '{self.in_excel_file}', "
+                    f"le fermer s'il est ouvert dans Excel!{Colors.RESET}",
                     soft_wrap=True,
                 )
                 sys.exit()
@@ -48,8 +48,8 @@ class ReferenceQuery:
                     pass
             except IOError:
                 console.print(
-                    f"[red]Impossible d'ouvrir le fichier '{self.out_excel_file}', [/red]"
-                    "[red]le fermer s'il est ouvert dans Excel![/red]",
+                    f"{Colors.RED}Impossible d'ouvrir le fichier '{self.out_excel_file}', "
+                    f"le fermer s'il est ouvert dans Excel!{Colors.RESET}",
                     soft_wrap=True,
                 )
                 sys.exit()
@@ -86,11 +86,11 @@ class ReferenceQuery:
         )
         if n_eng_members_regular_profs_only_all != n_eng_members_regular_profs_only:
             console.print(
-                f"[red]WARNING: Le nombre de professeurs réguliers en génie membres du 3IT "
+                f"{Colors.YELLOW}WARNING: Le nombre de professeurs réguliers en génie membres du 3IT "
                 f"({n_eng_members_regular_profs_only}) ne correspond pas à la somme des "
                 f"professeurs réguliers par département ({n_eng_members_regular_profs_only_all})"
                 ", des informations d'affiliation sont incorrectes dans le fichier"
-                f" '{self.in_excel_file}'![/red]",
+                f" '{self.in_excel_file}'!{Colors.RESET}",
                 soft_wrap=True,
             )
         n_members_with_office = len(authors[authors["Résidence"] != "Aucun bureau"])
@@ -183,14 +183,14 @@ class ReferenceQuery:
             authors.drop(authors[authors.status == "Collaborateur"].index, inplace=True)
             if authors.empty:
                 console.print(
-                    f"[red]Aucun membre régulier du 3IT n'a été trouvé dans le fichier '{self.in_excel_file}'[/red]"
-                    f"[red] pour la période de recherche [{self.year_start} au {self.year_end}][/red]",
+                    f"{Colors.RED}Aucun membre régulier du 3IT n'a été trouvé dans le fichier '{self.in_excel_file}'"
+                    f" pour la période de recherche [{self.year_start} au {self.year_end}]{Colors.RESET}",
                     soft_wrap=True,
                 )
                 sys.exit()
             else:
                 console.print(
-                    f"[green]** Nombre d'auteur.e.s dans le fichier '{self.in_excel_file}': {len(authors)} **[/green]",
+                    f"{Colors.GREEN}** Nombre d'auteur.e.s dans le fichier '{self.in_excel_file}': {len(authors)} **{Colors.RESET}",
                     style="green",
                     soft_wrap=True,
                 )
@@ -203,7 +203,7 @@ class ReferenceQuery:
         ):
             if len(input_data_full) == 0:
                 console.print(
-                    f"[red]Le fichier '{self.in_excel_file}' est vide![/red]",
+                    f"{Colors.RED}Le fichier '{self.in_excel_file}' est vide!{Colors.RESET}",
                     soft_wrap=True,
                 )
                 sys.exit()
@@ -211,8 +211,8 @@ class ReferenceQuery:
 
         else:
             console.print(
-                f"[red]L'intervalle de recherche [{self.year_start}-{self.year_end}] [/red]"
-                f"[red]dépasse l'étendue des données dans le fichier '{self.in_excel_file}'![/red]",
+                f"{Colors.RED}L'intervalle de recherche [{self.year_start}-{self.year_end}] "
+                f"dépasse l'étendue des données dans le fichier '{self.in_excel_file}'!{Colors.RESET}",
                 soft_wrap=True,
             )
             sys.exit()
@@ -281,7 +281,7 @@ class ReferenceQuery:
             ):
                 if pub_type == "Articles" and pub_code != "ar":
                     console.print(
-                        "[red]ERREUR: recherche Scopus avec paramètres 'publication_types' OpenAlex![/red]",
+                        f"{Colors.RED}ERREUR: recherche Scopus avec paramètres 'publication_types' OpenAlex!{Colors.RESET}",
                         soft_wrap=True,
                     )
                     sys.exit()
@@ -289,8 +289,8 @@ class ReferenceQuery:
         # Check search range
         if self.date_start > self.date_end:
             console.print(
-                f"[red]ERREUR: La date de début de recherche ({self.date_start}) "
-                f"doit être antérieure à la date de fin de recherche ({self.date_end})![/red]",
+                f"{Colors.RED}ERREUR: La date de début de recherche ({self.date_start}) "
+                f"doit être antérieure à la date de fin de recherche ({self.date_end})!{Colors.RESET}",
                 soft_wrap=True,
             )
             sys.exit()

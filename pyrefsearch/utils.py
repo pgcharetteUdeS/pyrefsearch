@@ -5,6 +5,7 @@ Various utility functions
 """
 
 __all__ = [
+    "Colors",
     "console",
     "count_publications_by_type_in_df",
     "remove_middle_initial",
@@ -17,6 +18,16 @@ import pandas as pd
 import re
 from rich.console import Console
 from unidecode import unidecode
+
+
+class Colors:
+    RESET = "\033[0m"
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    BLUE = "\033[34m"
+    YELLOW = "\033[93m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
 
 
 # Init rich console

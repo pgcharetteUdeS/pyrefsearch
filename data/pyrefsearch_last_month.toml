@@ -24,3 +24,6 @@ local_affiliations = [
 # le type de publication dans la base de données OpenAlex
 publication_types_openalex = [["Articles", "journal-article"], ["Confs", "proceedings-article"],
     ["Chap. de livres", "book-chapter"], ["Pré-impressions", "preprint"], ["Autres", "Other"]]
+
+# BREVETS : Activer/désactiver (true/false) la recherche de brevets dans ESPACENET (INPADOC)
+espacenet_patent_search = true

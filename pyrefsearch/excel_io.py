@@ -25,7 +25,7 @@ import sys
 import time
 
 from referencequery import ReferenceQuery
-from utils import console
+from utils import Colors, console
 
 
 def _export_publications_df_to_excel_sheet(
@@ -390,7 +390,7 @@ def write_reference_query_results_to_excel_file(
     workbook.save(reference_query.out_excel_file)
 
     console.print(
-        "Résultats de la recherche sauvegardés dans le fichier '{reference_query.out_excel_file}'",
+        f"Résultats de la recherche sauvegardés dans le fichier '{reference_query.out_excel_file}'",
         soft_wrap=True,
     )
 
@@ -419,9 +419,9 @@ def load_espacenet_search_results_from_excel_file(
         )
     ):
         console.print(
-            "[red]Impossible d'extraire la date du fichier de résultats de recherche"
+            "{Colors.RED}Impossible d'extraire la date du fichier de résultats de recherche"
             f" '{reference_query.espacenet_patent_search_results_file}' "
-            "qui doit être en format '<filename>YYYYMMDD.xlsx'![/red]",
+            f"qui doit être en format '<filename>YYYYMMDD.xlsx'!{Colors.RESET}",
             soft_wrap=True,
         )
         sys.exit()
@@ -429,9 +429,9 @@ def load_espacenet_search_results_from_excel_file(
     file_date = datetime.datetime.strptime(match[1], "%Y%m%d").date()
     if datetime.date.today() - file_date >= timedelta(days=30):
         console.print(
-            "[yellow]WARNING: Les données dans le fichier "
+            "{Colors.YELLOW}WARNING: Les données dans le fichier "
             f"'{reference_query.espacenet_patent_search_results_file}' "
-            "ont plus de 30 jours![/yellow]",
+            f"ont plus de 30 jours!{Colors.RESET}",
             soft_wrap=True,
         )
 

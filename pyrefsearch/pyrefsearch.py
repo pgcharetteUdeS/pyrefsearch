@@ -35,7 +35,7 @@ from search_scopus import (
     query_publications_scopus,
 )
 from search_uspto import query_uspto_patents_and_applications
-from utils import console
+from utils import Colors, console
 from version import __version__
 
 
@@ -104,13 +104,13 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
 
     # Console banner
     console.print(
-        "[green]\n** Période de recherche : "
-        f"{reference_query.date_start} au {reference_query.date_end} **[/green]",
+        f"{Colors.GREEN}\n** Période de recherche : "
+        f"{reference_query.date_start} au {reference_query.date_end} **{Colors.RESET}",
         soft_wrap=True,
     )
     if reference_query.previous_month_publications_search:
         console.print(
-            "[yellow](Recherche pour le mois précédant)[/yellow]",
+            f"{Colors.YELLOW}(Recherche pour le mois précédant){Colors.RESET}",
             soft_wrap=True,
         )
 
@@ -125,21 +125,25 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         # Fetch author profiles corresponding to user-supplied OpenAlex IDs, check they match
         # the user-supplied names, flag any inconsistencies in the "Erreurs" column
         console.print(
-            "[green]\n** Recherche de profils d'auteurs dans OpenAlex **[/green]"
+            f"{Colors.GREEN}\n** Recherche de profils d'auteurs dans OpenAlex **{Colors.RESET}"
         )
         author_profiles = query_author_profiles_by_id_openalex(
             reference_query=reference_query
         )
 
         # Fetch publications, count publication types by author
-        console.print("[green]\n** Recherche de publications dans OpenAlex **[/green]")
+        console.print(
+            f"{Colors.GREEN}\n** Recherche de publications dans OpenAlex **{Colors.RESET}"
+        )
         publications, pub_type_counts_by_author = query_publications_openalex(
             reference_query=reference_query
         )
 
         # Fetch OpenAlex author profiles corresponding to user-supplied names, check for
         # author names with multiple OpenAlex IDs ("homonyms")
-        console.print("[green]\n** Recherche d'homonymes dans OpenAlex **[/green]")
+        console.print(
+            f"{Colors.GREEN}\n** Recherche d'homonymes dans OpenAlex **{Colors.RESET}"
+        )
         author_homonyms = query_author_homonyms_openalex(
             reference_query=reference_query,
         )
@@ -151,14 +155,16 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         # Fetch author profiles corresponding to user-supplied Scopus IDs, check they match
         # the user-supplied names, flag any inconsistencies in the "Erreurs" column
         console.print(
-            "[green]\n** Recherche de profils d'auteurs dans Scopus **[/green]"
+            f"{Colors.GREEN}\n** Recherche de profils d'auteurs dans Scopus **{Colors.RESET}"
         )
         author_profiles = query_author_profiles_by_id_scopus(
             reference_query=reference_query
         )
 
         # Fetch publications, count publication types by author
-        console.print("[green]\n** Recherche de publications dans Scopus **[/green]")
+        console.print(
+            f"{Colors.GREEN}\n** Recherche de publications dans Scopus **{Colors.RESET}"
+        )
         publications, pub_type_counts_by_author = query_publications_scopus(
             reference_query=reference_query
         )
@@ -175,7 +181,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     uspto_patent_applications: pd.DataFrame = pd.DataFrame()
     if reference_query.uspto_patent_search:
         console.print(
-            "[green]\n** Recherche de brevets dans la base de données USPTO **[/green]"
+            f"{Colors.GREEN}\n** Recherche de brevets dans la base de données USPTO **{Colors.RESET}"
         )
         uspto_patent_application_ids: list
         uspto_patent_counts_by_author: list
@@ -205,22 +211,26 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     inpadoc_patent_applications = pd.DataFrame()
     inpadoc_patents = pd.DataFrame()
     if reference_query.espacenet_patent_search:
-        console.print("[green]\n** Recherche de brevets dans espacenet **[/green]")
+        console.print(
+            f"{Colors.GREEN}\n** Recherche de brevets dans espacenet **{Colors.RESET}"
+        )
         (
             inpadoc_patent_applications,
             inpadoc_patent_application_counts_per_author,
             inpadoc_patents,
             inpadoc_patent_counts_per_author,
         ) = query_espacenet_patents_and_applications(reference_query)
-        author_profiles["Brevets INPADOC (en instance)"] = (
-            inpadoc_patent_application_counts_per_author
-        )
-        author_profiles["Brevets INPADOC (délivrés)"] = inpadoc_patent_counts_per_author
+        if inpadoc_patent_application_counts_per_author:
+            author_profiles["Brevets INPADOC (en instance)"] = (
+                inpadoc_patent_application_counts_per_author
+            )
+        if inpadoc_patent_counts_per_author:
+            author_profiles["Brevets INPADOC (délivrés)"] = inpadoc_patent_counts_per_author
         console.print("Brevets INPADOC en instance: ", len(inpadoc_patent_applications))
         console.print("Brevets INPADOC délivrés: ", len(inpadoc_patents))
 
     # Write results to output Excel file
-    console.print("[green]\n** Sauvegarde des résultats **[/green]")
+    console.print(f"{Colors.GREEN}\n** Sauvegarde des résultats **{Colors.RESET}")
     write_reference_query_results_to_excel_file(
         reference_query=reference_query,
         publications=publications,
@@ -285,7 +295,7 @@ def pyrefsearch() -> None:
         and publications_search_database != "OpenAlex"
     ):
         console.print(
-            "[red]ERREUR: OpenAlex doit être utilisé pour la recherche du mois précédant![/red]",
+            f"{Colors.RED}ERREUR: OpenAlex doit être utilisé pour la recherche du mois précédant!{Colors.RESET}",
             soft_wrap=True,
         )
         sys.exit(0)
@@ -303,8 +313,8 @@ def pyrefsearch() -> None:
         date_end = date_end_scopus.replace(month=12, day=31)
         if date_start_scopus != date_start or date_end_scopus != date_end:
             console.print(
-                "[yellow]WARNING: 'La période de recherche dans Scopus"
-                " ne peut être spécifiée qu'en années'[/yellow]",
+                f"{Colors.YELLOW}WARNING: 'La période de recherche dans Scopus"
+                f" ne peut être spécifiée qu'en années'{Colors.RESET}",
                 soft_wrap=True,
             )
     else:
@@ -342,8 +352,8 @@ def pyrefsearch() -> None:
         query_scopus_author_profiles_legacy(reference_query=reference_query)
     else:
         console.print(
-            f"[red]ERREUR: '{toml_dict['search_type']}' est un type de recherche invalide, "
-            "doit être 'Publications' ou 'Profils'[/red]",
+            f"{Colors.RED}ERREUR: '{toml_dict['search_type']}' est un type de recherche invalide, "
+            f"doit être 'Publications' ou 'Profils'{Colors.RESET}",
             soft_wrap=True,
         )
 

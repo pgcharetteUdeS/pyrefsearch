@@ -22,6 +22,7 @@ from referencequery import ReferenceQuery
 import re
 import requests
 from utils import (
+    Colors,
     console,
     count_publications_by_type_in_df,
     remove_middle_initial,
@@ -53,8 +54,8 @@ def _check_author_name_and_affiliation_correspondance(
     ):
         e += "NAME"
         console.print(
-            f"[yellow]WARNING: le nom de l'auteur.e '{name[1]} {name[0]}' "
-            f"ne correspond pas au nom dans OpenAlex '{author['display_name']}'!",
+            f"{Colors.YELLOW}WARNING: le nom de l'auteur.e '{name[1]} {name[0]}' "
+            f"ne correspond pas au nom dans OpenAlex '{author['display_name']}'!{Colors.RESET}",
             soft_wrap=True,
         )
 
@@ -77,14 +78,14 @@ def _check_author_name_and_affiliation_correspondance(
             ]
         ):
             console.print(
-                f"[yellow]WARNING - l'affiliation de l'auteur.e '{name[1]} {name[0]}' "
-                f"est non-locale: '{affiliations}'!",
+                f"{Colors.YELLOW}WARNING - l'affiliation de l'auteur.e '{name[1]} {name[0]}' "
+                f"est non-locale: '{affiliations}'!{Colors.RESET}",
                 soft_wrap=True,
             )
         else:
             console.print(
-                f"[yellow]WARNING - l'auteur.e '{name[1]} {name[0]}' "
-                f"n'a pas d'affiliation dans OpenAlex!",
+                f"{Colors.YELLOW}WARNING - l'auteur.e '{name[1]} {name[0]}' "
+                f"n'a pas d'affiliation dans OpenAlex!{Colors.RESET}",
                 soft_wrap=True,
             )
 
@@ -123,7 +124,11 @@ def query_author_profiles_by_id_openalex(
                         ),
                         author["display_name"],
                         author["works_count"],
-                        author["summary_stats"]["h_index"] if "h_index" in author["summary_stats"] else None,
+                        (
+                            author["summary_stats"]["h_index"]
+                            if "h_index" in author["summary_stats"]
+                            else None
+                        ),
                         (
                             [
                                 institution["display_name"]
@@ -158,8 +163,8 @@ def query_author_profiles_by_id_openalex(
                     ]
                 )
                 console.print(
-                    f"[red]Erreur - l'identifiant OpenAlex {openalex_id} pour l'auteur "
-                    f"'{name[1]} {name[0]}' est invalide ({e})![/red]",
+                    f"{Colors.RED}Erreur - l'identifiant OpenAlex {openalex_id} pour l'auteur "
+                    f"'{name[1]} {name[0]}' est invalide ({e})!{Colors.RESET}",
                     soft_wrap=True,
                 )
         else:
@@ -178,7 +183,7 @@ def query_author_profiles_by_id_openalex(
                 ]
             )
             console.print(
-                f"[red]ERREUR - L'auteur.e '{name[1]} {name[0]}' n'a pas d'identifiant OpenAlex![/red]",
+                f"{Colors.RED}ERREUR - L'auteur.e '{name[1]} {name[0]}' n'a pas d'identifiant OpenAlex!{Colors.RESET}",
                 soft_wrap=True,
             )
 
@@ -284,7 +289,7 @@ def query_author_homonyms_openalex(
         author_search_results = Authors().search(f"{name[1]} {name[0]}").get()
         if not author_search_results:
             console.print(
-                f"[red]ERREUR - Aucun résultat dans OpenAlex pour {name[1]} {name[0]}![/red]"
+                f"{Colors.RED}ERREUR - Aucun résultat dans OpenAlex pour {name[1]} {name[0]}!{Colors.RESET}"
             )
         data_rows.extend(
             [
@@ -495,8 +500,8 @@ def _consolidate_subtypes(work_type: str) -> str:
     if work_type in subtypes:
         return subtypes[work_type]
     console.print(
-        f"[red]WARNING: subtype '{work_type}' inconnu dans la recherche de publications, "
-        "ajouter ce subtype à la fonction search_openalex._consolidate_subtypes()![/red]",
+        f"{Colors.YELLOW}WARNING: subtype '{work_type}' inconnu dans la recherche de publications, "
+        "ajouter ce subtype à la fonction search_openalex._consolidate_subtypes()!{Colors.RESET}",
         soft_wrap=True,
     )
     return "other"
@@ -673,8 +678,8 @@ def query_publications_openalex(
     # Check for no publications found!
     if publications.empty:
         console.print(
-            "[red]ERREUR - aucune publication trouvée dans OpenAlex pour la période du "
-            f"{reference_query.date_start} au {reference_query.date_end}![/red]",
+            "{Colors.RED}ERREUR - aucune publication trouvée dans OpenAlex pour la période du "
+            f"{reference_query.date_start} au {reference_query.date_end}!{Colors.RESET}",
             soft_wrap=True,
         )
     else:
