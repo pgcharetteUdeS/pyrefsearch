@@ -28,7 +28,7 @@ class Colors:
     YELLOW = "\033[93m"
     BOLD = "\033[1m"
     ITALICS = "\033[3m"
-    UNDERLINE_START = "\033[4m"
+    UNDERLINE = "\033[4m"
 
 
 # Init rich console
