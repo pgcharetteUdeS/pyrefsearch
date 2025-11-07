@@ -10,7 +10,6 @@ def convert_ansi_to_html(input_file, output_file):
     html_output = conv.convert(ansi_text)
     with open(output_file, "w", encoding="utf-8") as f_out:
         f_out.write(html_output)
-    print(f"Converted '{input_file}' to '{output_file}'")
 
 
 if __name__ == "__main__":

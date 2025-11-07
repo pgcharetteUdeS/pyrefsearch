@@ -63,7 +63,7 @@ def gen_power_shell_script_to_send_confirmation_emails(
         f.write("$currentDirectory = (Get-Location).Path\n\n")
 
         # Send logfile to Paul.Charette@Usehrbrooke.ca
-        f.write('$logfilename = $currentDirectory + "\\pyrefsearch_last_month.log"\n')
+        f.write('$logfilename = $currentDirectory + "\\pyrefsearch_last_month.html"\n')
         f.write(f"$attachments = @($logfilename)\n")
         f.write(
             '& ".\\shell_scripts\\send_email.ps1" -EmailTo '
