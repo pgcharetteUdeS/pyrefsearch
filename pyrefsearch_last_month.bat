@@ -1,7 +1,5 @@
 @echo off
 
-echo Running pyrefsearch.py...
-
 :: Set working directory
 ::set WORKINGDIR="C:\Users\%USERNAME%\OneDrive - USherbrooke\Documents on OneDrive\Python\Pycharm\pyrefsearch-stable"
 set WORKINGDIR="C:\Users\%USERNAME%\OneDrive - USherbrooke\Documents on OneDrive\Python\Pycharm\pyrefsearch"
@@ -22,6 +20,7 @@ GOTO run_search
 :run_search
 set EMAIL_POWERSHELL_SCRIPT="shell_scripts\pyrefsearch_send_email_confirmation.ps1"
 if exist  %EMAIL_POWERSHELL_SCRIPT% del /F  %EMAIL_POWERSHELL_SCRIPT%
+echo Running pyrefsearch.py...
 %PYTHONDIR%\python.exe pyrefsearch\pyrefsearch.py data\pyrefsearch_last_month.toml > pyrefsearch_last_month.log 2>&1
 %PYTHONDIR%\python.exe pyrefsearch\ansi_to_html_converter.py pyrefsearch_last_month.log pyrefsearch_last_month.html
 %PYTHONDIR%\python.exe pyrefsearch\strip_ANSI_codes_from_file.py pyrefsearch_last_month.log pyrefsearch_last_month.log
