@@ -110,7 +110,8 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
     )
     if reference_query.previous_month_publications_search:
         console.print(
-            f"{Colors.YELLOW}(Recherche pour le mois précédant){Colors.RESET}",
+            f"{Colors.YELLOW}(Recherche pour le mois précédant, les dates spécifiées dans "
+            f"'{reference_query.toml_filename}' sont ignorées){Colors.RESET}",
             soft_wrap=True,
         )
 
@@ -225,7 +226,9 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
                 inpadoc_patent_application_counts_per_author
             )
         if inpadoc_patent_counts_per_author:
-            author_profiles["Brevets INPADOC (délivrés)"] = inpadoc_patent_counts_per_author
+            author_profiles["Brevets INPADOC (délivrés)"] = (
+                inpadoc_patent_counts_per_author
+            )
         console.print("Brevets INPADOC en instance: ", len(inpadoc_patent_applications))
         console.print("Brevets INPADOC délivrés: ", len(inpadoc_patents))
 
@@ -272,6 +275,11 @@ def pyrefsearch() -> None:
     # Load the search parameters from the toml file
     toml_filename: Path = Path(args.toml_filename)
     toml_dict: dict = toml.load(toml_filename)
+    console.print(
+        f"{Colors.GREEN}** Paramètres d'exécution lus dans le fichier '{toml_filename}' **{Colors.RESET}",
+        style="green",
+        soft_wrap=True,
+    )
 
     # Load search type
     search_type: str = toml_dict.get("search_type", "Publications")
@@ -323,6 +331,7 @@ def pyrefsearch() -> None:
 
     # Define ReferenceQuery Class object containing the query parameters
     reference_query: ReferenceQuery = ReferenceQuery(
+        toml_filename=str(toml_filename),
         search_type=search_type,
         data_dir=str(toml_filename.parent),
         publications_search_database=publications_search_database,

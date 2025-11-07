@@ -190,7 +190,7 @@ class ReferenceQuery:
                 sys.exit()
             else:
                 console.print(
-                    f"{Colors.GREEN}** Nombre d'auteur.e.s dans le fichier '{self.in_excel_file}': {len(authors)} **{Colors.RESET}",
+                    f"{Colors.GREEN}\n** Nombre d'auteur.e.s dans le fichier '{self.in_excel_file}': {len(authors)} **{Colors.RESET}",
                     style="green",
                     soft_wrap=True,
                 )
@@ -221,6 +221,7 @@ class ReferenceQuery:
 
     def __init__(
         self,
+        toml_filename: str,
         search_type: str,
         data_dir: str,
         publications_search_database: str,
@@ -238,6 +239,7 @@ class ReferenceQuery:
         espacenet_max_retries: int,
         espacenet_patent_search_results_file: str,
     ):
+        self.toml_filename = toml_filename
         self.search_type = search_type
         self.data_dir: Path = Path(data_dir)
         self.publications_search_database: str = publications_search_database
