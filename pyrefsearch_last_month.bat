@@ -24,6 +24,7 @@ set EMAIL_POWERSHELL_SCRIPT="shell_scripts\pyrefsearch_send_email_confirmation.p
 if exist  %EMAIL_POWERSHELL_SCRIPT% del /F  %EMAIL_POWERSHELL_SCRIPT%
 %PYTHONDIR%\python.exe pyrefsearch\pyrefsearch.py data\pyrefsearch_last_month.toml > pyrefsearch_last_month.log 2>&1
 %PYTHONDIR%\python.exe pyrefsearch\ansi_to_html_converter.py pyrefsearch_last_month.log pyrefsearch_last_month.html
+%PYTHONDIR%\python.exe pyrefsearch\strip_ANSI_codes_from_file.py pyrefsearch_last_month.log pyrefsearch_last_month.log
 
 :: if the PowerShell script %EMAIL_POWERSHELL_SCRIPT% exists, pyrefsearch.py ran successfully
 if exist %EMAIL_POWERSHELL_SCRIPT% GOTO pyrefsearch_success
