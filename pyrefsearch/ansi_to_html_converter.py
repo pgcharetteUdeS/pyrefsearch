@@ -1,3 +1,5 @@
+"""ansi_to_html_converter.py"""
+
 from ansi2html import Ansi2HTMLConverter
 import sys
 
@@ -18,6 +20,4 @@ if __name__ == "__main__":
             "Usage: python ansi_to_html_converter.py <input_file.txt> <output_file.html>"
         )
     else:
-        input_file = sys.argv[1]
-        output_file = sys.argv[2]
-        convert_ansi_to_html(input_file, output_file)
+        convert_ansi_to_html(sys.argv[1], sys.argv[2])
