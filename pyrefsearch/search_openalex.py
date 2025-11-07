@@ -123,6 +123,7 @@ def query_author_profiles_by_id_openalex(
                         ),
                         author["display_name"],
                         author["works_count"],
+                        author["summary_stats"]["h_index"] if "h_index" in author["summary_stats"] else None,
                         (
                             [
                                 institution["display_name"]
@@ -153,6 +154,7 @@ def query_author_profiles_by_id_openalex(
                         None,
                         None,
                         None,
+                        None,
                     ]
                 )
                 console.print(
@@ -168,6 +170,7 @@ def query_author_profiles_by_id_openalex(
                     None,
                     None,
                     "ID",
+                    None,
                     None,
                     None,
                     None,
@@ -188,7 +191,8 @@ def query_author_profiles_by_id_openalex(
             "Profil ORCID",
             "Erreurs",
             "OpenAlex - display_name",
-            "Nombre de publies",
+            "Nb publies",
+            "H index",
             "Institutions",
             "Affiliations",
         ],

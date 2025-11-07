@@ -108,6 +108,11 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         f"{reference_query.date_start} au {reference_query.date_end} **[/green]",
         soft_wrap=True,
     )
+    if reference_query.previous_month_publications_search:
+        console.print(
+            "[yellow](Recherche pour le mois précédant)[/yellow]",
+            soft_wrap=True,
+        )
 
     # Search for publications either in the Scopus or OpenAlex databases
     publications_all: pd.DataFrame

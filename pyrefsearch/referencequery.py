@@ -188,6 +188,12 @@ class ReferenceQuery:
                     soft_wrap=True,
                 )
                 sys.exit()
+            else:
+                console.print(
+                    f"[green]** Nombre d'auteur.e.s dans le fichier '{self.in_excel_file}': {len(authors)} **[/green]",
+                    style="green",
+                    soft_wrap=True,
+                )
             self.write_3it_member_stats_to_file(authors)
 
         elif not any(
@@ -319,9 +325,6 @@ class ReferenceQuery:
         # (author status tabulated by fiscal year) or as a simple list of names
         authors: pd.DataFrame = self.extract_authors_from_df(input_data_full)
         self.au_names: list = authors[["Nom", "Prénom"]].values.tolist()
-        console.print(
-            f"Nombre d'auteur.e.s dans le fichier '{self.in_excel_file}': {len(authors)}"
-        )
 
         # Extract Scopus IDs from the input data, replace non-integer values with 0
         self.au_id_to_index: dict = {}
