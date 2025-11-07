@@ -24,6 +24,7 @@ def strip_ansi_codes_from_file(input_filepath, output_filepath):
 
         with open(output_filepath, "w", encoding="utf-8") as outfile:
             outfile.write(cleaned_content)
+
     except FileNotFoundError:
         print(f"Error: Input file '{input_filepath}' not found.")
     except Exception as e:
