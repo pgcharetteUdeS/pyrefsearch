@@ -411,6 +411,21 @@ def load_espacenet_search_results_from_excel_file(
 
     """
 
+    def parse_list_field(value):
+        """
+        Attempts to parse a string representation of a list.
+        First, it tries using ast.literal_eval. If that fails,
+        it falls back to regex-based extraction.
+        """
+        try:
+            parsed_value = ast.literal_eval(value)
+            if isinstance(parsed_value, list):
+                return parsed_value
+        except (ValueError, SyntaxError):
+            # Fall back to extracting items between apostrophes.
+            return re.findall(r"'([^']+)'", value)
+        return []
+
     # Extract date from file name, show warning on console if file is older than 30 days
     if not (
         match := re.search(
@@ -436,25 +451,17 @@ def load_espacenet_search_results_from_excel_file(
         )
 
     # Load data from Excel file
-    patent_families: pd.DataFrame = pd.read_excel(
-        reference_query.data_dir
-        / Path(reference_query.espacenet_patent_search_results_file)
+    filename: Path = reference_query.data_dir / Path(
+        reference_query.espacenet_patent_search_results_file
     )
-
-    def parse_list_field(value):
-        """
-        Attempts to parse a string representation of a list.
-        First, it tries using ast.literal_eval. If that fails,
-        it falls back to regex-based extraction.
-        """
-        try:
-            parsed_value = ast.literal_eval(value)
-            if isinstance(parsed_value, list):
-                return parsed_value
-        except (ValueError, SyntaxError):
-            # Fall back to extracting items between apostrophes.
-            return re.findall(r"'([^']+)'", value)
-        return []
+    try:
+        patent_families: pd.DataFrame = pd.read_excel(filename)
+    except Exception as e:
+        console.print(
+            f"{Colors.RED}Erreur dans l'ouverture du fichier '{filename}' ({e})!{Colors.RESET}",
+            soft_wrap=True,
+        )
+        sys.exit()
 
     # Reformat inventors and applicants columns into proper lists using the robust parser
     patent_families["Inventeurs"] = patent_families["Inventeurs"].apply(
