@@ -59,8 +59,16 @@ def _check_author_name_and_affiliation_correspondance(
             soft_wrap=True,
         )
 
-    # Check affiliation
-    if not any(
+    # Check institutions & affiliations
+    institution_match: bool = any(
+        any(
+            to_lower_no_accents_no_hyphens(local_affiliation["name"])
+            in to_lower_no_accents_no_hyphens(institution["display_name"])
+            for local_affiliation in reference_query.local_affiliations
+        )
+        for institution in author["last_known_institutions"]
+    )
+    affiliation_match: bool = any(
         any(
             to_lower_no_accents_no_hyphens(local_affiliation["name"])
             in to_lower_no_accents_no_hyphens(
@@ -69,9 +77,21 @@ def _check_author_name_and_affiliation_correspondance(
             for local_affiliation in reference_query.local_affiliations
         )
         for affiliation in author["affiliations"]
-    ):
+    )
+    if not institution_match and not affiliation_match:
         e = f"{e} Affl" if e else "Affl"
-        if affiliations := "; ".join(
+        if institutions := "; ".join(
+            [
+                institution["display_name"]
+                for institution in author["last_known_institutions"]
+            ]
+        ):
+            console.print(
+                f"{Colors.YELLOW}WARNING - l'affiliation de l'auteur.e '{name[1]} {name[0]}' "
+                f"est non-locale: '{institutions}'!{Colors.RESET}",
+                soft_wrap=True,
+            )
+        elif affiliations := "; ".join(
             [
                 affiliation["institution"]["display_name"]
                 for affiliation in author["affiliations"]
@@ -203,7 +223,7 @@ def query_author_profiles_by_id_openalex(
         ],
     )
 
-    # Check for errors
+    # Remove temporary columns
     author_profiles.drop("OpenAlex - display_name", axis=1, inplace=True)
 
     return author_profiles
