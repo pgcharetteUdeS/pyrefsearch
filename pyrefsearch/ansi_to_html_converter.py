@@ -5,7 +5,7 @@ import sys
 
 
 def convert_ansi_to_html(input_file, output_file):
-    conv = Ansi2HTMLConverter(font_size="large")
+    conv = Ansi2HTMLConverter(font_size="normal")
     ansi_text = conv.convert(input_file)
     with open(input_file, "r", encoding="ISO-8859-1") as f_in:
         ansi_text = f_in.read()

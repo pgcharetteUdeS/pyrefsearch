@@ -1,11 +1,11 @@
 """search_espacenet.py
 
-    Search the espacenet patent database
+Search the espacenet patent database
 
-    The script uses the "patent_client" package for searches,
-    see https://patent-client.readthedocs.io/en/latest/index.html.
+The script uses the "patent_client" package for searches,
+see https://patent-client.readthedocs.io/en/latest/index.html.
 
-    NB: An API key is required, see pyrefsearch.toml.
+NB: An API key is required, see pyrefsearch.toml.
 
 """
 
@@ -20,7 +20,12 @@ from excel_io import (
     write_espacenet_search_results_to_excel_file,
 )
 from referencequery import ReferenceQuery
-from utils import console, tabulate_patents_per_author, to_lower_no_accents_no_hyphens
+from utils import (
+    Colors,
+    console,
+    tabulate_patents_per_author,
+    to_lower_no_accents_no_hyphens,
+)
 
 
 def _extract_patent_family_members(root_member_info) -> tuple[list, list]:
@@ -96,7 +101,7 @@ def _extract_earliest_espacenet_patent_family_members(patent_families: pd.DataFr
 
 def _fetch_espacenet_patent_families_by_author_name(
     reference_query: ReferenceQuery, last_name: str, first_name: str
-) -> pd.DataFrame:
+) -> pd.DataFrame | None:
     """
     Fetch espacenet patent family IDs for author
 
@@ -153,14 +158,15 @@ def _fetch_espacenet_patent_families_by_author_name(
             retries += 1
             if retries == reference_query.espacenet_max_retries:
                 console.print(
-                    "[red]Erreur dans la recherche de brevets espacenet pour l'auteur "
-                    f"{first_name} {last_name} ('{e}'): "
+                    f"{Colors.RED}\nErreur dans la recherche de brevets {Colors.ITALICS}espacenet{Colors.RESET}"
+                    f"{Colors.RED} pour l'auteur {first_name} {last_name} ('{e}'): "
                     "cette erreur vient généralement du fait que la limite du nombre "
                     "d'accès pour une période donnée à la base de données a été excédée"
-                    f" ({retries}) essais...[/red]"
+                    f" ({retries}) essais...{Colors.RESET}",
+                    soft_wrap=True,
                 )
                 console.print()
-                exit()
+                return None
             time.sleep(0.1)
 
     # Parse patents into a dataframe, retaining only "family_id" and "patent_id" columns
@@ -180,7 +186,9 @@ def _fetch_espacenet_patent_families_by_author_name(
     return patents_name_df.drop_duplicates(subset=["family_id"])
 
 
-def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.DataFrame:
+def _search_espacenet_by_author_name(
+    reference_query: ReferenceQuery,
+) -> pd.DataFrame | None:
     """
     Search the espacenet worldwide patent library by author name
 
@@ -199,15 +207,15 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
     )
     for name in reference_query.au_names:
         print(f" - {name[0]}", end="")
+        author_patent_families: pd.DataFrame | None = (
+            _fetch_espacenet_patent_families_by_author_name(
+                reference_query=reference_query, last_name=name[0], first_name=name[1]
+            )
+        )
+        if author_patent_families is None:
+            return None
         patent_families_raw = pd.concat(
-            [
-                patent_families_raw,
-                _fetch_espacenet_patent_families_by_author_name(
-                    reference_query=reference_query,
-                    last_name=name[0],
-                    first_name=name[1],
-                ),
-            ],
+            [patent_families_raw, author_patent_families],
             ignore_index=True,
         )
     print("")
@@ -237,12 +245,12 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
                 retries += 1
                 if retries == reference_query.espacenet_max_retries:
                     console.print(
-                        f"\n[red]Erreur dans la recherche de brevets espacenet ('{e}'): "
+                        f"\n{Colors.RED}Erreur dans la recherche de brevets espacenet ('{e}'): "
                         "cette erreur vient généralement du fait que la limite du nombre "
                         "d'accès pour une période donnée à la base de données a été excédée"
-                        f" ({retries} essais)...[/red]"
+                        f" ({retries} essais)...{Colors.RESET}"
                     )
-                    exit()
+                    return pd.DataFrame([])
                 time.sleep(0.1)
 
         console.print(
@@ -285,9 +293,10 @@ def _search_espacenet_by_author_name(reference_query: ReferenceQuery) -> pd.Data
     patent_families = patent_families.sort_values(by=["Titre"])
 
     # Write dataframe of all patent results to output Excel file
-    write_espacenet_search_results_to_excel_file(
-        reference_query=reference_query, patent_families=patent_families
-    )
+    if not patent_families.empty:
+        write_espacenet_search_results_to_excel_file(
+            reference_query=reference_query, patent_families=patent_families
+        )
 
     # Return dataframe of search results
     return patent_families
@@ -328,9 +337,12 @@ def query_espacenet_patents_and_applications(
             "Recherche espacenet dans le fichier "
             f"'{reference_query.espacenet_patent_search_results_file}'"
         )
+    elif isinstance(
+        search_return := _search_espacenet_by_author_name(reference_query), pd.DataFrame
+    ):
+        patent_families = search_return
     else:
-        # else, search espacenet for patent families by author name, save to file
-        patent_families = _search_espacenet_by_author_name(reference_query)
+        return pd.DataFrame([]), [], pd.DataFrame([]), []
 
     # Add columns with local inventors and number of co-inventors to the dataframe
     local_inventors = patent_families["Inventeurs"].apply(
