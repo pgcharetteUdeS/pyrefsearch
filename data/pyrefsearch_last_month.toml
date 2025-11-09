@@ -14,16 +14,17 @@ previous_month_publications_search_confirmation_emails = [
 # Noms d'institutions/affiliations considérées commme "locales" avec leurs identifiants
 # OpenAlex ou Scopus, pour valider les profils d'auteurs dans les recherches
 local_affiliations = [
-    ["Université de Sherbrooke", "60011832"],
-    ["3IT", "60190927"],
-    ["Institut interdisciplinaire d'innovation technologique", "60190927"],
-    ["LN2", "60108180"],
-    ["Laboratoire nanotechnologies et nanosystèmes", "60108180"]
+    ["Université de Sherbrooke", "0"],
+    ["3IT", "0"],
+    ["Institut interdisciplinaire d'innovation technologique", "0"],
+    ["LN2", "0"],
+    ["Laboratoire nanotechnologies et nanosystèmes", "0"]
 ]
 # OPENALEX : Paires de descriptifs (au choix de l'usager) et mosts clefs indiquant
 # le type de publication dans la base de données OpenAlex
 publication_types_openalex = [["Articles", "journal-article"], ["Confs", "proceedings-article"],
-    ["Chap. de livres", "book-chapter"], ["Pré-impressions", "preprint"], ["Autres", "Other"]]
+    ["Chap. de livres", "book-chapter"], ["Pré-impressions", "preprint"], ["HAL", "HAL"],
+    ["Autres", "other"]]
 
 # BREVETS : Activer/désactiver (true/false) la recherche de brevets dans ESPACENET (INPADOC)
 espacenet_patent_search = true
