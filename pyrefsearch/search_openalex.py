@@ -657,6 +657,10 @@ def query_publications_openalex(
                         work_type=work_type, publication_name=work_publication_name
                     )
 
+                    # Special case for HAL open archive entries (https://hal.science/)
+                    if work_type == "HAL":
+                        work_publication_name = f"HAL ({work['primary_location']['raw_source_name'] if 'raw_source_name' in work['primary_location'] else 'HAL'})"
+
                     # Add the record to the dataframe for this author
                     works_df = pd.concat(
                         [

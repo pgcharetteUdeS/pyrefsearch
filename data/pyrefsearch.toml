@@ -4,8 +4,8 @@ in_excel_file = "Liste chercheurs-membres.xlsx"
 in_excel_file_author_sheet = "Membres"
 
 # Période temporelle de recherche
-date_start = 2025-01-01
-date_end = 2025-10-31
+date_start = 2024-05-01
+date_end = 2025-04-30
 
 # Base de données pour la recherche de publications : "OpenAlex" (défaut) ou "Scopus"
 publications_search_database = "OpenAlex"
@@ -23,7 +23,8 @@ local_affiliations = [
 # OPENALEX : Paires de descriptifs (au choix de l'usager) et mosts clefs indiquant
 # le type de publication dans la base de données OpenAlex
 publication_types_openalex = [["Articles", "journal-article"], ["Confs", "proceedings-article"],
-    ["Chap. de livres", "book-chapter"], ["Pré-impressions", "preprint"], ["Autres", "other"]]
+    ["Chap. de livres", "book-chapter"], ["Pré-impressions", "preprint"], ["HAL", "HAL"],
+    ["Autres", "other"]]
 
 # BREVETS : Activer/désactiver (true/false) la recherche de brevets USPTO et ESPACENET (INPADOC)
 # 1) La recherche de brevets dans INPADOC est préférable à l'USPTO parce que les brevets
