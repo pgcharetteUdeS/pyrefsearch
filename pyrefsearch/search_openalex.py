@@ -495,19 +495,21 @@ def _add_local_author_name_and_count_columns(
     return publications_without_duplicate
 
 
-def _consolidate_subtypes(work_type: str) -> str:
+def _consolidate_subtypes(work_type: str, publication_name: str | None) -> str:
     """
     Constrain subtypes to the set specified by the publication_types_openalex parameter
-    in the input .toml file
+    in the input .toml file, put HAL publications in separate catégory and their subtypes
+    are inconsistent.
 
     Args:
         work_type (str): publications type to consolidate, if not in input set
+        publication_name (str): publications name
 
     Returns : consolidated subtype
     """
 
     subtypes = {
-        "article": "other",
+        "article": "preprint",
         "journal-article": "journal-article",
         "proceedings-article": "proceedings-article",
         "book-chapter": "book-chapter",
@@ -517,6 +519,8 @@ def _consolidate_subtypes(work_type: str) -> str:
         "other": "other",
     }
 
+    if publication_name is not None and "HAL" in publication_name:
+        return "HAL"
     if work_type in subtypes:
         return subtypes[work_type]
     console.print(
@@ -648,8 +652,10 @@ def query_publications_openalex(
                         publication_name_crossref or publication_name_openalex
                     )
 
-                    # Consolidate subtypes to the set specified by the user
-                    work_type = _consolidate_subtypes(work_type=work_type)
+                    # Consolidate subtypes to the set specified by the user (HAL category, check for article in openalex vs preprint in crossref)
+                    work_type = _consolidate_subtypes(
+                        work_type=work_type, publication_name=work_publication_name
+                    )
 
                     # Add the record to the dataframe for this author
                     works_df = pd.concat(
