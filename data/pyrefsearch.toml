@@ -4,8 +4,8 @@ in_excel_file = "Liste chercheurs-membres.xlsx"
 in_excel_file_author_sheet = "Membres"
 
 # Période temporelle de recherche
-date_start = 2024-05-01
-date_end = 2025-04-30
+date_start = 2025-01-01
+date_end = 2025-10-31
 
 # Noms d'institutions/affiliations considérées commme "locales" pour valider les profils d'auteurs
 local_affiliations = [
