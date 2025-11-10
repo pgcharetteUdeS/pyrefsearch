@@ -261,13 +261,19 @@ class ReferenceQuery:
         self.local_affiliations: list[dict] = [
             {
                 "name": to_lower_no_accents_no_hyphens(affiliation[0]),
-                "ID": int(affiliation[1]),
+                "ID": (
+                    int(affiliation[1])
+                    if len(affiliation) > 1 and affiliation[1]
+                    else None
+                ),
             }
             for affiliation in local_affiliations
         ]
-        self.local_affiliations_IDs: list[str] = [
-            affiliation[1] for affiliation in local_affiliations
-        ]
+        self.local_affiliations_IDs: list[str] = (
+            [affiliation[1] for affiliation in local_affiliations]
+            if len(local_affiliations[0]) > 1
+            else []
+        )
         self.scopus_database_refresh_days: bool | int = scopus_database_refresh_days
         self.uspto_patent_search: bool = uspto_patent_search
         self.espacenet_patent_search: bool = espacenet_patent_search
