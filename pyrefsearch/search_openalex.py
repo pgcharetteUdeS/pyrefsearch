@@ -429,7 +429,7 @@ def _add_local_author_name_and_count_columns_drop_duplicates(
 
     # Columns to use for removing publication duplicates
     # match_criteria_columns: list[str] = ["title", "subtype", "doi"]
-    match_criteria_columns: list[str] = ["title", "subtype"]
+    match_criteria_columns: list[str] = ["title", "subtype", "doi"]
 
     # Build DataFrame with unique publication entries
     publications_duplicate_counts = publications.value_counts(match_criteria_columns)
