@@ -423,12 +423,13 @@ def _get_publication_info_from_crossref(doi) -> dict | None:
     )
 
 
-def _add_local_author_name_and_count_columns(
+def _add_local_author_name_and_count_columns_drop_duplicates(
     publications: pd.DataFrame,
 ) -> pd.DataFrame:
 
     # Columns to use for removing publication duplicates
-    match_criteria_columns: list[str] = ["title", "subtype", "doi"]
+    # match_criteria_columns: list[str] = ["title", "subtype", "doi"]
+    match_criteria_columns: list[str] = ["title", "subtype"]
 
     # Build DataFrame with unique publication entries
     publications_duplicate_counts = publications.value_counts(match_criteria_columns)
@@ -446,9 +447,10 @@ def _add_local_author_name_and_count_columns(
         indices: list = [
             index
             for index, row_all in publications.iterrows()
-            if row_all["title"] == row["title"]
-            and row_all["subtype"] == row["subtype"]
-            and row_all["doi"] == row["doi"]
+            if all(
+                row_all[criteria] == row[criteria]
+                for criteria in match_criteria_columns
+            )
         ]
         return indices
 
@@ -715,7 +717,7 @@ def query_publications_openalex(
     else:
         # Remove duplicates and add local author name and count columns
         publications.reset_index(drop=True, inplace=True)
-        publications = _add_local_author_name_and_count_columns(
+        publications = _add_local_author_name_and_count_columns_drop_duplicates(
             publications=publications
         )
 
