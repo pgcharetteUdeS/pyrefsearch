@@ -336,7 +336,9 @@ def pyrefsearch() -> None:
         data_dir=str(toml_filename.parent),
         publications_search_database=publications_search_database,
         in_excel_file=toml_dict["in_excel_file"],
-        in_excel_file_author_sheet=toml_dict["in_excel_file_author_sheet"],
+        in_excel_file_author_sheet=toml_dict.get(
+            "in_excel_file_author_sheet", "Membres"
+        ),
         date_start=date_start,
         date_end=date_end,
         previous_month_publications_search=previous_month_publications_search,

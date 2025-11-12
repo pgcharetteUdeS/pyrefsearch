@@ -1,6 +1,5 @@
 # Fichier Excel d'entrée et nom du feuillet contenant les information des auteur.e.s
 in_excel_file = "Liste chercheurs-membres.xlsx"
-in_excel_file_author_sheet = "Membres"
 
 # Activer/désactiver l'extraction différentielle Scopus relativement au 1er du mois précédant,
 # spécification de la liste d'envois de courriels de confirmation, où la première adresse
@@ -20,8 +19,8 @@ local_affiliations = [
     ["LN2", "0"],
     ["Laboratoire nanotechnologies et nanosystèmes", "0"]
 ]
-# OPENALEX : Paires de descriptifs (au choix de l'usager) et mosts clefs indiquant
-# le type de publication dans la base de données OpenAlex
+# OPENALEX : Paires de descriptifs (au choix de l'usager) et mosts clefs ("subtype")
+# indiquant le type de publication dans la base de données OpenAlex
 publication_types_openalex = [["Articles", "journal-article"], ["Confs", "proceedings-article"],
     ["Chap. de livres", "book-chapter"], ["Pré-impressions", "preprint"], ["HAL", "HAL"],
     ["Autres", "other"]]

@@ -1,9 +1,8 @@
-# Fichier Excel d'entrée et nom du feuillet contenant les information des auteur.e.s
+# Fichier Excel d'entrée
 #in_excel_file = "Liste chercheurs-membres - TEST - SHORT.xlsx"
 in_excel_file = "Liste chercheurs-membres.xlsx"
-in_excel_file_author_sheet = "Membres"
 
-# Période temporelle de recherche
+# Période temporelle de la recherche
 date_start = 2024-05-01
 date_end = 2025-04-30
 
@@ -16,8 +15,8 @@ local_affiliations = [
     ["Laboratoire nanotechnologies et nanosystèmes"]
 ]
 
-# OPENALEX : Paires de descriptifs (au choix de l'usager) et mosts clefs indiquant
-# le type de publication dans la base de données OpenAlex
+# OPENALEX : Paires de descriptifs (au choix de l'usager) et mosts clefs ("subtype")
+# indiquant le type de publication dans la base de données OpenAlex
 publication_types_openalex = [["Articles", "journal-article"], ["Confs", "proceedings-article"],
     ["Chap. de livres", "book-chapter"], ["Pré-impressions", "preprint"], ["HAL", "HAL"],
     ["Autres", "other"]]
