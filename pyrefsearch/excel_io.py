@@ -373,6 +373,14 @@ def write_reference_query_results_to_excel_file(
             freeze_panes=(1, 1),
         )
 
+        # Write full OpenAlex search results to a sheet at the end
+        publications.to_excel(
+            writer,
+            index=False,
+            sheet_name="OpenAlex - résultat complets",
+            freeze_panes=(1, 1),
+        )
+
     # Attempt to adjust column widths in the output Excel file to reasonable values.
     # The solution is a hack because the auto_size/bestFit properties in
     # openpyxl.worksheet.dimensions.ColumnDimension() don't seem to work and the actual
