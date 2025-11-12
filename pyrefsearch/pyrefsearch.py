@@ -1,7 +1,7 @@
 """pyrefsearch.py
 
-For a list of author names and range of dates supplied in an Excel file, publications in OpenAlex or Scopus,
-patents in the INPADOC and USPTO databases.
+For a list of author names and range of dates supplied in an Excel file,
+publications in OpenAlex or Scopus, patents in the INPADOC and USPTO databases.
 
 All execution parameters specified in the file "data/pyrefsearch.toml"
 
