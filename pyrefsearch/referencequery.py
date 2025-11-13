@@ -21,7 +21,7 @@ class ReferenceQuery:
     Class to store reference query parameters
     """
 
-    def check_excel_file_access(self):
+    def check_excel_file_access(self) -> None:
         # Check that input Excel file exists and can be read from
         if not self.in_excel_file.is_file():
             console.print(
@@ -54,7 +54,7 @@ class ReferenceQuery:
                 )
                 sys.exit()
 
-    def write_3it_member_stats_to_file(self, authors: pd.DataFrame):
+    def write_3it_member_stats_to_file(self, authors: pd.DataFrame) -> None:
         n_members_women: int = len(authors[authors["Sexe"] == "F"])
         n_eng_members: int = len(authors[authors["Faculté / Service"] == "FGEN"])
         n_eng_members_regular_profs_only: int = len(

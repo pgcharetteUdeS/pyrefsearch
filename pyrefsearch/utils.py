@@ -63,7 +63,7 @@ def count_publications_by_type_in_df(
     Count number of publications by type in a dataframe
 
     Args:
-        reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
+        publication_type_codes (list): publication_type_codes input parameter from .toml file
         df (pd.DataFrame): DataFrame with publications
 
     Returns: List of counts per publication type
