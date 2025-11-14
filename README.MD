@@ -4,24 +4,11 @@
 [![Python 3.10](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
 ## Fonctions:
-1) Recherche de publications (base de données Scopus) et de brevets US et canadiens
-   (bases de données INPADOC et/ou USPTO, au choix) pour une liste d'auteur.e.s sur une
+Recherche de publications dans la base de données OpenAlex et de brevets
+   dans la base de données INPADOC pour une liste d'auteur.e.s sur une
    gamme d'années donnée.
-2) Recherche de profils Scopus pour une liste d'auteur.e.s
-
-NB: La recherche de brevets dans INPADOC (*International Patent Documentation*) est
-préférable à l'USPTO parce que les brevets sont groupés par familles, ce qui permet
-notamment de retenir uniquement les premiers dépots et octrois de brevets pour une
-invention et éviter les redondances (brevets dans plusieurs pays, multiples numéros
-de brevets pour une même invention reliés à des variations mineures comme des changements
-aux revendications, des modifications cléricales, etc.).
 
 ## Pré-requis:
-- Une clé API est requise pour effectuer des recherches sur Scopus, laquelle peut être obtenue
-  à partir de cette [page web](https://dev.elsevier.com/index.jsp), click sur *I want an API Key*
-  puis *Create API Key*. La première exécution du script demande de saisir la clé,
-  celle-ci est ensuite sauvegardée sur le poste de travail. Le script doit être exécuté
-  à partir d'un poste sur le réseau universitaire pour que l'accès à Scopus soit autorisé.
 - Une clé API est requise pour faire des recherches de brevets dans la base de données
   INPADOC (*International Patent Documentation*) gérée par l'EPO (*European
   patent office*) et accessible via *espacenet*. Il faut d'abord ouvrir un compte en ligne pour accéder aux
@@ -34,76 +21,55 @@ aux revendications, des modifications cléricales, etc.).
 - Appel du script: *pyrefsearch\pyrefsearch.py data\pyrefsearch.toml*
 - Les paramètres d'exécution sont lus dans le fichier *pyrefsearch.toml*
 - Les données d'auteur.e.s sont lues dans un fichier Excel d'entrée (voir *pyrefsearch.toml*)
-- Les résultats de la recherche sont écrits dans un fichier Excel de sortie (voir *pyrefsearch.toml*)
+- Les résultats de la recherche sont écrits dans un fichier Excel de sortie
 - Tous les fichiers spécifiés sont lus/écrits dans le même répertoire que le fichier .toml
 
-<div style="page-break-before:always">&nbsp;</div>
 <p></p>
 
-## Fichier des paramètres d'exécution *pyrefsearch.toml* (voir le fichier donné en exemple pour plus d'infos sur les paramètres) :
-- *search_type* ("Publications" ou "Profils"): Type de recherche (publications & brevets ou profils d'auteur.e.s)
+## *pyrefsearch.toml* : fichier des paramètres d'exécution pour une recherche sur une période donnée (voir le fichier donné en exemple) :
 - *in_excel_file* : Fichier Excel d'entrée
-- *in_excel_file_author_sheet* : Feuillet dans le fichier Excel d'entrée contenant
-  les informations des auteur.e.s
-- *first_year*, *last_year* : Première/dernière année de la gamme d'années (recherche de
-  publications & brevets)
-- *publication_types* : Descriptions des types de publications et codes Scopus correspondants
-  pour la recherche de publications dans Scopus
+- *date_start*, *date_end* : Première/dernière dates de la période de recherche
+- *publication_types_openalex* : List des binômes de types de publications et mots-clefs correspondants ("subtype")
+  pour la recherche de publications dans OpenAlex
 - *local_affiliations* : Liste des institutions considérées comme des affiliations "locales"
-- *scopus_database_refresh*: Intervalle de mise à jour de la copie locale de la base de données Scopus
+- *espacenet_patent_search* : activer la recherche de brevets ("espacenet_patent_search = true")
+- *espacenet_patent_search_results_file* = nom de fichier de résultats de recherche dans espacenet précédante (si ce paramètre
+n'est pas spécifié, une nouvelle recherche en ligne est effectuée, ce qui est assez long)
 
-## Fichier Excel d'entrée *in_excel_file* :
-Noms et identifiants Scopus des auteur.e.s spécifiés dans les colonnes
-suivantes du feuillet *in_excel_file_sheet_name*:
+<div style="page-break-after: always;"></div>
+
+## *pyrefsearch_last_month.toml* : fichier des paramètres d'exécution pour une recherche au cours du dernier mois (voir le fichier donné en exemple) :
+Pour forcer une recherche dans le mois précédant, en plus des paramètres ci-haut (*pyrefsearch.toml*) où
+*date_start*, *date_end* sont ignorés, les paramètres suivants sont requis:
+- *previous_month_publications_search* = true
+- *previous_month_publications_search_confirmation_emails* : list des adresses qui recevront un courriel avec le fichier Excel de résultats
+
+## Fichier Excel d'entrée "*in_excel_file*" (voir fichier *pyrefsearch.toml*), feuillet *Membres* :
+Noms et identifiants OpenAlex des auteur.e.s spécifiés dans les colonnes
+suivantes :
 
 - *Nom* : Nom de famille de l’auteur.e
 - *Prénom* : Prénom de l’auteur.e
-- *ID Scopus* : Identifiant Scopus de l’auteur.e pour une recherche de publications 
-(laisser la cellule vide si aucun identifiant Scopus n'est disponible)
+- *OpenAlex* : Adresse web du profil OpenAlex de l’auteur.e pour la recherche de publications 
+(laisser la cellule vide si aucun identifiant n'est disponible)
 
-Il a 2 options pour le format du fichier:
-1) Base de données du 3IT, où le statut des auteur.e.s est spécifié par année
-   fiscale (*Régulier* ou *Collaborateur*): seuls les membres ayant eu un statut
-   *Régulier* pendant au moins une année dans la gamme d'années spécifiée
-   seront inclus dans les recherches
-2) Une simple liste d'auteur.e.s
-
-
-## Fichier Excel de sortie :
-- Recherche de publications & brevets:
-  - Nom du fichier: *\<in_excel_file mantissa\>\_publications\_\<first_year\>-\<last_year\>.xlsx*
+## Fichier Excel de sortie "*\<in_excel_file mantissa\>\_publications\_\<date_start\>-\<date_end\>.xlsx*" :
   - Feuillet *Résultats* : résumé des résultats de la recherche
   - Feuillets *Articles*, *Conférences*, *Lettres*, *Livres*, *Chap. de livres*,
-  *Rapports*, *Brevets US (en instance)*, *Brevets US (délivrés)* : résultats de la
+  *Pré-impression*, *HAL*, *Rapports*, *Brevets INPADOC (en instance)*,
+  *Brevets INPADOC (délivrés)* : résultats de la
   recherche par type de document (omis si aucun résultat)
-  - Feuillet *Profils par identifiants*, colonne *Erreurs*: erreurs le cas échéant dans
+  - Feuillet *Auteurs - Profils*, colonne *Erreurs*: erreurs le cas échéant dans
   les profils d'auteur.e.s et/ou disparités entre les informations dans le fichier Excel
-  d'entrée et la base de données Scopus
-- Recherche de profils :
-  - Nom du fichier: *\<in_excel_file mantissa\>\_profils.xlsx*
-- Recherche de publications & brevets ou de profils :
-  - Feuillet *Homonymes* ou *Profils* selon le type de recherche, colonne *Affl/ID*:
+  d'entrée et la base de données OpenAlex
+  - Feuillet *Auteurs - Homonymes*, colonne *Affl/ID*:
   repérage des noms d’auteur.e.s
-  correspondant à plusieurs identifiants Scopus, afin de s’assurer que les bons
+  correspondant à plusieurs identifiants OpenAlex, afin de s’assurer que les bons
   identifiants sont fournis dans le fichier Excel d’entrée pour la recherche de
   publications & brevets:
     - *Affl.* : l'affiliation est comprise dans la liste *local_affiliations*
       spécifiée dans *pyrefsearch.toml*
-    - *ID* : l'identifiant Scopus est identique à celui dans le fichier Excel d'entrée
-
-## Problèmes / points à considérer :
-- Il y a des erreurs fréquentes dans la base de données Scopus (ex : publications
-  attribuées à tort à des auteur.e.s ayant le même nom, affiliation incorrecte, etc.). Les
-  informations dans le fichier Excel de sortie (feuillet *Homonymes* ou
-  *Profils* selon le type de recherche, colonne *Affl/ID*) aident à
-  repérer ces erreurs. Le cas échéant, il faut demander à la personne concernée de faire
-  une mise à jour de son profil Scopus. La mise à jour de la base de données peut prendre
-  jusqu'à une semaine, il faut ensuite mettre à jour la copie locale de la base de données
-  via le paramètre *scopus_database_refresh* dans le fichier *pyScopus.toml* avant
-  de lancer une nouvelle recherche avec le script.
-- Google Scholar semble plus complet que Scopus, en particulier pour les conférences,
-  mais il ne semble pas y avoir de moyen facile de faire des recherches scriptées
-  dans Google Scholar.
+    - *ID* : l'identifiant OpenAlex est identique à celui dans le fichier Excel d'entrée
 
 ## Installation:
 - Projet *pyrefsearch* disponible sur [github](https://github.com/pgcharetteUdeS/pyRefSearchUdeS)
