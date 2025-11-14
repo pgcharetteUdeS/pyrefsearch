@@ -1,12 +1,12 @@
 ## pyrefsearch
 
 <!---Badges-->
-[![Python 3.10](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 
 ## Fonctions:
 Recherche de publications dans la base de données OpenAlex et de brevets
    dans la base de données INPADOC pour une liste d'auteur.e.s sur une
-   gamme d'années donnée.
+  période donnée.
 
 ## Pré-requis:
 - Une clé API est requise pour faire des recherches de brevets dans la base de données
@@ -29,11 +29,11 @@ Recherche de publications dans la base de données OpenAlex et de brevets
 ## *pyrefsearch.toml* : fichier des paramètres d'exécution pour une recherche sur une période donnée (voir le fichier donné en exemple) :
 - *in_excel_file* : Fichier Excel d'entrée
 - *date_start*, *date_end* : Première/dernière dates de la période de recherche
-- *publication_types_openalex* : List des binômes de types de publications et mots-clefs correspondants ("subtype")
-  pour la recherche de publications dans OpenAlex
+- *publication_types_openalex* : List des binômes de types de publications et mots-clefs (OpenAlex "subtype") correspondants
+  pour la recherche de publications
 - *local_affiliations* : Liste des institutions considérées comme des affiliations "locales"
-- *espacenet_patent_search* : activer la recherche de brevets ("espacenet_patent_search = true")
-- *espacenet_patent_search_results_file* = nom de fichier de résultats de recherche dans espacenet précédante (si ce paramètre
+- *espacenet_patent_search* : activer la recherche de brevets *espacenet* ("espacenet_patent_search = true")
+- *espacenet_patent_search_results_file* = nom de fichier de résultats de recherche précédante dans *espacenet* (si ce paramètre
 n'est pas spécifié, une nouvelle recherche en ligne est effectuée, ce qui est assez long)
 
 <div style="page-break-after: always;"></div>
@@ -42,7 +42,7 @@ n'est pas spécifié, une nouvelle recherche en ligne est effectuée, ce qui est
 Pour forcer une recherche dans le mois précédant, en plus des paramètres ci-haut (*pyrefsearch.toml*) où
 *date_start*, *date_end* sont ignorés, les paramètres suivants sont requis:
 - *previous_month_publications_search* = true
-- *previous_month_publications_search_confirmation_emails* : list des adresses qui recevront un courriel avec le fichier Excel de résultats
+- *previous_month_publications_search_confirmation_emails* : liste des adresses qui recevront un courriel avec le fichier Excel de résultats
 
 ## Fichier Excel d'entrée "*in_excel_file*" (voir fichier *pyrefsearch.toml*), feuillet *Membres* :
 Noms et identifiants OpenAlex des auteur.e.s spécifiés dans les colonnes
@@ -67,7 +67,7 @@ suivantes :
   correspondant à plusieurs identifiants OpenAlex, afin de s’assurer que les bons
   identifiants sont fournis dans le fichier Excel d’entrée pour la recherche de
   publications & brevets:
-    - *Affl.* : l'affiliation est comprise dans la liste *local_affiliations*
+    - *Affl.* : une institution ou une affiliation est comprise dans la liste *local_affiliations*
       spécifiée dans *pyrefsearch.toml*
     - *ID* : l'identifiant OpenAlex est identique à celui dans le fichier Excel d'entrée
 
