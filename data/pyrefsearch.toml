@@ -1,3 +1,6 @@
+# Type de membre du 3IT pour laquelle la recherche est affectuée(valeur par défaut: "Régulier")
+member_status = "Collaborateur"
+
 # Fichier Excel d'entrée
 #in_excel_file = "Liste chercheurs-membres - TEST - SHORT.xlsx"
 in_excel_file = "Liste chercheurs-membres.xlsx"

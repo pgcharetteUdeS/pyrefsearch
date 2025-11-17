@@ -76,7 +76,7 @@ class ReferenceQuery:
                     & (authors["Département"] == d)
                 ]
             )
-            for d in ["DGEGI", "DGMEC", "Chimie et biotechnologie", "Génie Civil"]
+            for d in ["DGEGI", "DGMEC", "DGCGB", "Génie Civil"]
         ]
         n_eng_members_regular_profs_only_all: int = (
             n_eng_members_regular_profs_only_ee
@@ -138,7 +138,9 @@ class ReferenceQuery:
             f.write(
                 f"      - Chimie & biotech: {n_eng_members_regular_profs_only_cb}\n"
             )
-            f.write(f"      - Civil: {n_eng_members_regular_profs_only_cv}\n")
+            f.write(
+                f"      - Civil & batiment: {n_eng_members_regular_profs_only_cv}\n"
+            )
             if n_eng_members_regular_profs_only_all != n_eng_members_regular_profs_only:
                 f.write(
                     "      - Autres: "
