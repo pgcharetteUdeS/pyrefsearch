@@ -440,7 +440,6 @@ def _add_local_author_name_and_count_columns_drop_duplicates(
     publications_without_duplicate["duplicates"] = (
         publications_duplicate_counts.values.tolist()
     )
-    publications_without_duplicate.reset_index()
 
     # Add column of duplicate indices
     def find_duplicate_indices(row) -> list[int]:

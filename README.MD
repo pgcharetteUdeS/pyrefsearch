@@ -28,6 +28,7 @@ Recherche de publications dans la base de données OpenAlex et de brevets
 
 ## *pyrefsearch.toml* : fichier des paramètres d'exécution pour une recherche sur une période donnée (voir le fichier donné en exemple) :
 - *in_excel_file* : Fichier Excel d'entrée
+- *member_status* : "Régulier" (valeur par défaut) ou "Collaborateur"
 - *date_start*, *date_end* : Première/dernière dates de la période de recherche
 - *publication_types_openalex* : List des binômes de types de publications et mots-clefs (OpenAlex "subtype") correspondants
   pour la recherche de publications

@@ -1,5 +1,3 @@
-member_status="Collaborateur"
-
 # Fichier Excel d'entrée
 #in_excel_file = "Liste chercheurs-membres - TEST - SHORT.xlsx"
 in_excel_file = "Liste chercheurs-membres.xlsx"

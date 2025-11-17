@@ -183,17 +183,13 @@ class ReferenceQuery:
                 lambda x: x.replace("https://orcid.org/", "")
             )
             authors["status"] = [
-                "Régulier" if "Régulier" in yearly_status else "Collaborateur"
+                self.member_status if self.member_status in yearly_status else "drop"
                 for yearly_status in authors[
                     author_status_by_year_columns
                 ].values.tolist()
             ]
-            if self.member_status == "Régulier":
-                authors.drop(
-                    authors[authors.status == "Collaborateur"].index, inplace=True
-                )
-            else:
-                authors.drop(authors[authors.status == "Régulier"].index, inplace=True)
+            authors.drop(authors[authors.status == "drop"].index, inplace=True)
+            authors.reset_index(inplace=True, drop=True)
             if authors.empty:
                 console.print(
                     f"{Colors.RED}Aucun membre {self.member_status} du 3IT n'a été trouvé dans le fichier"
