@@ -60,7 +60,7 @@ class ReferenceQuery:
         n_eng_members_regular_profs_only: int = len(
             authors[
                 (authors["Faculté / Service"] == "FGEN")
-                & (authors["Lien d'emploi UdeS"] == self.member_status)
+                & (authors["Lien d'emploi UdeS"] == "Régulier")
             ]
         )
         (
@@ -72,7 +72,7 @@ class ReferenceQuery:
             len(
                 authors[
                     (authors["Faculté / Service"] == "FGEN")
-                    & (authors["Lien d'emploi UdeS"] == self.member_status)
+                    & (authors["Lien d'emploi UdeS"] == "Régulier")
                     & (authors["Département"] == d)
                 ]
             )
@@ -98,14 +98,14 @@ class ReferenceQuery:
             authors[
                 (authors["Faculté / Service"] == "FGEN")
                 & (authors["Résidence"] != "Aucun bureau")
-                & (authors["Lien d'emploi UdeS"] == self.member_status)
+                & (authors["Lien d'emploi UdeS"] == "Régulier")
             ]
         )
         n_eng_members_asso_profs_with_office = len(
             authors[
                 (authors["Faculté / Service"] == "FGEN")
                 & (authors["Résidence"] != "Aucun bureau")
-                & (authors["Lien d'emploi UdeS"] != self.member_status)
+                & (authors["Lien d'emploi UdeS"] != "Régulier")
             ]
         )
 
@@ -121,16 +121,16 @@ class ReferenceQuery:
         )
         with open(stats_filename, "w") as f:
             f.write(
-                f"* Membres {self.member_status} du 3IT: {len(authors)} ({n_members_women / len(authors) * 100:.0f}% de femmes)\n"
+                f"* Membres {self.member_status}s du 3IT: {len(authors)} ({n_members_women / len(authors) * 100:.0f}% de femmes)\n"
             )
             f.write(
-                f"* Membres {self.member_status} du 3IT qui ont un bureau au 3IT: {n_members_with_office}\n"
+                f"* Membres {self.member_status}s du 3IT qui ont un bureau au 3IT: {n_members_with_office}\n"
             )
             f.write(
-                f"* Membres {self.member_status} du 3IT en génie: {n_eng_members}\n"
+                f"* Membres {self.member_status}s du 3IT en génie: {n_eng_members}\n"
             )
             f.write(
-                f"    o Profs {self.member_status}: {n_eng_members_regular_profs_only}, "
+                f"    o Profs {self.member_status}s: {n_eng_members_regular_profs_only}, "
                 f"dont {n_eng_members_regular_profs_with_office} avec bureau\n"
             )
             f.write(f"      - GEGI: {n_eng_members_regular_profs_only_ee}\n")
