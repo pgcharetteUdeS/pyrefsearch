@@ -60,7 +60,7 @@ class ReferenceQuery:
         n_eng_members_regular_profs_only: int = len(
             authors[
                 (authors["Faculté / Service"] == "FGEN")
-                & (authors["Lien d'emploi UdeS"] == "Régulier")
+                & (authors["Lien d'emploi UdeS"] == self.member_status)
             ]
         )
         (
@@ -72,7 +72,7 @@ class ReferenceQuery:
             len(
                 authors[
                     (authors["Faculté / Service"] == "FGEN")
-                    & (authors["Lien d'emploi UdeS"] == "Régulier")
+                    & (authors["Lien d'emploi UdeS"] == self.member_status)
                     & (authors["Département"] == d)
                 ]
             )
@@ -86,9 +86,9 @@ class ReferenceQuery:
         )
         if n_eng_members_regular_profs_only_all != n_eng_members_regular_profs_only:
             console.print(
-                f"{Colors.YELLOW}WARNING: Le nombre de professeurs réguliers en génie membres du 3IT "
+                f"{Colors.YELLOW}WARNING: Le nombre de professeurs {self.member_status} en génie membres du 3IT "
                 f"({n_eng_members_regular_profs_only}) ne correspond pas à la somme des "
-                f"professeurs réguliers par département ({n_eng_members_regular_profs_only_all})"
+                f"professeurs {self.member_status} par département ({n_eng_members_regular_profs_only_all})"
                 ", des informations d'affiliation sont incorrectes dans le fichier"
                 f" '{self.in_excel_file}'!{Colors.RESET}",
                 soft_wrap=True,
@@ -98,31 +98,39 @@ class ReferenceQuery:
             authors[
                 (authors["Faculté / Service"] == "FGEN")
                 & (authors["Résidence"] != "Aucun bureau")
-                & (authors["Lien d'emploi UdeS"] == "Régulier")
+                & (authors["Lien d'emploi UdeS"] == self.member_status)
             ]
         )
         n_eng_members_asso_profs_with_office = len(
             authors[
                 (authors["Faculté / Service"] == "FGEN")
                 & (authors["Résidence"] != "Aucun bureau")
-                & (authors["Lien d'emploi UdeS"] != "Régulier")
+                & (authors["Lien d'emploi UdeS"] != self.member_status)
             ]
         )
 
+        collab_members_suffix: str = (
+            f"_membres_{self.member_status}s"
+            if self.member_status == "Collaborateur"
+            else ""
+        )
         stats_filename: Path = self.data_dir / Path(
             f"{self.in_excel_file.stem}"
-            f"_{self.date_start.strftime('%Y%m%d')}-{self.date_end.strftime('%Y%m%d')}_stats.txt"
+            f"_{self.date_start.strftime('%Y%m%d')}-{self.date_end.strftime('%Y%m%d')}_stats"
+            f"{collab_members_suffix}.txt"
         )
         with open(stats_filename, "w") as f:
             f.write(
-                f"* Membres réguliers du 3IT: {len(authors)} ({n_members_women / len(authors) * 100:.0f}% de femmes)\n"
+                f"* Membres {self.member_status} du 3IT: {len(authors)} ({n_members_women / len(authors) * 100:.0f}% de femmes)\n"
             )
             f.write(
-                f"* Membres réguliers du 3IT qui ont un bureau au 3IT: {n_members_with_office}\n"
+                f"* Membres {self.member_status} du 3IT qui ont un bureau au 3IT: {n_members_with_office}\n"
             )
-            f.write(f"* Membres réguliers du 3IT en génie: {n_eng_members}\n")
             f.write(
-                f"    o Profs réguliers: {n_eng_members_regular_profs_only}, "
+                f"* Membres {self.member_status} du 3IT en génie: {n_eng_members}\n"
+            )
+            f.write(
+                f"    o Profs {self.member_status}: {n_eng_members_regular_profs_only}, "
                 f"dont {n_eng_members_regular_profs_with_office} avec bureau\n"
             )
             f.write(f"      - GEGI: {n_eng_members_regular_profs_only_ee}\n")
@@ -142,7 +150,7 @@ class ReferenceQuery:
                 f" dont {n_eng_members_asso_profs_with_office} avec bureau\n"
             )
             console.print(
-                "Statistiques des membres réguliers du 3IT écrites dans le fichier "
+                f"Statistiques des membres {self.member_status} du 3IT écrites dans le fichier "
                 f"'{stats_filename}'",
                 soft_wrap=True,
             )
@@ -180,11 +188,17 @@ class ReferenceQuery:
                     author_status_by_year_columns
                 ].values.tolist()
             ]
-            authors.drop(authors[authors.status == "Collaborateur"].index, inplace=True)
+            if self.member_status == "Régulier":
+                authors.drop(
+                    authors[authors.status == "Collaborateur"].index, inplace=True
+                )
+            else:
+                authors.drop(authors[authors.status == "Régulier"].index, inplace=True)
             if authors.empty:
                 console.print(
-                    f"{Colors.RED}Aucun membre régulier du 3IT n'a été trouvé dans le fichier '{self.in_excel_file}'"
-                    f" pour la période de recherche [{self.year_start} au {self.year_end}]{Colors.RESET}",
+                    f"{Colors.RED}Aucun membre {self.member_status} du 3IT n'a été trouvé dans le fichier"
+                    f"'{self.in_excel_file}' pour la période de recherche [{self.year_start} au {self.year_end}]"
+                    f"{Colors.RESET}",
                     soft_wrap=True,
                 )
                 sys.exit()
@@ -223,6 +237,7 @@ class ReferenceQuery:
         self,
         toml_filename: str,
         search_type: str,
+        member_status: str,
         data_dir: str,
         publications_search_database: str,
         in_excel_file: str,
@@ -241,6 +256,7 @@ class ReferenceQuery:
     ):
         self.toml_filename = toml_filename
         self.search_type = search_type
+        self.member_status = member_status
         self.data_dir: Path = Path(data_dir)
         self.publications_search_database: str = publications_search_database
         self.date_start: date = date_start
@@ -305,11 +321,16 @@ class ReferenceQuery:
 
         # Build input/output Excel filename Path objects, check for access
         self.in_excel_file: Path = self.data_dir / Path(in_excel_file)
+        collab_members_suffix: str = (
+            f"_membres_{self.member_status}s"
+            if self.member_status == "Collaborateur"
+            else ""
+        )
         self.out_excel_file: Path = data_dir / (
             Path(
                 f"{self.in_excel_file.stem}_publications_"
                 f"{self.date_start.strftime('%Y%m%d')}-{self.date_end.strftime('%Y%m%d')}"
-                ".xlsx"
+                f"{collab_members_suffix}.xlsx"
             )
             if self.search_type == "Publications"
             else Path(

@@ -294,7 +294,7 @@ def pyrefsearch() -> None:
     else:
         publication_types = toml_dict["publication_types_openalex"]
 
-    # If this a search for the previous, make sure OpenALex is used, else exit
+    # If this a search for the previous month, make sure OpenALex is used, else exit
     previous_month_publications_search: bool = toml_dict.get(
         "previous_month_publications_search", False
     )
@@ -333,6 +333,7 @@ def pyrefsearch() -> None:
     reference_query: ReferenceQuery = ReferenceQuery(
         toml_filename=str(toml_filename),
         search_type=search_type,
+        member_status=toml_dict.get("member_status", "Régulier"),
         data_dir=str(toml_filename.parent),
         publications_search_database=publications_search_database,
         in_excel_file=toml_dict["in_excel_file"],

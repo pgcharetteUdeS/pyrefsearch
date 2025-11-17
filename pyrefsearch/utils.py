@@ -47,7 +47,7 @@ def to_lower_no_accents_no_hyphens(s: str) -> str:
 
     """
 
-    return unidecode(s.lower().strip()).replace("-", " ").replace("ç", "c")
+    return unidecode(s.lower().strip()).replace("-", " ").replace("ç", "c") if s else ""
 
 
 def remove_middle_initial(full_name):
