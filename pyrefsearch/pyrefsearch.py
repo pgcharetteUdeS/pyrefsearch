@@ -313,7 +313,7 @@ def pyrefsearch() -> None:
     date_end: date
     if previous_month_publications_search:
         date_end = date.today()
-        date_start = date_end - relativedelta(months=1)
+        date_start = date_end - relativedelta(months=1) + relativedelta(days=1)
     elif publications_search_database == "Scopus":
         date_start_scopus: date = toml_dict["date_start"]
         date_end_scopus: date = toml_dict["date_end"]

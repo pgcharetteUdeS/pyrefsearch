@@ -1,4 +1,4 @@
-# Type de membre du 3IT pour laquelle la recherche est affectuée(valeur par défaut: "Régulier")
+# Type de membre du 3IT pour laquelle la recherche est affectuée (valeur par défaut: "Régulier")
 member_status = "Collaborateur"
 
 # Fichier Excel d'entrée
