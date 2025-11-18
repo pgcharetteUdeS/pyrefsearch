@@ -21,9 +21,15 @@ local_affiliations = [
 ]
 # OPENALEX : Paires de descriptifs (au choix de l'usager) et mosts clefs ("subtype")
 # indiquant le type de publication dans la base de données OpenAlex
-publication_types_openalex = [["Articles", "journal-article"], ["Confs", "proceedings-article"],
-    ["Chap. de livres", "book-chapter"], ["Pré-impressions", "preprint"], ["HAL", "HAL"],
-    ["Autres", "other"]]
+publication_types_openalex = [
+    ["Articles", "journal-article"],
+    ["Confs", "proceedings-article"],
+    ["Chap. de livres", "book-chapter"],
+    ["Pré-impressions", "preprint"],
+    ["HAL", "HAL"],
+    ["Autres", "other"]
+]
 
 # BREVETS : Activer/désactiver (true/false) la recherche de brevets dans ESPACENET (INPADOC)
 espacenet_patent_search = true
+espacenet_patent_search_results_file = "espacenet_search_results_20251110.xlsx"
