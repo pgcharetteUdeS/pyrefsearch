@@ -18,11 +18,12 @@ Recherche de publications dans la base de données OpenAlex et de brevets
   [*How to get an EPO OPS API key*](https://patent-client.readthedocs.io/en/stable/getting_started.html).
 
 ## Utilisation:
-- Appel du script: *pyrefsearch\pyrefsearch.py data\pyrefsearch.toml*
-- Les paramètres d'exécution sont lus dans le fichier *pyrefsearch.toml*
-- Les données d'auteur.e.s sont lues dans un fichier Excel d'entrée (voir *pyrefsearch.toml*)
+- Appel du script: *pyrefsearch\pyrefsearch.py data\\<fichier toml\>*, où *\<fichier toml\>* est 
+par exemple *pyrefsearch.toml* ou *pyrefsearch_last_month.toml*
+- Les paramètres d'exécution sont lus dans le fichier *\<fichier toml\>*
+- Les données d'auteur.e.s sont lues dans un fichier Excel d'entrée dont le nom du fichier est spécifié dans *\<fichier toml\>*
 - Les résultats de la recherche sont écrits dans un fichier Excel de sortie
-- Tous les fichiers spécifiés sont lus/écrits dans le même répertoire que le fichier .toml
+- Tous les fichiers spécifiés sont lus/écrits dans le même répertoire que le fichier *\<fichier toml\>*
 
 <p></p>
 
@@ -37,15 +38,13 @@ Recherche de publications dans la base de données OpenAlex et de brevets
 - *espacenet_patent_search_results_file* = nom de fichier de résultats de recherche précédante dans *espacenet* (si ce paramètre
 n'est pas spécifié, une nouvelle recherche en ligne est effectuée, ce qui est assez long)
 
-<div style="page-break-after: always;"></div>
-
 ## *pyrefsearch_last_month.toml* : fichier des paramètres d'exécution pour une recherche au cours du dernier mois (voir le fichier donné en exemple) :
-Pour forcer une recherche dans le mois précédant, en plus des paramètres ci-haut (*pyrefsearch.toml*) où
+Pour forcer une recherche dans le mois précédant, en plus des paramètres ci-haut (voir *pyrefsearch.toml*) où
 *date_start*, *date_end* sont ignorés, les paramètres suivants sont requis:
 - *previous_month_publications_search* = true
 - *previous_month_publications_search_confirmation_emails* : liste des adresses qui recevront un courriel avec le fichier Excel de résultats
 
-## Fichier Excel d'entrée "*in_excel_file*" (voir fichier *pyrefsearch.toml*), feuillet *Membres* :
+## Fichier Excel d'entrée "*in_excel_file*" (voir le fichier *\<fichier toml\>*), feuillet *Membres* :
 Noms et identifiants OpenAlex des auteur.e.s spécifiés dans les colonnes
 suivantes :
 
