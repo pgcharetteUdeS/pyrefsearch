@@ -18,12 +18,12 @@ Recherche de publications dans la base de données OpenAlex et de brevets
   [*How to get an EPO OPS API key*](https://patent-client.readthedocs.io/en/stable/getting_started.html).
 
 ## Utilisation:
-- Appel du script: *pyrefsearch\pyrefsearch.py data\\<fichier toml\>*, où *\<fichier toml\>* est 
+- Appel du script: *pyrefsearch\pyrefsearch.py data\\<fichier_toml\>*, où *\<fichier_toml\>* est 
 par exemple *pyrefsearch.toml* ou *pyrefsearch_last_month.toml*
-- Les paramètres d'exécution sont lus dans le fichier *\<fichier toml\>*
-- Les données d'auteur.e.s sont lues dans un fichier Excel d'entrée dont le nom du fichier est spécifié dans *\<fichier toml\>*
+- Les paramètres d'exécution sont lus dans le fichier *\<fichier_toml\>*
+- Les données d'auteur.e.s sont lues dans un fichier Excel d'entrée dont le nom du fichier est spécifié dans *\<fichier_toml\>*
 - Les résultats de la recherche sont écrits dans un fichier Excel de sortie
-- Tous les fichiers spécifiés sont lus/écrits dans le même répertoire que le fichier *\<fichier toml\>*
+- Tous les fichiers spécifiés sont lus/écrits dans le même répertoire que le fichier *\<fichier_toml\>*
 
 <p></p>
 
@@ -44,7 +44,7 @@ Pour forcer une recherche dans le mois précédant, en plus des paramètres ci-h
 - *previous_month_publications_search* = true
 - *previous_month_publications_search_confirmation_emails* : liste des adresses qui recevront un courriel avec le fichier Excel de résultats
 
-## Fichier Excel d'entrée "*in_excel_file*" (voir le fichier *\<fichier toml\>*), feuillet *Membres* :
+## Fichier Excel d'entrée "*in_excel_file*" (voir le fichier *\<fichier_toml\>*), feuillet *Membres* :
 Noms et identifiants OpenAlex des auteur.e.s spécifiés dans les colonnes
 suivantes :
 
