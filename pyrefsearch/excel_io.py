@@ -53,6 +53,7 @@ def _export_publications_df_to_excel_sheet(
         "publicationName": "Publication",
         "volume": "Volume",
         "doi": "DOI",
+        "id": "Lien OpenAlex",
     }
     column_names: list[str] = list(columns.values())
     if not df.empty:

@@ -62,7 +62,7 @@ def gen_power_shell_script_to_send_confirmation_emails(
         )
         f.write("$currentDirectory = (Get-Location).Path\n\n")
 
-        # Send logfile to Paul.Charette@Usehrbrooke.ca
+        # Send the logfile to Paul.Charette@Usehrbrooke.ca
         f.write('$logfilename = $currentDirectory + "\\pyrefsearch_last_month.html"\n')
         f.write(f"$attachments = @($logfilename)\n")
         f.write(
@@ -72,7 +72,7 @@ def gen_power_shell_script_to_send_confirmation_emails(
             " -Attachments $attachments\n\n"
         )
 
-        # Send Excel results files to list of recipients
+        # Send the Excel results file to the list of recipients
         f.write(
             '$recipients = "'
             + ",".join(
@@ -115,7 +115,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
             soft_wrap=True,
         )
 
-    # Search for publications either in the Scopus or OpenAlex databases
+    # Search for publications either in the OpenAlex (default) or Scopus databases
     publications_all: pd.DataFrame
     pub_type_counts_by_author: list[list[int | None]]
     author_homonyms: pd.DataFrame
@@ -126,7 +126,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         # Fetch author profiles corresponding to user-supplied OpenAlex IDs, check they match
         # the user-supplied names, flag any inconsistencies in the "Erreurs" column
         console.print(
-            f"{Colors.GREEN}\n** Recherche de profils d'auteurs dans OpenAlex **{Colors.RESET}"
+            f"{Colors.GREEN}\n** Recherche de profils d'auteur.e.s dans OpenAlex **{Colors.RESET}"
         )
         author_profiles = query_author_profiles_by_id_openalex(
             reference_query=reference_query
@@ -284,7 +284,7 @@ def pyrefsearch() -> None:
     # Load search type
     search_type: str = toml_dict.get("search_type", "Publications")
 
-    # Assign the correct search codes depending on the database used
+    # Assign the correct search codes depending on the database used (OpenAlex vs Scopus)
     publications_search_database: str = toml_dict.get(
         "publications_search_database", "OpenAlex"
     )
@@ -294,7 +294,7 @@ def pyrefsearch() -> None:
     else:
         publication_types = toml_dict["publication_types_openalex"]
 
-    # If this a search for the previous month, make sure OpenALex is used, else exit
+    # If this a search for the previous month, make sure OpenAlex is used, else exit
     previous_month_publications_search: bool = toml_dict.get(
         "previous_month_publications_search", False
     )

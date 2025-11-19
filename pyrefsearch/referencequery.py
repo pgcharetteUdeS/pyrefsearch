@@ -56,6 +56,9 @@ class ReferenceQuery:
 
     def write_3it_member_stats_to_file(self, authors: pd.DataFrame) -> None:
         n_members_women: int = len(authors[authors["Sexe"] == "F"])
+        n_members_associate_profs: int = len(
+            authors[authors["Lien d'emploi UdeS"] == "Associé"]
+        )
         n_eng_members: int = len(authors[authors["Faculté / Service"] == "FGEN"])
         n_eng_members_regular_profs_only: int = len(
             authors[
@@ -124,6 +127,9 @@ class ReferenceQuery:
                 f"* Membres {self.member_status}s du 3IT: {len(authors)} ({n_members_women / len(authors) * 100:.0f}% de femmes)\n"
             )
             f.write(
+                f"* Membres {self.member_status}s du 3IT qui sont profs associés: {n_members_associate_profs}\n"
+            )
+            f.write(
                 f"* Membres {self.member_status}s du 3IT qui ont un bureau au 3IT: {n_members_with_office}\n"
             )
             f.write(
@@ -148,7 +154,8 @@ class ReferenceQuery:
                     " (devrait être zéro!)\n"
                 )
             f.write(
-                f"    o Profs associés: {n_eng_members - n_eng_members_regular_profs_only},"
+                "    o Autres (profs associés, responsables de recherche): "
+                f"{n_eng_members - n_eng_members_regular_profs_only},"
                 f" dont {n_eng_members_asso_profs_with_office} avec bureau\n"
             )
             console.print(

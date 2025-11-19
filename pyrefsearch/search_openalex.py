@@ -687,7 +687,7 @@ def query_publications_openalex(
                                     "publicationName": [work_publication_name],
                                     "volume": [volume],
                                     "doi": [f'=HYPERLINK("{work["doi"]}")'],
-                                    "id": work["id"],
+                                    "id": [f'=HYPERLINK("{work["id"]}")'],
                                 }
                             ),
                         ],

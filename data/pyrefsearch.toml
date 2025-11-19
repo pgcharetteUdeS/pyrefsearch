@@ -1,11 +1,11 @@
 # Type de membre du 3IT pour laquelle la recherche est affectuée (valeur par défaut: "Régulier")
-member_status = "Collaborateur"
+#member_status = "Collaborateur"
 
 # Fichier Excel d'entrée
 #in_excel_file = "Liste chercheurs-membres - TEST - SHORT.xlsx"
 in_excel_file = "Liste chercheurs-membres.xlsx"
 
-# Période temporelle de la recherche
+# Période temporelle de la recherche (YYYY-MM-DD)
 date_start = 2024-05-01
 date_end = 2025-04-30
 
