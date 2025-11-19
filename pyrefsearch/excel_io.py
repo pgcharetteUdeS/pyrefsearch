@@ -47,13 +47,13 @@ def _export_publications_df_to_excel_sheet(
         "title": "Titre",
         "coverDate": "Date",
         "Auteurs locaux": "Auteurs locaux",
-        "Collab interne": "Collab interne",
-        "Affiliation 3IT": "Affiliation 3IT",
-        "author_names": "Auteurs",
-        "publicationName": "Publication",
+        "publicationName": "Nom de la publication",
+        "author_names": "Auteurs (liste complète)",
         "volume": "Volume",
         "doi": "DOI",
         "id": "Lien OpenAlex",
+        "Collab interne": "Collab interne",
+        "Affiliation 3IT": "Affiliation 3IT",
     }
     column_names: list[str] = list(columns.values())
     if not df.empty:
