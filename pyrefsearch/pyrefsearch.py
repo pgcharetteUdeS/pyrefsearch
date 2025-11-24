@@ -57,8 +57,8 @@ def gen_power_shell_script_to_send_confirmation_emails(
         f.write("# Script to send confirmation emails to a list of recipients\n")
         f.write("# NB: the script is generated automatically by pyrefsearch.py\n\n")
         f.write(
-            f'$Subject = "Recherche de publications dans {reference_query.publications_search_database}'
-            f' pour les membres réguliers du 3IT du {reference_query.date_start} au {reference_query.date_end}"\n'
+            f'$Subject = "Recherche de publications et brevets pour les membres {reference_query.member_status.lower()}s'
+            f' du 3IT du {reference_query.date_start} au {reference_query.date_end}"\n'
         )
         f.write("$currentDirectory = (Get-Location).Path\n\n")
 

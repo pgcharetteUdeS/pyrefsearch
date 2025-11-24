@@ -259,9 +259,9 @@ class ReferenceQuery:
         espacenet_max_retries: int,
         espacenet_patent_search_results_file: str,
     ):
-        self.toml_filename = toml_filename
-        self.search_type = search_type
-        self.member_status = member_status
+        self.toml_filename: str = toml_filename
+        self.search_type: str = search_type
+        self.member_status: str = member_status
         self.data_dir: Path = Path(data_dir)
         self.publications_search_database: str = publications_search_database
         self.date_start: date = date_start
@@ -274,8 +274,8 @@ class ReferenceQuery:
         self.previous_month_publications_search_confirmation_emails: list[str] = (
             previous_month_publications_search_confirmation_emails
         )
-        self.publication_types = [row[0] for row in publication_types]
-        self.publication_type_codes = [row[1] for row in publication_types]
+        self.publication_types: list[str] = [row[0] for row in publication_types]
+        self.publication_type_codes: list[str] = [row[1] for row in publication_types]
         self.publication_type_table: dict = dict(
             zip(self.publication_type_codes, self.publication_types)
         )
