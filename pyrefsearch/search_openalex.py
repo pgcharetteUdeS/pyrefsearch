@@ -709,7 +709,7 @@ def query_publications_openalex(
     # Check for no publications found!
     if publications.empty:
         console.print(
-            "{Colors.RED}ERREUR - aucune publication trouvée dans OpenAlex pour la période du "
+            f"{Colors.RED}ERREUR - aucune publication trouvée dans OpenAlex pour la période du "
             f"{reference_query.date_start} au {reference_query.date_end}!{Colors.RESET}",
             soft_wrap=True,
         )
