@@ -31,5 +31,5 @@ publication_types_openalex = [
 ]
 
 # BREVETS : Activer/désactiver (true/false) la recherche de brevets dans ESPACENET (INPADOC)
-espacenet_patent_search = true
+#espacenet_patent_search = true
 #espacenet_patent_search_results_file = "espacenet_search_results_20251110.xlsx"

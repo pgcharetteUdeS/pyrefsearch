@@ -631,12 +631,18 @@ def query_publications_openalex(
                 if publication_info_from_crossref := _get_publication_info_from_crossref(
                     work["doi"]
                 ):
+                    authors_crossref = publication_info_from_crossref["authors"]
+                    author_affiliations_crossref = publication_info_from_crossref[
+                        "Affiliations"
+                    ]
                     type_crossref = publication_info_from_crossref["type"]
                     publication_name_crossref = publication_info_from_crossref[
                         "publication_name"
                     ]
                     volume = publication_info_from_crossref["volume"]
                 else:
+                    authors_crossref = None
+                    author_affiliations_crossref = None
                     type_crossref = None
                     publication_name_crossref = None
                     volume = None
@@ -652,6 +658,12 @@ def query_publications_openalex(
                     work_publication_name: str | None = (
                         publication_name_crossref or publication_name_openalex
                     )
+                    if len(authors_crossref) > len(authors_openalex):
+                        authors = authors_crossref
+                        affiliations = author_affiliations_crossref
+                    else:
+                        authors = authors_openalex
+                        affiliations = author_affiliations_openalex
 
                     # Consolidate subtypes to the set specified by the user (HAL category, check for article in openalex vs preprint in crossref)
                     work_type = _consolidate_subtypes(
@@ -681,9 +693,9 @@ def query_publications_openalex(
                                             else None
                                         )
                                     ],
-                                    "author_names": [authors_openalex],
+                                    "author_names": [authors],
                                     "institutions": [author_institutions_openalex],
-                                    "affiliations": [author_affiliations_openalex],
+                                    "affiliations": [affiliations],
                                     "publicationName": [work_publication_name],
                                     "volume": [volume],
                                     "doi": [f'=HYPERLINK("{work["doi"]}")'],
