@@ -281,7 +281,7 @@ def _flag_matched_openalex_author_ids_and_affiliations(
     reference_query.au_id_to_index = {
         au_id: index for index, au_id in enumerate(reference_query.openalex_ids)
     }
-    author_profiles["Affl/ID"] = author_profiles.apply(
+    author_profiles["Affl/ID"] = author_profiles.apply(  # type: ignore[call-overload]
         set_affiliation_and_id_column, axis=1
     )
 
@@ -473,7 +473,7 @@ def _add_local_author_name_and_count_columns_drop_duplicates(
         return len(row["Auteurs locaux"]) if len(row["Auteurs locaux"]) > 1 else None
 
     publications_without_duplicate["Collab interne"] = (
-        publications_without_duplicate.apply(count_local_coauthors, axis=1)
+        publications_without_duplicate.apply(count_local_coauthors, axis=1)  # type: ignore[call-overload]
     )
 
     # Add missing columns to the output dataframe
