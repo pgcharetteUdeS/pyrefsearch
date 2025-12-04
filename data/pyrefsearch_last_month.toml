@@ -1,3 +1,6 @@
+# Type de membre du 3IT pour laquelle la recherche est affectuée (valeur par défaut: "Régulier")
+#member_status = "Collaborateur"
+
 # Fichier Excel d'entrée et nom du feuillet contenant les information des auteur.e.s
 in_excel_file = "Liste chercheurs-membres.xlsx"
 
@@ -31,5 +34,5 @@ publication_types_openalex = [
 ]
 
 # BREVETS : Activer/désactiver (true/false) la recherche de brevets dans ESPACENET (INPADOC)
-#espacenet_patent_search = true
-#espacenet_patent_search_results_file = "espacenet_search_results_20251110.xlsx"
+espacenet_patent_search = true
+espacenet_patent_search_results_file = "espacenet_search_results_20251202.xlsx"
