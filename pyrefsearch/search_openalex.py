@@ -306,44 +306,45 @@ def query_author_homonyms_openalex(
 
     data_rows: list = []
     for name in reference_query.au_names:
-        author_search_results = Authors().search(f"{name[1]} {name[0]}").get()
-        if not author_search_results:
+        if author_search_results := Authors().search(f"{name[1]} {name[0]}").get():
+            author_info_list = [
+                [
+                    name[0],
+                    name[1],
+                    author["display_name"],
+                    f'=HYPERLINK("{author["id"]}")',
+                    f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else "",
+                    author["works_count"],
+                    (
+                        [
+                            last_inst["display_name"]
+                            for last_inst in author["last_known_institutions"]
+                        ]
+                        if author["last_known_institutions"]
+                        else None
+                    ),
+                    (
+                        [
+                            affiliation["institution"]["display_name"]
+                            for affiliation in author["affiliations"]
+                        ]
+                        if author["affiliations"]
+                        else None
+                    ),
+                    (
+                        [topic["display_name"] for topic in author["topics"]]
+                        if author["topics"]
+                        else None
+                    ),
+                ]
+                for author in author_search_results
+            ]
+            data_rows.extend(author_info_list)
+            data_rows.append([""] * len(author_info_list[0]))
+        else:
             console.print(
                 f"{Colors.RED}ERREUR - Aucun résultat dans OpenAlex pour {name[1]} {name[0]}!{Colors.RESET}"
             )
-        data_rows.extend(
-            [
-                name[0],
-                name[1],
-                author["display_name"],
-                f'=HYPERLINK("{author["id"]}")',
-                f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else "",
-                author["works_count"],
-                (
-                    [
-                        last_inst["display_name"]
-                        for last_inst in author["last_known_institutions"]
-                    ]
-                    if author["last_known_institutions"]
-                    else None
-                ),
-                (
-                    [
-                        affiliation["institution"]["display_name"]
-                        for affiliation in author["affiliations"]
-                    ]
-                    if author["affiliations"]
-                    else None
-                ),
-                (
-                    [topic["display_name"] for topic in author["topics"]]
-                    if author["topics"]
-                    else None
-                ),
-            ]
-            for author in author_search_results
-        )
-        data_rows.extend([""])
 
     # Build dataframe from data
     author_profiles: pd.DataFrame = pd.DataFrame(
@@ -658,7 +659,9 @@ def query_publications_openalex(
                     work_publication_name: str | None = (
                         publication_name_crossref or publication_name_openalex
                     )
-                    if len(authors_crossref) > len(authors_openalex):
+                    if authors_crossref is not None and len(authors_crossref) > len(
+                        authors_openalex
+                    ):
                         authors = authors_crossref
                         affiliations = author_affiliations_crossref
                     else:
