@@ -128,7 +128,7 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         console.print(
             f"{Colors.GREEN}\n** Recherche de profils d'auteur.e.s dans OpenAlex **{Colors.RESET}"
         )
-        author_profiles = query_author_profiles_by_id_openalex(
+        author_profiles, openalex_query_time_0 = query_author_profiles_by_id_openalex(
             reference_query=reference_query
         )
 
@@ -136,16 +136,19 @@ def query_publications_and_patents(reference_query: ReferenceQuery) -> None:
         console.print(
             f"{Colors.GREEN}\n** Recherche de publications dans OpenAlex **{Colors.RESET}"
         )
-        publications, pub_type_counts_by_author = query_publications_openalex(
-            reference_query=reference_query
-        )
+        (
+            publications,
+            pub_type_counts_by_author,
+            openalex_query_time_1,
+            crossref_query_time,
+        ) = query_publications_openalex(reference_query=reference_query)
 
         # Fetch OpenAlex author profiles corresponding to user-supplied names, check for
         # author names with multiple OpenAlex IDs ("homonyms")
         console.print(
             f"{Colors.GREEN}\n** Recherche d'homonymes dans OpenAlex **{Colors.RESET}"
         )
-        author_homonyms = query_author_homonyms_openalex(
+        author_homonyms, openalex_query_time_2 = query_author_homonyms_openalex(
             reference_query=reference_query,
         )
 
@@ -376,3 +379,4 @@ if __name__ == "__main__":
     console.print(
         f"\nTemps d'exécution: {str(timedelta(seconds=int(time.time() - start_time)))}"
     )
+    console.print("")

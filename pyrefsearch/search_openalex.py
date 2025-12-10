@@ -17,6 +17,7 @@ import itertools
 import html
 import pandas as pd
 from pyalex import config, Authors, Works
+import time
 
 from referencequery import ReferenceQuery
 import re
@@ -112,9 +113,35 @@ def _check_author_name_and_affiliation_correspondance(
     return e
 
 
+def _show_database_query_time(source: str, query_time: float) -> None:
+    """
+    Displays the total time taken by OpenAlex queries in a formatted
+    output, showing time in minutes and seconds if applicable.
+
+    Args:
+        source (str): The source of the query, e.g. "OpenAlex" or "Crossref"
+        query_time (float): The total time taken for the web query in seconds.
+    """
+
+    query_time_min, query_time_sec = divmod(query_time, 60)
+    if query_time_min > 0:
+        console.print(
+            f"Temps requis pour la recherche dans {source} : "
+            f"{int(query_time_min)} minutes "
+            f"{int(query_time_sec)} secondes",
+            soft_wrap=True,
+        )
+    else:
+        console.print(
+            f"Temps requis pour la recherche dans {source} : "
+            f"{int(query_time_sec)} secondes",
+            soft_wrap=True,
+        )
+
+
 def query_author_profiles_by_id_openalex(
     reference_query: ReferenceQuery,
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, float]:
     """
 
     Fetch author profiles from their IDs in the OpenAlex database
@@ -123,16 +150,21 @@ def query_author_profiles_by_id_openalex(
         reference_query (ReferenceQuery): ReferenceQuery Class object
 
     Returns: DataFrame with author profiles
+             Total openalex query time in seconds (float)
+
 
     """
 
     data_rows: list = []
+    openalex_query_time: float = 0
     for [name, openalex_id] in zip(
         reference_query.au_names, reference_query.openalex_ids
     ):
         if openalex_id:
             try:
+                start_time: float = time.perf_counter()
                 author = Authors()[openalex_id]
+                openalex_query_time += time.perf_counter() - start_time
                 data_rows.append(
                     [
                         name[0],
@@ -226,7 +258,10 @@ def query_author_profiles_by_id_openalex(
     # Remove temporary columns
     author_profiles.drop("OpenAlex - display_name", axis=1, inplace=True)
 
-    return author_profiles
+    # Show total time taken by OpenAlex queries
+    _show_database_query_time(source="OpenAlex", query_time=openalex_query_time)
+
+    return author_profiles, openalex_query_time
 
 
 def _flag_matched_openalex_author_ids_and_affiliations(
@@ -294,7 +329,7 @@ def _flag_matched_openalex_author_ids_and_affiliations(
 
 def query_author_homonyms_openalex(
     reference_query: ReferenceQuery,
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, float]:
     """
     Fetch author profiles from the OpenAlex database by name
 
@@ -302,11 +337,16 @@ def query_author_homonyms_openalex(
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
 
     Returns : DataFrame with author profiles
+              Total openalex query time in seconds (float)
+
     """
 
     data_rows: list = []
+    openalex_query_time: float = 0
     for name in reference_query.au_names:
+        start_time: float = time.perf_counter()
         if author_search_results := Authors().search(f"{name[1]} {name[0]}").get():
+            openalex_query_time += time.perf_counter() - start_time
             author_info_list = [
                 [
                     name[0],
@@ -342,6 +382,7 @@ def query_author_homonyms_openalex(
             data_rows.extend(author_info_list)
             data_rows.append([""] * len(author_info_list[0]))
         else:
+            openalex_query_time += time.perf_counter() - start_time
             console.print(
                 f"{Colors.RED}ERREUR - Aucun résultat dans OpenAlex pour {name[1]} {name[0]}!{Colors.RESET}"
             )
@@ -367,7 +408,10 @@ def query_author_homonyms_openalex(
         reference_query=reference_query, author_profiles=author_profiles
     )
 
-    return author_profiles
+    # Show total time taken by OpenAlex queries
+    _show_database_query_time(source="OpenAlex", query_time=openalex_query_time)
+
+    return author_profiles, openalex_query_time
 
 
 def _get_publication_info_from_crossref(doi) -> dict | None:
@@ -558,18 +602,22 @@ def _check_3it_affiliation(authorships: list) -> bool:
 
 def query_publications_openalex(
     reference_query: ReferenceQuery,
-) -> tuple[pd.DataFrame, list[list[int | None]]]:
+) -> tuple[pd.DataFrame, list[list[int | None]], float, float]:
     """
-    Fetch publications for range of years in OpenAlex database for list of author IDs
+    Fetch publications for a range of years in OpenAlex database for a list of author IDs
 
     Args:
         reference_query (ReferenceQuery): ReferenceQuery Class object containing query info
 
     Returns : DataFrame with publication search results (pd.DataFrame),
               list of publication type counts by author (list)
+              Total OpenAlex query time in seconds (float)
+              Total Crossref query time in seconds (float)
     """
 
     # Loop though authors to fetch/process records
+    crossref_query_time: float = 0
+    openalex_query_time: float = 0
     pub_type_counts_by_author: list = []
     publications = pd.DataFrame([])
     for openalex_id, author_name in zip(
@@ -583,7 +631,9 @@ def query_publications_openalex(
                 ),
                 "to_publication_date": reference_query.date_end.strftime("%Y-%m-%d"),
             }
+            start_time_openalex: float = time.perf_counter()
             works = Works().filter(author={"id": openalex_id}, **date_range)
+            openalex_query_time += time.perf_counter() - start_time_openalex
             for work in itertools.chain(*works.paginate(per_page=200, n_max=None)):
                 # Fetch OpenAlex record
                 title_openalex: str = work["title"]
@@ -629,6 +679,7 @@ def query_publications_openalex(
                     author_affiliations_openalex = []
 
                 # Fetch Crossref record
+                start_time_crossref: float = time.perf_counter()
                 if publication_info_from_crossref := _get_publication_info_from_crossref(
                     work["doi"]
                 ):
@@ -647,6 +698,7 @@ def query_publications_openalex(
                     type_crossref = None
                     publication_name_crossref = None
                     volume = None
+                crossref_query_time += time.perf_counter() - start_time_crossref
 
                 # Store record if the publication name is available either in the OpenAlex or Crossref records
                 if (
@@ -744,4 +796,13 @@ def query_publications_openalex(
         list(row) for row in zip(*pub_type_counts_by_author)
     ]
 
-    return publications, pub_type_counts_by_author_transpose
+    # Show total time taken by OpenAlex queries
+    _show_database_query_time(source="OpenAlex", query_time=openalex_query_time)
+    _show_database_query_time(source="Crossref", query_time=crossref_query_time)
+
+    return (
+        publications,
+        pub_type_counts_by_author_transpose,
+        openalex_query_time,
+        crossref_query_time,
+    )
