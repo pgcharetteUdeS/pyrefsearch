@@ -721,7 +721,7 @@ def query_publications_openalex(
                 ):
                     # Consolidate OpenAlex & Crossref record fields
                     work_type: str = type_crossref or (type_openalex or "other")
-                    work_title: str = title_openalex or title_openalex
+                    work_title: str = title_openalex
                     work_publication_name: str | None = (
                         publication_name_crossref or publication_name_openalex
                     )
