@@ -424,6 +424,18 @@ def _get_publication_info_from_crossref(doi) -> dict | None:
     Returns:
         str or None: The name of the publication (journal) if found, otherwise None.
     """
+
+    """
+    # Use habanero library for crossref queries
+    from habanero import Crossref
+    if not hasattr(_get_publication_info_from_crossref, "crossref"):
+        _get_publication_info_from_crossref.crossref = Crossref()  # type: ignore[attr-defined]
+    try:
+        data = _get_publication_info_from_crossref.crossref.works(ids=f"{doi}")  # type: ignore[attr-defined]
+    except Exception as e:
+        return None
+    """
+
     response = requests.get(
         f"https://api.crossref.org/works/{doi}",
         headers={"Accept": "application/json"},
