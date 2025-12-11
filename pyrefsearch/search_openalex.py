@@ -643,11 +643,12 @@ def query_publications_openalex(
                 ),
                 "to_publication_date": reference_query.date_end.strftime("%Y-%m-%d"),
             }
-            start_time_openalex: float = time.perf_counter()
+            start_time_openalex = time.perf_counter()
             works = Works().filter(author={"id": openalex_id}, **date_range)
-            openalex_query_time += time.perf_counter() - start_time_openalex
             for work in itertools.chain(*works.paginate(per_page=200, n_max=None)):
-                # Fetch OpenAlex record
+                openalex_query_time += time.perf_counter() - start_time_openalex
+
+                # Parse OpenAlex record
                 title_openalex: str = work["title"]
                 type_openalex: str = work["type"]
                 date_openalex: str = work["publication_date"]
@@ -695,6 +696,7 @@ def query_publications_openalex(
                 if publication_info_from_crossref := _get_publication_info_from_crossref(
                     work["doi"]
                 ):
+                    crossref_query_time += time.perf_counter() - start_time_crossref
                     authors_crossref = publication_info_from_crossref["authors"]
                     author_affiliations_crossref = publication_info_from_crossref[
                         "Affiliations"
@@ -705,12 +707,12 @@ def query_publications_openalex(
                     ]
                     volume = publication_info_from_crossref["volume"]
                 else:
+                    crossref_query_time += time.perf_counter() - start_time_crossref
                     authors_crossref = None
                     author_affiliations_crossref = None
                     type_crossref = None
                     publication_name_crossref = None
                     volume = None
-                crossref_query_time += time.perf_counter() - start_time_crossref
 
                 # Store record if the publication name is available either in the OpenAlex or Crossref records
                 if (
@@ -772,6 +774,7 @@ def query_publications_openalex(
                         ],
                         ignore_index=True,
                     )
+                start_time_openalex = time.perf_counter()
 
         # Add the dataframe for this author to the dataframe of all publications
         if not works_df.empty:
