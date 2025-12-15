@@ -659,7 +659,7 @@ def query_publications_openalex(
     ):
         works_df = pd.DataFrame([])
         if openalex_id:
-            date_range = {
+            date_range: dict = {
                 "from_publication_date": reference_query.date_start.strftime(
                     "%Y-%m-%d"
                 ),
