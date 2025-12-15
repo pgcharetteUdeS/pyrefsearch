@@ -192,6 +192,7 @@ def query_author_profiles_by_id_openalex(
                         ),
                         author["display_name"],
                         author["works_count"],
+                        f"{author["counts_by_year"][0]["year"]}-{author["counts_by_year"][-1]["year"]}",
                         (
                             author["summary_stats"]["h_index"]
                             if "h_index" in author["summary_stats"]
@@ -228,6 +229,7 @@ def query_author_profiles_by_id_openalex(
                         None,
                         None,
                         None,
+                        None,
                     ]
                 )
                 console.print(
@@ -243,6 +245,7 @@ def query_author_profiles_by_id_openalex(
                     None,
                     None,
                     "ID",
+                    None,
                     None,
                     None,
                     None,
@@ -265,6 +268,7 @@ def query_author_profiles_by_id_openalex(
             "Erreurs",
             "OpenAlex - display_name",
             "Nb publies",
+            "Années",
             "H index",
             "Institutions",
             "Affiliations",
@@ -371,6 +375,7 @@ def query_author_homonyms_openalex(
                     f'=HYPERLINK("{author["id"]}")',
                     f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else "",
                     author["works_count"],
+                    f"{author["counts_by_year"][0]["year"]}-{author["counts_by_year"][-1]["year"]}",
                     (
                         [
                             last_inst["display_name"]
@@ -413,6 +418,7 @@ def query_author_homonyms_openalex(
             "OpenAlex profile",
             "ORCID profile",
             "Pub count",
+            "Pub years",
             "Institutions",
             "Affiliations",
             "Topics",
