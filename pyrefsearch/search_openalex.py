@@ -61,42 +61,58 @@ def _check_author_name_and_affiliation_correspondance(
         )
 
     # Check institutions & affiliations
-    institution_match: bool = any(
+    institution_match: bool = (
         any(
-            to_lower_no_accents_no_hyphens(local_affiliation["name"])
-            in to_lower_no_accents_no_hyphens(institution["display_name"])
-            for local_affiliation in reference_query.local_affiliations
-        )
-        for institution in author["last_known_institutions"]
-    )
-    affiliation_match: bool = any(
-        any(
-            to_lower_no_accents_no_hyphens(local_affiliation["name"])
-            in to_lower_no_accents_no_hyphens(
-                affiliation["institution"]["display_name"]
+            any(
+                to_lower_no_accents_no_hyphens(local_affiliation["name"])
+                in to_lower_no_accents_no_hyphens(institution["display_name"])
+                for local_affiliation in reference_query.local_affiliations
             )
-            for local_affiliation in reference_query.local_affiliations
+            for institution in author["last_known_institutions"]
         )
-        for affiliation in author["affiliations"]
+        if author["last_known_institutions"]
+        else False
+    )
+    affiliation_match: bool = (
+        any(
+            any(
+                to_lower_no_accents_no_hyphens(local_affiliation["name"])
+                in to_lower_no_accents_no_hyphens(
+                    affiliation["institution"]["display_name"]
+                )
+                for local_affiliation in reference_query.local_affiliations
+            )
+            for affiliation in author["affiliations"]
+        )
+        if author["affiliations"]
+        else False
     )
     if not institution_match and not affiliation_match:
         e = f"{e} Affl" if e else "Affl"
-        if institutions := "; ".join(
-            [
-                institution["display_name"]
-                for institution in author["last_known_institutions"]
-            ]
+        if institutions := (
+            "; ".join(
+                [
+                    institution["display_name"]
+                    for institution in author["last_known_institutions"]
+                ]
+            )
+            if author["last_known_institutions"]
+            else None
         ):
             console.print(
                 f"{Colors.YELLOW}WARNING - l'affiliation de l'auteur.e '{name[1]} {name[0]}' "
                 f"est non-locale: '{institutions}'!{Colors.RESET}",
                 soft_wrap=True,
             )
-        elif affiliations := "; ".join(
-            [
-                affiliation["institution"]["display_name"]
-                for affiliation in author["affiliations"]
-            ]
+        elif affiliations := (
+            "; ".join(
+                [
+                    affiliation["institution"]["display_name"]
+                    for affiliation in author["affiliations"]
+                ]
+            )
+            if author["affiliations"]
+            else None
         ):
             console.print(
                 f"{Colors.YELLOW}WARNING - l'affiliation de l'auteur.e '{name[1]} {name[0]}' "
