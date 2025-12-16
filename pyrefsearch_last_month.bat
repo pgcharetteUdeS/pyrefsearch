@@ -6,7 +6,7 @@ set WORKINGDIR="C:\Users\%USERNAME%\OneDrive - USherbrooke\Documents on OneDrive
 cd %WORKINGDIR%
 
 :: Fetch the most recent 3IT membership file
-copy "C:\Users\%USERNAME%\USherbrooke\3IT - Gestion Centrale - Documents\General\Membres\Liste chercheurs-membres.xlsx" data
+copy "C:\Users\%USERNAME%\USherbrooke\3IT-Gestion_Documents - 3IT-Gestion_Documents\M_Bases_donnees\M300_Membres\M320_Chercheurs_Membres\Liste chercheurs-membres.xlsx" data
 
 :: Set python.exe path (Paul's FGEN-004012 laptop, versus others)
 if "%COMPUTERNAME%" == "FGEN-004012" GOTO running_FGEN_004012
