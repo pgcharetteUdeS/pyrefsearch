@@ -317,11 +317,12 @@ def pyrefsearch() -> None:
     date_end: date
     if previous_month_publications_search:
         date_end = date.today()
-        # if this is the last day of the month, force the start date to be the first day of the same month
-        if (date_end + relativedelta(days=1)).month != date_end.month:
-            date_start = date_end.replace(day=1)
-        else:
-            date_start = date_end - relativedelta(months=1) + relativedelta(days=1)
+        # if this is the last day of the month, start date is the first day of the same month, else 1 month back
+        date_start = (
+            date_end.replace(day=1)
+            if (date_end + relativedelta(days=1)).month != date_end.month
+            else date_end - relativedelta(months=1) + relativedelta(days=1)
+        )
     elif publications_search_database == "Scopus":
         date_start_scopus: date = toml_dict["date_start"]
         date_end_scopus: date = toml_dict["date_end"]
