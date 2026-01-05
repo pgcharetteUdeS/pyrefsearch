@@ -27,6 +27,7 @@ from search_openalex import (
     query_publications_openalex,
     config_openalex,
 )
+from search_orcid import query_publications_orcid
 from search_scopus import (
     config_scopus,
     query_scopus_author_profiles_legacy,
@@ -316,7 +317,11 @@ def pyrefsearch() -> None:
     date_end: date
     if previous_month_publications_search:
         date_end = date.today()
-        date_start = date_end - relativedelta(months=1) + relativedelta(days=1)
+        # if this is the last day of the month, force the start date to be the first day of the same month
+        if (date_end + relativedelta(days=1)).month != date_end.month:
+            date_start = date_end.replace(day=1)
+        else:
+            date_start = date_end - relativedelta(months=1) + relativedelta(days=1)
     elif publications_search_database == "Scopus":
         date_start_scopus: date = toml_dict["date_start"]
         date_end_scopus: date = toml_dict["date_end"]
@@ -374,6 +379,10 @@ def pyrefsearch() -> None:
 
 
 if __name__ == "__main__":
+    """
+    query_publications_orcid(family_name="Charette", given_name="Paul")
+    """
+
     start_time = time.time()
     pyrefsearch()
     console.print(
