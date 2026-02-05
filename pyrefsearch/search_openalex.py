@@ -375,7 +375,11 @@ def query_author_homonyms_openalex(
                     f'=HYPERLINK("{author["id"]}")',
                     f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else "",
                     author["works_count"],
-                    f"{author["counts_by_year"][0]["year"]}-{author["counts_by_year"][-1]["year"]}",
+                    (
+                        f"{author["counts_by_year"][0]["year"]}-{author["counts_by_year"][-1]["year"]}"
+                        if author["counts_by_year"]
+                        else ""
+                    ),
                     (
                         [
                             last_inst["display_name"]

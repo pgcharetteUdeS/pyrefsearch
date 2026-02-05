@@ -1,12 +1,12 @@
 """search_scopus.py
 
-    Search Scopus database for author profiles and publications
+Search Scopus database for author profiles and publications
 
-    The script uses the "pybliometrics" for Scopus searches,
-    see https://pybliometrics.readthedocs.io/en/stable/
-    NB: An API key is required to query the Scopus API,
-        see https://dev.elsevier.com/index.jsp. The first execution of the script
-        will prompt the user to enter the key.
+The script uses the "pybliometrics" for Scopus searches,
+see https://pybliometrics.readthedocs.io/en/stable/
+NB: An API key is required to query the Scopus API,
+    see https://dev.elsevier.com/index.jsp. The first execution of the script
+    will prompt the user to enter the key.
 
 """
 
@@ -208,7 +208,7 @@ def _add_coauthor_and_externals_columns_and_sort_by_tile_df(
 
     # Flag publication with at least one non-local author
     def flag_non_local_authors(author_afids) -> str:
-        if author_afids is None:
+        if author_afids is None or not isinstance(author_afids, str):
             return ""
         non_local_coauthors: bool = any(
             afid not in reference_query.local_affiliations_IDs

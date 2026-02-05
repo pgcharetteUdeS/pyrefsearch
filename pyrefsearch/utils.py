@@ -14,6 +14,7 @@ __all__ = [
 ]
 
 from functools import lru_cache
+import math
 import pandas as pd
 import re
 from rich.console import Console
@@ -47,7 +48,11 @@ def to_lower_no_accents_no_hyphens(s: str) -> str:
 
     """
 
-    return unidecode(s.lower().strip()).replace("-", " ").replace("ç", "c") if s else ""
+    return (
+        unidecode(s.lower().strip()).replace("-", " ").replace("ç", "c")
+        if isinstance(s, str) and s
+        else ""
+    )
 
 
 def remove_middle_initial(full_name):
