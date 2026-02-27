@@ -453,7 +453,7 @@ def load_espacenet_search_results_from_excel_file(
     file_date = datetime.datetime.strptime(match[1], "%Y%m%d").date()
     if datetime.date.today() - file_date >= timedelta(days=30):
         console.print(
-            "{Colors.YELLOW}WARNING: Les données dans le fichier "
+            f"{Colors.YELLOW}WARNING: Les données dans le fichier "
             f"'{reference_query.espacenet_patent_search_results_file}' "
             f"ont plus de 30 jours!{Colors.RESET}",
             soft_wrap=True,
