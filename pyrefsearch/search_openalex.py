@@ -479,22 +479,30 @@ def _get_publication_info_from_crossref(doi) -> dict | None:
                 if data["message"]["container-title"]
                 else None
             ),
-            "authors": [
-                f"{author['family'] if 'family' in author else ''}, "
-                f"{author['given'] if 'given' in author else ''}"
-                for author in data["message"]["author"]
-            ],
-            "Affiliations": list(
-                itertools.chain(
-                    *[
-                        [
-                            html.unescape(affiliation["name"])
-                            for affiliation in authors["affiliation"]
-                            if "name" in affiliation
+            "authors": (
+                [
+                    f"{author['family'] if 'family' in author else ''}, "
+                    f"{author['given'] if 'given' in author else ''}"
+                    for author in data["message"]["author"]
+                ]
+                if "author" in data["message"]
+                else []
+            ),
+            "Affiliations": (
+                list(
+                    itertools.chain(
+                        *[
+                            [
+                                html.unescape(affiliation["name"])
+                                for affiliation in authors["affiliation"]
+                                if "name" in affiliation
+                            ]
+                            for authors in data["message"]["author"]
                         ]
-                        for authors in data["message"]["author"]
-                    ]
+                    )
                 )
+                if "author" in data["message"]
+                else []
             ),
             "volume": (
                 data["message"]["volume"] if "volume" in data["message"] else None
