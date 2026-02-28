@@ -596,6 +596,7 @@ def _consolidate_subtypes(work_type: str, publication_name: str | None) -> str:
         "article": "preprint",
         "journal-article": "journal-article",
         "proceedings-article": "proceedings-article",
+        "book": "book",
         "book-chapter": "book-chapter",
         "preprint": "preprint",
         "posted-content": "preprint",
@@ -609,7 +610,7 @@ def _consolidate_subtypes(work_type: str, publication_name: str | None) -> str:
         return subtypes[work_type]
     console.print(
         f"{Colors.YELLOW}WARNING: subtype '{work_type}' inconnu dans la recherche de publications, "
-        "ajouter ce subtype à la fonction search_openalex._consolidate_subtypes()!{Colors.RESET}",
+        f"ajouter ce subtype à la fonction search_openalex._consolidate_subtypes()!{Colors.RESET}",
         soft_wrap=True,
     )
     return "other"

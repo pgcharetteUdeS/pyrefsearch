@@ -24,6 +24,7 @@ publication_types_openalex = [
     ["Articles", "journal-article"],
     ["Confs", "proceedings-article"],
     ["Chap. de livres", "book-chapter"],
+    ["Livres", "book"],
     ["Pré-impressions", "preprint"],
     ["HAL", "HAL"],
     ["Autres", "other"]
