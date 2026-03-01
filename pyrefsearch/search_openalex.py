@@ -17,11 +17,11 @@ import itertools
 import html
 import pandas as pd
 from pyalex import config, Authors, Works
+import re
 import time
 
+from search_crossref import get_publication_info_from_crossref
 from referencequery import ReferenceQuery
-import re
-import requests
 from utils import (
     Colors,
     console,
@@ -440,80 +440,6 @@ def query_author_homonyms_openalex(
     return author_profiles, openalex_query_time
 
 
-def _get_publication_info_from_crossref(doi) -> dict | None:
-    """
-    Retrieves the publication name (journal name) for a given DOI using the Crossref API.
-
-    Args:
-        doi (str): The Digital Object Identifier (DOI) of the publication.
-
-    Returns:
-        str or None: The name of the publication (journal) if found, otherwise None.
-    """
-
-    """
-    # Use habanero library for crossref queries
-    from habanero import Crossref
-    if not hasattr(_get_publication_info_from_crossref, "crossref"):
-        _get_publication_info_from_crossref.crossref = Crossref()  # type: ignore[attr-defined]
-    try:
-        data = _get_publication_info_from_crossref.crossref.works(ids=f"{doi}")  # type: ignore[attr-defined]
-    except Exception as e:
-        return None
-    """
-
-    response = requests.get(
-        f"https://api.crossref.org/works/{doi}",
-        headers={"Accept": "application/json"},
-        timeout=30,
-    )
-    if not response:
-        return None
-    data = response.json()
-    return (
-        {
-            "title": data["message"]["title"],
-            "type": data["message"]["type"],
-            "publication_name": (
-                data["message"]["container-title"][0]
-                if data["message"]["container-title"]
-                else None
-            ),
-            "authors": (
-                [
-                    f"{author['family'] if 'family' in author else ''}, "
-                    f"{author['given'] if 'given' in author else ''}"
-                    for author in data["message"]["author"]
-                ]
-                if "author" in data["message"]
-                else []
-            ),
-            "Affiliations": (
-                list(
-                    itertools.chain(
-                        *[
-                            [
-                                html.unescape(affiliation["name"])
-                                for affiliation in authors["affiliation"]
-                                if "name" in affiliation
-                            ]
-                            for authors in data["message"]["author"]
-                        ]
-                    )
-                )
-                if "author" in data["message"]
-                else []
-            ),
-            "volume": (
-                data["message"]["volume"] if "volume" in data["message"] else None
-            ),
-            "issue": data["message"]["issue"] if "issue" in data["message"] else None,
-        }
-        if data and "message" in data
-        else None
-    )
-
-
 def _add_local_author_name_and_count_columns_drop_duplicates(
     publications: pd.DataFrame,
 ) -> pd.DataFrame:
@@ -728,43 +654,30 @@ def query_publications_openalex(
 
                 # Fetch Crossref record
                 start_time_crossref: float = time.perf_counter()
-                if publication_info_from_crossref := _get_publication_info_from_crossref(
+                publication_info_from_crossref = get_publication_info_from_crossref(
                     work["doi"]
-                ):
-                    crossref_query_time += time.perf_counter() - start_time_crossref
-                    authors_crossref = publication_info_from_crossref["authors"]
-                    author_affiliations_crossref = publication_info_from_crossref[
-                        "Affiliations"
-                    ]
-                    type_crossref = publication_info_from_crossref["type"]
-                    publication_name_crossref = publication_info_from_crossref[
-                        "publication_name"
-                    ]
-                    volume = publication_info_from_crossref["volume"]
-                else:
-                    crossref_query_time += time.perf_counter() - start_time_crossref
-                    authors_crossref = None
-                    author_affiliations_crossref = None
-                    type_crossref = None
-                    publication_name_crossref = None
-                    volume = None
+                )
+                crossref_query_time += time.perf_counter() - start_time_crossref
 
                 # Store record if the publication name is available either in the OpenAlex or Crossref records
                 if (
                     publication_name_openalex is not None
-                    or publication_name_crossref is not None
+                    or publication_info_from_crossref["publication_name"] is not None
                 ):
                     # Consolidate OpenAlex & Crossref record fields
-                    work_type: str = type_crossref or (type_openalex or "other")
+                    work_type: str = publication_info_from_crossref["type"] or (
+                        type_openalex or "other"
+                    )
                     work_title: str = title_openalex
                     work_publication_name: str | None = (
-                        publication_name_crossref or publication_name_openalex
+                        publication_info_from_crossref["publication_name"]
+                        or publication_name_openalex
                     )
-                    if authors_crossref is not None and len(authors_crossref) > len(
-                        authors_openalex
-                    ):
-                        authors = authors_crossref
-                        affiliations = author_affiliations_crossref
+                    if publication_info_from_crossref["authors"] is not None and len(
+                        publication_info_from_crossref["authors"]
+                    ) > len(authors_openalex):
+                        authors = publication_info_from_crossref["authors"]
+                        affiliations = publication_info_from_crossref["authors"]
                     else:
                         authors = authors_openalex
                         affiliations = author_affiliations_openalex
@@ -801,7 +714,9 @@ def query_publications_openalex(
                                     "institutions": [author_institutions_openalex],
                                     "affiliations": [affiliations],
                                     "publicationName": [work_publication_name],
-                                    "volume": [volume],
+                                    "volume": [
+                                        publication_info_from_crossref["volume"]
+                                    ],
                                     "doi": [f'=HYPERLINK("{work["doi"]}")'],
                                     "id": [f'=HYPERLINK("{work["id"]}")'],
                                 }
