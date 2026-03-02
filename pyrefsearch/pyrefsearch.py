@@ -27,7 +27,7 @@ from search_openalex import (
     query_publications_openalex,
     config_openalex,
 )
-from search_orcid import query_publications_orcid
+from search_orcid import query_author_id_by_name_orcid, query_publications_by_id_orcid
 from search_scopus import (
     config_scopus,
     query_scopus_author_profiles_legacy,
@@ -381,7 +381,10 @@ def pyrefsearch() -> None:
 
 if __name__ == "__main__":
     """
-    query_publications_orcid(family_name="Charette", given_name="Paul")
+    orcid_id = query_author_id_by_name_orcid(family_name="Morris", given_name="Denis")[
+        0
+    ]["orcid-identifier"]["path"]
+    query_publications_by_id_orcid(orcid_id=orcid_id, start_year=2024, end_year=2026)
     """
 
     start_time = time.time()
