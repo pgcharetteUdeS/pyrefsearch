@@ -9,9 +9,15 @@ cd %WORKINGDIR%
 copy "C:\Users\%USERNAME%\USherbrooke\3IT-Gestion_Documents - 3IT-Gestion_Documents\M_Bases_donnees\M300_Membres\M320_Chercheurs_Membres\Liste chercheurs-membres.xlsx" data
 
 :: Set python.exe path (Paul's FGEN-004012 laptop, versus others)
+if "%COMPUTERNAME%" == "FGEN-007356" GOTO FGEN-007356
 if "%COMPUTERNAME%" == "FGEN-004012" GOTO running_FGEN_004012
 set PYTHONDIR="C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312"
 GOTO run_search
+
+:FGEN-007356
+set PYTHONDIR="C:\Users\%USERNAME%\AppData\Local\Python\pythoncore-3.12-64"
+GOTO run_search
+
 :running_FGEN_004012
 set PYTHONDIR="C:\Program Files\Python\Python312"
 GOTO run_search
