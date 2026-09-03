@@ -4,6 +4,8 @@ Search OpenAlex database
 
 https://github.com/J535D165/pyalex
 
+NB: An API key is required else quieres are capped at 100 per day (https://help.openalex.org/api/authentication/)
+
 """
 
 __all__ = [
@@ -32,12 +34,14 @@ from utils import (
 
 
 def config_openalex():
+    config.api_key = "9nLDZ0W2aeoGTWaIfEUTOG"
     config.email = "paul.charette@usherbrooke.ca"
     config.max_retries = 5
     config.retry_backoff_factor = 0.5
+    config.timeout = 30
 
 
-def _check_author_name_and_affiliation_correspondance(
+def _check_author_name_and_affiliation_correspondence(
     reference_query: ReferenceQuery, author: Authors, name: list[str]
 ) -> str:
 
@@ -187,7 +191,7 @@ def query_author_profiles_by_id_openalex(
                         name[1],
                         f'=HYPERLINK("https://openalex.org/{openalex_id}")',
                         f'=HYPERLINK("{author["orcid"]}")' if author["orcid"] else None,
-                        _check_author_name_and_affiliation_correspondance(
+                        _check_author_name_and_affiliation_correspondence(
                             reference_query=reference_query, author=author, name=name
                         ),
                         author["display_name"],

@@ -5,7 +5,14 @@ Search the espacenet patent database
 The script uses the "patent_client" package for searches,
 see https://patent-client.readthedocs.io/en/latest/index.html.
 
-NB: An API key is required, see pyrefsearch.toml.
+NB: An API key is required (see https://patent-client.readthedocs.io/en/latest/getting_started.html):
+    - Step 1: Go to EPO Open Patent Services and register a new account (Free up to 4GB of data / month,
+              which is usually more than sufficient).
+    - Step 2: Log in to EPO OPS, and click on “My Apps,” add a new app, and write down the corresponding
+              API Consumer Key and Consumer Key Secret.
+    - Step 3: Set your environment variables as:
+                - PATENT_CLIENT_EPO_API_KEY="<Consumer Key Here>"
+                - PATENT_CLIENT_EPO_API_SECRET="<Consumer Key Secret Here>"
 
 """
 
@@ -160,7 +167,8 @@ def _fetch_espacenet_patent_families_by_author_name(
                 console.print(
                     f"{Colors.RED}\nErreur dans la recherche de brevets {Colors.ITALICS}espacenet{Colors.RESET}"
                     f"{Colors.RED} pour l'auteur {first_name} {last_name} ('{e}'): "
-                    "cette erreur vient généralement du fait que la limite du nombre "
+                    "cette erreur vient généralement du fait que les deux clefs EPO ne sont pas définies "
+                    "dans les variables environnementales ou que la limite du nombre "
                     "d'accès pour une période donnée à la base de données a été excédée"
                     f" ({retries}) essais...{Colors.RESET}",
                     soft_wrap=True,

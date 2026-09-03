@@ -381,10 +381,10 @@ def pyrefsearch() -> None:
 
 if __name__ == "__main__":
     """
-    orcid_id = query_author_id_by_name_orcid(family_name="Morris", given_name="Denis")[
+    orcid_id = query_author_id_by_name_orcid(family_name="Charette", given_name="Paul")[
         0
     ]["orcid-identifier"]["path"]
-    query_publications_by_id_orcid(orcid_id=orcid_id, start_year=2024, end_year=2026)
+    orcid_pubs = query_publications_by_id_orcid(orcid_id=orcid_id, start_year=2025, end_year=2025)
     """
 
     start_time = time.time()

@@ -1,4 +1,5 @@
 # Script to send an email from pgcharette@gmail.com to a list of recipients
+# NB: An App password associated with Google account pgcharette@gmail.com is required
 
 param(
 	[string]$EmailTo,
@@ -16,5 +17,5 @@ foreach ($Attachment in $Attachments) {
 }
 $SMTPClient = New-Object Net.Mail.SmtpClient($SmtpServer, 587)
 $SMTPClient.EnableSsl = $true
-$SMTPClient.Credentials = New-Object System.Net.NetworkCredential("pgcharette@gmail.com", "iqgsfyhwlitpopzb");
+$SMTPClient.Credentials = New-Object System.Net.NetworkCredential("pgcharette@gmail.com", "jumo ogyg yovx wlvz");
 $SMTPClient.Send($SMTPMessage)
