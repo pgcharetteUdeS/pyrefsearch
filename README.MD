@@ -9,6 +9,11 @@ Recherche de publications dans la base de données OpenAlex et de brevets
   période donnée.
 
 ## Pré-requis:
+- Une clé API est requise pour faire des recherches dans la base de données OpenAlex
+  ([*How to get an EPO OPS API key*](https://help.openalex.org/api/authentication/)),
+  la clé doit être insérée dans la fonction
+  *search_openalex.def config_openalex()*.
+
 - Une clé API est requise pour faire des recherches de brevets dans la base de données
   INPADOC (*International Patent Documentation*) gérée par l'EPO (*European
   patent office*) et accessible via *espacenet*. Il faut d'abord ouvrir un compte en ligne pour accéder aux
