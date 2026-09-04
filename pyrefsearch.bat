@@ -6,7 +6,7 @@ copy "C:\Users\%USERNAME%\USherbrooke\3IT-Gestion_Documents - 3IT-Gestion_Docume
 :: Set python.exe path
 echo Set python.exe path...
 if "%COMPUTERNAME%" == "FGEN-007356" GOTO FGEN-007356
-if "%COMPUTERNAME%" == "FGEN-004012" GOTO running_FGEN_004012
+if "%COMPUTERNAME%" == "FGEN-004012" GOTO FGEN_004012
 set PYTHONDIR="C:\Program Files\Python\Python312"
 GOTO run_search
 
@@ -14,8 +14,8 @@ GOTO run_search
 set PYTHONDIR="C:\Users\%USERNAME%\AppData\Local\Python\pythoncore-3.12-64"
 GOTO run_search
 
-:running_FGEN_004012
-set PYTHONDIR="C:\Program Files\Python\Python312"
+:FGEN_004012
+set PYTHONDIR="C:\Users\%USERNAME%\AppData\Roaming\Python\Python312"
 GOTO run_search
 
 :: Run search...

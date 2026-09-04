@@ -4,7 +4,7 @@ Search OpenAlex database
 
 https://github.com/J535D165/pyalex
 
-NB: An API key is required else quieres are capped at 100 per day (https://help.openalex.org/api/authentication/)
+NB: An API key is required, else queries are capped at 100 per day (https://help.openalex.org/api/authentication/)
 
 """
 
