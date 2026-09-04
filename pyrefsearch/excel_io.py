@@ -179,34 +179,33 @@ def _create_results_summary_df(
             len(inpadoc_patent_applications),
             len(inpadoc_patents),
         ]
-        if not inpadoc_patents.empty or not inpadoc_patent_applications.empty:
-            inpadoc_patent_applications_joint_count: int = sum(
-                row["Nb co-inventeurs locaux"] is not None
-                and row["Nb co-inventeurs locaux"] > 1
-                for _, row in inpadoc_patent_applications.iterrows()
-            )
-            inpadoc_patents_joint_count: int = sum(
-                row["Nb co-inventeurs locaux"] is not None
-                and row["Nb co-inventeurs locaux"] > 1
-                for _, row in inpadoc_patents.iterrows()
-            )
-            co_authors += [
-                inpadoc_patent_applications_joint_count,
-                inpadoc_patents_joint_count,
-            ]
-            formulae_offset = len(formulae)
-            formulae += [
-                (
-                    None
-                    if len(inpadoc_patent_applications) == 0
-                    else f"=ROUND(C{formulae_offset+1}/B{formulae_offset+1}*100, 1)"
-                ),
-                (
-                    None
-                    if len(inpadoc_patents) == 0
-                    else f"=ROUND(C{formulae_offset + 2}/B{formulae_offset + 2}*100, 1)"
-                ),
-            ]
+        inpadoc_patent_applications_joint_count: int = sum(
+            row["Nb co-inventeurs locaux"] is not None
+            and row["Nb co-inventeurs locaux"] > 1
+            for _, row in inpadoc_patent_applications.iterrows()
+        )
+        inpadoc_patents_joint_count: int = sum(
+            row["Nb co-inventeurs locaux"] is not None
+            and row["Nb co-inventeurs locaux"] > 1
+            for _, row in inpadoc_patents.iterrows()
+        )
+        co_authors += [
+            inpadoc_patent_applications_joint_count,
+            inpadoc_patents_joint_count,
+        ]
+        formulae_offset = len(formulae)
+        formulae += [
+            (
+                None
+                if len(inpadoc_patent_applications) == 0
+                else f"=ROUND(C{formulae_offset+1}/B{formulae_offset+1}*100, 1)"
+            ),
+            (
+                None
+                if len(inpadoc_patents) == 0
+                else f"=ROUND(C{formulae_offset + 2}/B{formulae_offset + 2}*100, 1)"
+            ),
+        ]
 
     return pd.DataFrame([results, values, co_authors, formulae]).T
 

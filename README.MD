@@ -10,7 +10,7 @@ Recherche de publications dans la base de données OpenAlex et de brevets
 
 ## Pré-requis:
 - Une clé API est requise pour faire des recherches dans la base de données OpenAlex
-  ([*How to get an EPO OPS API key*](https://help.openalex.org/api/authentication/)),
+  ([*Authentication - OpenAlex help*](https://help.openalex.org/api/authentication/)),
   la clé doit être insérée dans la fonction
   *search_openalex.def config_openalex()*.
 

@@ -10,7 +10,7 @@ copy "C:\Users\%USERNAME%\USherbrooke\3IT-Gestion_Documents - 3IT-Gestion_Docume
 
 :: Set python.exe path (Paul's FGEN-004012 laptop, versus others)
 if "%COMPUTERNAME%" == "FGEN-007356" GOTO FGEN-007356
-if "%COMPUTERNAME%" == "FGEN-004012" GOTO running_FGEN_004012
+if "%COMPUTERNAME%" == "FGEN-004012" GOTO FGEN_004012
 set PYTHONDIR="C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312"
 GOTO run_search
 
@@ -18,8 +18,8 @@ GOTO run_search
 set PYTHONDIR="C:\Users\%USERNAME%\AppData\Local\Python\pythoncore-3.12-64"
 GOTO run_search
 
-:running_FGEN_004012
-set PYTHONDIR="C:\Program Files\Python\Python312"
+:FGEN_004012
+set PYTHONDIR="C:\Users\%USERNAME%\AppData\Roaming\Python\Python312"
 GOTO run_search
 
 :: Run the publications search for the previous month
